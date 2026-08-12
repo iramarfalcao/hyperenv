@@ -250,6 +250,19 @@ jobs:
           # The tag build is detached; push explicitly to the default branch.
           git push origin HEAD:main
 
+      # A second copy under a name that never changes. GitHub only serves
+      # /releases/latest/download/<asset> when the asset name is known ahead of
+      # time, and ours carries the version — so a website linking to it would
+      # need editing on every release. This copy gives one permanent URL:
+      #   https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg
+      - name: Add stable-named copies
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cp "build/HyperEnv-$VERSION.dmg" build/HyperEnv.dmg
+          (cd build && shasum -a 256 HyperEnv.dmg > HyperEnv.dmg.sha256)
+          ls -la build/
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -266,13 +279,17 @@ jobs:
               --notes-file "$RUNNER_TEMP/notes.md"
             gh release upload "$tag" \
               "build/HyperEnv-$VERSION.dmg" \
-              "build/HyperEnv-$VERSION.dmg.sha256" --clobber
+              "build/HyperEnv-$VERSION.dmg.sha256" \
+              "build/HyperEnv.dmg" \
+              "build/HyperEnv.dmg.sha256" --clobber
           else
             gh release create "$tag" \
               --title "HyperEnv $VERSION" \
               --notes-file "$RUNNER_TEMP/notes.md" \
               "build/HyperEnv-$VERSION.dmg" \
-              "build/HyperEnv-$VERSION.dmg.sha256"
+              "build/HyperEnv-$VERSION.dmg.sha256" \
+              "build/HyperEnv.dmg" \
+              "build/HyperEnv.dmg.sha256"
           fi
 
       # Kept even on failure, so a run that dies after packaging still leaves the

@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Primary search intent: someone looking for a way to switch env vars per project on a Mac. -->
+<title>HyperEnv — Environment Variable Manager for macOS | Switch .env per Project</title>
+<meta name="description" content="HyperEnv is a native macOS app that switches the environment variables your terminals inherit, per project and per environment. See which one is live at a glance, revert in one click, and import or export .env files. Free and open source.">
+<link rel="canonical" href="https://hyperenv.falcaosl.com/">
+
+<meta name="author" content="Iramar Falcao">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="theme-color" content="#5C44E6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0E14" media="(prefers-color-scheme: dark)">
+
+<!-- Social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HyperEnv">
+<meta property="og:title" content="HyperEnv — Environment Variable Manager for macOS">
+<meta property="og:description" content="Switch the environment variables your terminals inherit, per project and per environment. Always see which one is live. Revert in one click.">
+<meta property="og:url" content="https://hyperenv.falcaosl.com/">
+<meta property="og:image" content="https://hyperenv.falcaosl.com/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HyperEnv running on macOS, showing projects, profiles and environment variables">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HyperEnv — Environment Variable Manager for macOS">
+<meta name="twitter:description" content="Switch the environment variables your terminals inherit, per project and per environment.">
+<meta name="twitter:image" content="https://hyperenv.falcaosl.com/assets/og-image.jpg">
+
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<link rel="preload" as="image" href="assets/screenshot-light.png" media="(prefers-color-scheme: light)">
+<link rel="preload" as="image" href="assets/screenshot-dark.png" media="(prefers-color-scheme: dark)">
+
+<!-- Structured data. SoftwareApplication drives the rich result for app queries;
+     FAQPage is what search engines lift answers from. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://hyperenv.falcaosl.com/#app",
+      "name": "HyperEnv",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Environment Variable Manager",
+      "operatingSystem": "macOS 26.5 or later",
+      "url": "https://hyperenv.falcaosl.com/",
+      "downloadUrl": "https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg",
+      "softwareVersion": "1.0.1",
+      "processorRequirements": "Apple silicon or Intel",
+      "description": "A native macOS app that manages the environment variables new terminal sessions inherit, organised per project and per environment, with drift detection and one-click revert.",
+      "license": "https://github.com/iramarfalcao/hyperenv/blob/main/LICENSE",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Iramar Falcao",
+        "url": "https://github.com/iramarfalcao"
+      },
+      "featureList": [
+        "Switch environment variables per project and per environment",
+        "See which environment is live in the menu bar",
+        "One-click revert that restores previous values",
+        "Import and export .env files in three dialects",
+        "Detects when your shell drifts from what was applied",
+        "Never edits dotfiles outside its own marked block"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://hyperenv.falcaosl.com/#website",
+      "url": "https://hyperenv.falcaosl.com/",
+      "name": "HyperEnv",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://hyperenv.falcaosl.com/#app" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://hyperenv.falcaosl.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does HyperEnv change environment variables in terminals that are already open?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, and no tool can. A process cannot rewrite the environment of a child that is already running. HyperEnv changes what new terminal sessions inherit, and gives you a one-click command to bring an already-open shell up to date."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does HyperEnv modify my .zshrc or .zprofile?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It adds three lines to ~/.zprofile, once, between its own markers, and only after you press Install Hook. The file is backed up first and can be restored byte for byte. Nothing else in your dotfiles is touched."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is HyperEnv free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. HyperEnv is free and open source under the MIT licence, with no account, telemetry or paid tier."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which macOS versions does HyperEnv support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "macOS 26.5 or later, on both Apple silicon and Intel Macs. The download is a universal binary."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I install HyperEnv with Homebrew?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Run: brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv, then brew trust iramarfalcao/hyperenv, then brew install --cask hyperenv."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are my secrets stored securely?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Values applied to your shell are written in plaintext to ~/.config/hyperenv/session.zsh, because the file has to be sourceable by zsh. It is created with 0600 permissions in your home directory. Masking a value hides it in the interface only. Treat the file exactly as you would treat any .env file."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <nav aria-label="Primary">
+    <a class="brand" href="/">
+      <img src="assets/icon-256.png" alt="" width="28" height="28" decoding="async">
+      <span>HyperEnv</span>
+    </a>
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#walkthrough">Walkthrough</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="https://github.com/iramarfalcao/hyperenv" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="wrap">
+      <img class="hero-icon" src="assets/icon-256.png"
+           alt="The HyperEnv app icon: a terminal prompt above green, orange and red dots"
+           width="112" height="112" fetchpriority="high">
+      <h1>Environment variables for macOS,<br>one project at a time</h1>
+      <p class="lede">
+        HyperEnv switches the environment variables your terminals inherit — per
+        project, per environment. You can always see which one is live, and
+        putting it back is one click.
+      </p>
+
+      <div class="cta">
+        <a class="button primary"
+           href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg"
+           data-download>
+          Download for macOS
+        </a>
+        <a class="button" href="#install">Install with Homebrew</a>
+      </div>
+
+      <p class="meta">
+        Free and open source · Universal (Apple&nbsp;silicon &amp; Intel) ·
+        macOS&nbsp;26.5+ ·
+        <a href="https://github.com/iramarfalcao/hyperenv/releases/latest" rel="noopener">Release notes and checksum</a>
+      </p>
+
+      <figure class="shot">
+        <picture>
+          <source srcset="assets/screenshot-dark.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/screenshot-light.png"
+               alt="The HyperEnv window: a sidebar of projects, a column of colour-coded profiles for development, homologation and production, and a table of environment variables"
+               width="1280" height="800" fetchpriority="high" decoding="async">
+        </picture>
+        <figcaption>Projects, profiles and their variables. The bar along the bottom always names what is live.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="problem">
+    <div class="wrap narrow">
+      <h2>The shell that ran the migration looked exactly like the one that didn&rsquo;t</h2>
+      <p>
+        Anyone working against more than one backend ends up juggling
+        <code>.env</code> files, <code>source</code> commands and half-remembered
+        exports. The failure is rarely that switching is hard. It is that nothing
+        tells you which environment the terminal in front of you is actually
+        pointed at.
+      </p>
+      <div class="cards">
+        <article>
+          <h3>A pile of .env files</h3>
+          <p>Nothing on screen says which one is loaded. Two identical-looking shells, two different databases.</p>
+        </article>
+        <article>
+          <h3>Editing dotfiles by hand</h3>
+          <p>The file drifts, backups pile up, and one typo costs you a working login shell.</p>
+        </article>
+        <article>
+          <h3>A terminal profile per environment</h3>
+          <p>Every other tool — an editor terminal, a task runner, a CI shim — starts outside the setup.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>What HyperEnv does</h2>
+      <div class="features">
+        <article>
+          <h3>Projects and profiles</h3>
+          <p>A project per codebase or client. Inside it, a profile per environment — development, homologation, production, or your own — each holding its own set of variables.</p>
+        </article>
+        <article>
+          <h3>Colour that means something</h3>
+          <p>Every profile carries an environment class. Production is red wherever it appears, asks for confirmation before it is applied, and takes a shape in the menu bar that no other state uses.</p>
+        </article>
+        <article>
+          <h3>You can always see what is live</h3>
+          <p>A bar along the bottom of the window names the applied profile and its variable count. The menu bar shows it without switching apps.</p>
+        </article>
+        <article>
+          <h3>Revert restores, it does not blank</h3>
+          <p>Reverting puts back each variable&rsquo;s previous value, and unsets only the ones that did not exist before. A variable that was empty comes back empty.</p>
+        </article>
+        <article>
+          <h3>Open terminals are handled honestly</h3>
+          <p>No process can rewrite a running shell&rsquo;s environment. HyperEnv says so plainly and puts the one command that fixes it a single click away.</p>
+        </article>
+        <article>
+          <h3>Drift detection</h3>
+          <p>It tells you when your shell stops matching what was applied — including the case a checksum cannot catch, where something set the same variable after HyperEnv&rsquo;s block and quietly won.</p>
+        </article>
+        <article>
+          <h3>Import and export .env</h3>
+          <p>Three dialects — POSIX shell, quoted dotenv and <code>docker --env-file</code> — with a preview before anything is written.</p>
+        </article>
+        <article>
+          <h3>It reads your machine first</h3>
+          <p>On first launch it takes a snapshot of your existing shell environment, sorted by whether each variable is safe to reuse, so you start from what you already have.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works">
+    <div class="wrap narrow">
+      <h2>How it works</h2>
+      <p>
+        HyperEnv never edits your dotfiles line by line. It adds one guarded
+        block to <code>~/.zprofile</code>, once, and everything after that
+        happens in files it owns.
+      </p>
+      <pre><code># &gt;&gt;&gt; hyperenv managed block v1 &gt;&gt;&gt; (do not edit)
+[ -r "${HOME}/.config/hyperenv/session.zsh" ] &amp;&amp; . "${HOME}/.config/hyperenv/session.zsh"
+# &lt;&lt;&lt; hyperenv managed block v1 &lt;&lt;&lt;</code></pre>
+      <p>Applying a profile rewrites that one generated file:</p>
+      <pre><code># Generated by HyperEnv. Do not edit — changes are overwritten on apply.
+# Project: payments
+# Profile: prd
+
+[[ -n "$HYPERENV_DISABLE" ]] &amp;&amp; return
+
+export AWS_PROFILE='payments-prd'
+export DATABASE_URL='postgres://…'</code></pre>
+      <p>
+        New login shells source it and inherit the profile. At the same moment
+        HyperEnv writes the matching inverse script, so the undo exists before
+        you need it — and keeps working even if you delete the app first.
+      </p>
+
+      <h3>Built to be reversible</h3>
+      <ul class="checks">
+        <li><strong>Backed up before the first edit.</strong> <code>~/.zprofile</code> is copied aside before a single byte changes.</li>
+        <li><strong>Only inside the markers.</strong> Removing the block restores the file byte for byte, including CRLF line endings and a missing trailing newline.</li>
+        <li><strong>A kill switch that does not need the app.</strong> <code>HYPERENV_DISABLE=1 zsh -l</code> gives you a shell as if HyperEnv were never installed.</li>
+        <li><strong>The filesystem is the source of truth.</strong> What is applied lives in a JSON journal on disk, not in the app&rsquo;s database, so a corrupted store can never strand you with modified dotfiles and no way back.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="walkthrough">
+    <div class="wrap narrow">
+      <h2>From nothing to a working profile</h2>
+      <p>Three steps, about a minute.</p>
+
+      <ol class="steps">
+        <li>
+          <h3>Create a project</h3>
+          <p>Name it after the codebase or client it belongs to. It starts empty — no profiles are invented for you.</p>
+          <img class="step-shot" src="assets/step-new-project.png"
+               alt="The New Project sheet in HyperEnv, with a name field reading payments and a Create button"
+               width="380" height="182" loading="lazy" decoding="async">
+        </li>
+        <li>
+          <h3>Add a profile and pick its badge</h3>
+          <p>
+            Green, orange, red or purple. The badge is the environment class, so
+            choosing red is also choosing to be asked for confirmation before
+            that profile is ever applied.
+          </p>
+          <img class="step-shot" src="assets/step-new-profile.png"
+               alt="The New Profile sheet, showing a name field and four colour swatches for development, homologation, production and custom"
+               width="380" height="290" loading="lazy" decoding="async">
+        </li>
+        <li>
+          <h3>Enter the variables, then apply</h3>
+          <p>
+            Type them in, or import an existing <code>.env</code>. Applying
+            points every new terminal at that profile, and the bar along the
+            bottom names it from then on — as in the window at the top of this
+            page.
+          </p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap narrow">
+      <h2>Install</h2>
+
+      <h3>Homebrew</h3>
+      <pre><code>brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
+brew trust iramarfalcao/hyperenv
+brew install --cask hyperenv</code></pre>
+      <p class="note">
+        <code>brew trust</code> is not optional: Homebrew refuses to load a cask
+        from a third-party tap until you say once that you trust it.
+      </p>
+
+      <h3>Direct download</h3>
+      <p>
+        <a class="button primary"
+           href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg"
+           data-download>Download HyperEnv.dmg</a>
+        <a class="button"
+           href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg.sha256"
+           rel="noopener">SHA-256 checksum</a>
+      </p>
+      <p>Verify it before opening:</p>
+      <pre><code>shasum -a 256 HyperEnv.dmg</code></pre>
+
+      <h3 id="first-launch">First launch</h3>
+      <p>
+        Builds are <strong>ad-hoc signed</strong> rather than signed with a paid
+        Apple Developer ID, so macOS blocks the first launch. Right-click
+        <strong>HyperEnv</strong> in Applications and choose <strong>Open</strong>,
+        or run this once:
+      </p>
+      <pre><code>xattr -dr com.apple.quarantine /Applications/HyperEnv.app</code></pre>
+      <p class="note">
+        Said plainly because it matters: this build is not notarized by Apple.
+        The source is public and every release publishes its checksum, so you can
+        verify what you downloaded — or
+        <a href="https://github.com/iramarfalcao/hyperenv#building-from-source" rel="noopener">build it yourself</a>
+        in one command.
+      </p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap narrow">
+      <h2>Frequently asked questions</h2>
+
+      <details>
+        <summary>Does it change terminals that are already open?</summary>
+        <p>
+          No, and nothing can — a process cannot rewrite the environment of a
+          child that is already running. HyperEnv changes what <em>new</em>
+          sessions inherit, and gives you a one-click command to bring an
+          existing shell up to date.
+        </p>
+      </details>
+
+      <details>
+        <summary>Will it mess with my .zshrc?</summary>
+        <p>
+          It touches <code>~/.zprofile</code> only, adding three lines between
+          its own markers, and only after you press <strong>Install Hook</strong>.
+          The file is backed up first, and removing the block restores it byte
+          for byte.
+        </p>
+      </details>
+
+      <details>
+        <summary>Why .zprofile and not .zshenv?</summary>
+        <p>
+          <code>/etc/zprofile</code> runs <code>path_helper</code>, which
+          reorders <code>PATH</code> — anything PATH-related written to
+          <code>.zshenv</code> is silently undone before your shell is ready.
+          <code>.zshenv</code> also runs for every non-interactive shell, which
+          would leak profile credentials into unrelated scripts and cron jobs.
+        </p>
+      </details>
+
+      <details>
+        <summary>Are secrets encrypted?</summary>
+        <p>
+          No, and it would be dishonest to imply otherwise.
+          <code>session.zsh</code> must be sourceable by <code>zsh</code>, so it
+          holds plaintext. It is written <code>0600</code> in your home
+          directory. Masking a value hides it in the interface only. Treat the
+          file exactly as you would treat any <code>.env</code>.
+        </p>
+      </details>
+
+      <details>
+        <summary>Does it work with bash or fish?</summary>
+        <p>
+          Not yet. HyperEnv targets <code>zsh</code>, the macOS default login
+          shell, and refuses to install its hook if your login shell is
+          something else rather than writing a file that would not work.
+        </p>
+      </details>
+
+      <details>
+        <summary>Is it free? Is there telemetry?</summary>
+        <p>
+          Free and open source under the MIT licence. No account, no telemetry,
+          no paid tier, no network calls of any kind.
+        </p>
+      </details>
+
+      <details>
+        <summary>How do I uninstall it?</summary>
+        <p>
+          Remove the hook from inside the app first, then delete the app — or
+          <code>brew uninstall --cask hyperenv</code>. Adding
+          <code>--zap</code> also removes <code>~/.config/hyperenv</code>. A
+          leftover block in <code>.zprofile</code> is harmless: it is guarded and
+          does nothing once the files are gone.
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap narrow">
+      <h2>Stop guessing which environment you are in</h2>
+      <p class="cta">
+        <a class="button primary"
+           href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg"
+           data-download>Download for macOS</a>
+        <a class="button" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Read the source</a>
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      <strong>HyperEnv</strong> — an environment variable manager for macOS.
+      MIT licensed. Built by
+      <a href="https://github.com/iramarfalcao" rel="noopener me">Iramar Falcao</a>.
+    </p>
+    <ul>
+      <li><a href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Source</a></li>
+      <li><a href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/iramarfalcao/hyperenv/blob/main/docs/ARCHITECTURE.md" rel="noopener">Architecture</a></li>
+      <li><a href="https://github.com/iramarfalcao/hyperenv/blob/main/SECURITY.md" rel="noopener">Security</a></li>
+      <li><a href="https://github.com/iramarfalcao/hyperenv/issues" rel="noopener">Report a problem</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

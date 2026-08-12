@@ -1,0 +1,5 @@
+# HyperEnv — https://hyperenv.falcaosl.com/
+User-agent: *
+Allow: /
+
+Sitemap: https://hyperenv.falcaosl.com/sitemap.xml

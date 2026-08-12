@@ -35,9 +35,37 @@ final class AppModel {
 
     func isApplied(_ profile: Profile) -> Bool { applied?.profileID == profile.id }
 
+    // MARK: Staged state, for previews and screenshots
+
+    init() {}
+
+    /// Builds a model showing a given state without touching the machine.
+    ///
+    /// `applied` is otherwise settable only by the engine, on purpose — the
+    /// journal on disk is the source of truth for what is live, and a UI that
+    /// could claim otherwise would be able to lie about which environment a
+    /// terminal is in. This initialiser stages the value for a preview or a
+    /// screenshot instead, so neither needs the real journal, the real dotfiles,
+    /// or a profile actually applied to somebody's machine.
+    init(staging applied: ApplyTransaction?, hookStatus: HookStatus = .installed) {
+        self.applied = applied
+        self.hookStatus = hookStatus
+        self.isStaged = true
+    }
+
+    /// Staged models never consult the machine.
+    ///
+    /// Without this the view's `.task` would immediately call `refresh()` and
+    /// replace the staged values with whatever is really applied — and a
+    /// screenshot harness would also probe the login shell and seed a snapshot
+    /// of somebody's actual environment, which is the one thing it exists to
+    /// avoid.
+    private var isStaged = false
+
     // MARK: Lifecycle
 
     func refresh() async {
+        guard !isStaged else { return }
         applied = try? await engine.current()
         hookStatus = await engine.hookStatus()
         pendingRecoveries = (try? await engine.pendingRecoveries()) ?? []
@@ -45,7 +73,7 @@ final class AppModel {
 
     /// Seeds Default/Default on first launch.
     func seedIfNeeded(context: ModelContext) async {
-        guard !SeedService.hasSeeded(in: context) else { return }
+        guard !isStaged, !SeedService.hasSeeded(in: context) else { return }
         await withBusy("Reading your shell environment…") {
             seedReport = try await seeder.seed(into: context)
         }
@@ -116,6 +144,7 @@ final class AppModel {
     // MARK: Drift
 
     func checkDrift() async {
+        guard !isStaged else { return }
         drift = (try? await engine.detectDrift()) ?? []
     }
 

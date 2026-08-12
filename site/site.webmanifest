@@ -1,0 +1,13 @@
+{
+  "name": "HyperEnv — Environment Variable Manager for macOS",
+  "short_name": "HyperEnv",
+  "description": "Switch the environment variables your terminals inherit, per project and per environment.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0e14",
+  "theme_color": "#5c44e6",
+  "icons": [
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
