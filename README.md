@@ -11,11 +11,30 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/macOS-26.5%2B-lightgrey.svg)](#requirements)
 
-[Download](#install) · [How it works](#how-it-works) · [Safety](#safety-model) · [Architecture](docs/ARCHITECTURE.md)
+[**hyperenv.falcaosl.com**](https://hyperenv.falcaosl.com) · [Download](#install) · [How it works](#how-it-works) · [Safety](#safety-model) · [Architecture](docs/ARCHITECTURE.md)
 
 </div>
 
 ---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-dark.png">
+  <img src="docs/images/window-light.png" alt="The HyperEnv window: a sidebar of projects, a column of colour-coded profiles for development, homologation and production, and a table of environment variables. The bar along the bottom reads payments/dev, 7 variables in new terminals.">
+</picture>
+
+<div align="center"><sub>Projects, profiles and their variables. The bar along the bottom always names what is live.</sub></div>
+
+---
+
+## Contents
+
+| | |
+|---|---|
+| [What it is](#what-it-is) · [The problem it solves](#the-problem-it-solves) · [Where it is useful](#where-it-is-useful) | Why it exists |
+| [Features](#features) · [Install](#install) · [How it works](#how-it-works) | Using it |
+| [Safety model](#safety-model) · [SECURITY.md](SECURITY.md) | What it will and will not do to your machine |
+| [Building from source](#building-from-source) · [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [CONTRIBUTING.md](CONTRIBUTING.md) | Working on it |
+| [Releasing](#releasing) · [RELEASING.md](docs/RELEASING.md) | Shipping it |
 
 ## What it is
 
@@ -26,21 +45,6 @@ You keep **projects**, each holding **profiles** (`dev`, `hml`, `prd`, or your o
 A profile is a list of `KEY=value` pairs. Applying one writes a single generated
 file that your shell sources at login, so every terminal you open from that
 moment on sees that environment. One click puts it back.
-
-<div align="center">
-
-```
-  Projects            Profiles                  Variables
-  ──────────          ──────────                ─────────────────────────
-  ▸ Default           ▸ dev   DEV               ☑ DATABASE_URL   postgres://…
-  ▸ acme-api          ▸ hml   HML               ☑ API_BASE       https://…
-  ▸ payments          ▸ prd   PROD   ● ACTIVE   ☑ AWS_PROFILE    payments-prd
-                                                ☐ DEBUG          1
-  ─────────────────────────────────────────────────────────────────────────
-  ● payments / prd · 14 variables in new terminals   Copy reload command | Revert
-```
-
-</div>
 
 ## The problem it solves
 
@@ -74,7 +78,8 @@ one click rather than an act of memory.
 ## Features
 
 - **Projects and profiles** — a hierarchy that matches how the work is actually
-  organised, with `dev` / `hml` / `prd` created for you on every new project.
+  organised. A new project is named by you and starts empty; profiles are added
+  one at a time, each with a name and a badge.
 - **Colour-coded risk** — every profile carries an environment class. Production
   is red everywhere it appears and is the only action that asks first.
 - **Always-visible active state** — a status bar naming the live profile and its
@@ -97,6 +102,22 @@ one click rather than an act of memory.
   live animates in. Sound is limited to those four events, respects macOS's own
   interface-sound setting, and can be switched off in the Environment menu.
 - **Menu bar switching** — change profile without bringing the window forward.
+
+## Getting started
+
+<img src="docs/images/new-profile.png" width="380" align="right" alt="The New Profile sheet, showing a name field and four colour swatches for development, homologation, production and custom">
+
+1. **Install the hook.** The app asks once, and explains exactly what it will add
+   to `~/.zprofile`. Nothing is written before you press the button.
+2. **Create a project**, named after the codebase or client it belongs to.
+3. **Add a profile** and pick its badge. The badge is the environment class, so
+   choosing red is also choosing to be asked for confirmation before that
+   profile is ever applied.
+4. **Enter the variables**, or import an existing `.env`.
+5. **Apply.** Every terminal you open from then on inherits that profile, and the
+   bar along the bottom names it until you revert.
+
+<br clear="right">
 
 ## Install
 
@@ -127,14 +148,16 @@ way, since it is guarded and does nothing once the files are missing.
 
 ### Download
 
-Grab the latest `HyperEnv-<version>.dmg` from the
-[**Releases**](https://github.com/iramarfalcao/hyperenv/releases/latest) page,
-open it, and drag **HyperEnv** into **Applications**.
+[**Download HyperEnv.dmg**](https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg)
+— always the newest release — then open it and drag **HyperEnv** into
+**Applications**. Every release also publishes a versioned copy and a checksum on
+the [Releases](https://github.com/iramarfalcao/hyperenv/releases/latest) page.
 
-Every release ships a `.sha256` next to the disk image. Verify it before opening:
+Verify it before opening:
 
 ```sh
-shasum -a 256 HyperEnv-1.0.0.dmg
+curl -LO https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg.sha256
+shasum -a 256 -c HyperEnv.dmg.sha256
 ```
 
 ### First launch
@@ -278,7 +301,8 @@ cd hyperenv
 
 Tests/run-core-checks.sh          # 121 pure-logic checks, no app bundle needed
 Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
-Tests/run-layout-checks.sh        # no view may demand more width than the window
+Tests/run-layout-checks.sh        # no view may outgrow the window
+Tests/run-export-checks.sh        # an export carries the variables it claims to
 
 Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
 Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
@@ -294,7 +318,7 @@ previous values back. It refuses to run anywhere near your real `$HOME`.
 ## Releasing
 
 Tagging is the whole process. Push a `v*` tag and the
-[release workflow](.github/workflows/release.yml) runs both test suites, builds a
+[release workflow](.github/workflows/release.yml) runs all four suites, builds a
 universal binary, packages the disk image, and publishes it with a checksum:
 
 ```sh

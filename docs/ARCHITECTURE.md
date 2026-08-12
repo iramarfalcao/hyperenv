@@ -175,6 +175,9 @@ drift away from the palette the app actually uses.
 | `Tests/run-core-checks.sh` | The generated strings, parsing and quoting are correct. Pure, fast, no I/O. |
 | `Tests/run-shell-integration.sh` | A real `zsh`, in an isolated `ZDOTDIR`, produces the promised environment — and un-applying restores the previous values. Refuses to run anywhere near the real `$HOME`. |
 | `Tests/run-layout-checks.sh` | No row demands more width than the window can give it. Measures `VariableRow` directly, because measuring it inside the editor's `List` reports a clamped width and would pass with the bug present. |
+| `Tests/run-export-checks.sh` | An export carries the variables it says it does. Reads the generated file rather than trusting the code path, because the failure it guards — a file holding a comment header and nothing else — looks like success until the file is opened. |
 
-The second suite is the one that matters. Unit tests prove the strings are built
-correctly; only a real shell proves the contract.
+The shell suite is the one that matters most. Unit tests prove the strings are
+built correctly; only a real shell proves the contract. The other three exist
+because each of them caught something that had already shipped: a row wider than
+the window, a view taller than the screen, and an export with nothing in it.
