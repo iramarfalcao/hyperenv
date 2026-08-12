@@ -96,6 +96,25 @@ one click rather than an act of memory.
 
 ## Install
 
+### Homebrew
+
+The repository doubles as a Homebrew tap:
+
+```sh
+brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
+brew install --cask hyperenv
+```
+
+The download carries macOS's quarantine attribute and Homebrew does not strip
+it, so the first launch still needs one command — `brew` prints it, and it is
+the same one in [First launch](#first-launch) below. Upgrades are
+`brew upgrade --cask hyperenv`; `brew uninstall --cask hyperenv` removes the
+app, and `--zap` also removes `~/.config/hyperenv`.
+
+Uninstalling does not touch the block in `~/.zprofile`. Remove the hook from
+inside the app first if you want it gone — a leftover block is harmless either
+way, since it is guarded and does nothing once the files are missing.
+
 ### Download
 
 Grab the latest `HyperEnv-<version>.dmg` from the
@@ -284,6 +303,7 @@ Signing and notarization are optional and entirely secret-driven — see
 | [docs/RELEASING.md](docs/RELEASING.md) | Cutting a release, and enabling Developer ID signing |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose a change |
 | [CHANGELOG.md](CHANGELOG.md) | What changed, per version |
+| [Casks/hyperenv.rb](Casks/hyperenv.rb) | The Homebrew cask, updated automatically on release |
 
 ## License
 

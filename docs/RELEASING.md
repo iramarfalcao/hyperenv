@@ -70,6 +70,45 @@ ticket to the bundle before the disk image is built.
 The release notes adapt automatically: a notarized build tells users it opens
 normally, an ad-hoc one tells them how to get past Gatekeeper.
 
+## Homebrew
+
+`Casks/hyperenv.rb` makes this repository a Homebrew tap. Users install with the
+two-argument `brew tap` form, which accepts any repository name:
+
+```sh
+brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
+brew install --cask hyperenv
+```
+
+The release workflow rewrites the cask's `version` and `sha256` from the disk
+image it just built and commits that back to `main`. A cask carrying a stale
+checksum fails installation with a mismatch error that reads like a corrupted
+download, so it is not left to be updated by hand.
+
+Two things to know before aiming at the official `homebrew-cask`:
+
+- **It would be rejected today.** Acceptable Casks requires that an app "must
+  not require System Integrity Protection or Gatekeeper to be disabled or
+  bypassed". Ad-hoc signed builds are quarantined on download and rejected by
+  Gatekeeper, and telling users to strip the attribute is exactly that bypass.
+  Setting up Developer ID signing and notarization — the secrets above — is the
+  prerequisite, not an optional polish.
+- **Notability is judged separately.** Homebrew weighs how established a project
+  is, so a new repository is unlikely to qualify regardless of signing.
+
+Nothing about the tap depends on either. It works now, and it keeps working if
+the cask is later submitted upstream.
+
+To check the cask after editing it, Homebrew requires it to sit inside a tap:
+
+```sh
+brew tap-new you/scratch --no-git
+cp Casks/hyperenv.rb "$(brew --repository)/Library/Taps/you/homebrew-scratch/Casks/"
+brew style --cask you/scratch/hyperenv
+brew audit --cask --online you/scratch/hyperenv
+brew untap you/scratch
+```
+
 ## Versioning
 
 [Semantic versioning](https://semver.org). The workflow rejects a tag that is not

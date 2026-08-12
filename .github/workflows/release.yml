@@ -184,6 +184,41 @@ jobs:
           PY
           cat "$RUNNER_TEMP/notes.md"
 
+      # The cask hard-codes a version and a checksum, so it is wrong the moment
+      # a release ships unless something updates it. Committed back to main
+      # rather than kept by hand, because a stale checksum makes `brew install`
+      # fail with a mismatch that looks like a corrupted download.
+      - name: Update the Homebrew cask
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          checksum="$(cut -d' ' -f1 < "build/HyperEnv-$VERSION.dmg.sha256")"
+          python3 - "$VERSION" "$checksum" <<'PY'
+          import pathlib, re, sys
+          version, checksum = sys.argv[1], sys.argv[2]
+          path = pathlib.Path("Casks/hyperenv.rb")
+          text = path.read_text()
+          text = re.sub(r'^  version ".*"$', f'  version "{version}"', text, count=1, flags=re.M)
+          text = re.sub(r'^  sha256 ".*"$', f'  sha256 "{checksum}"', text, count=1, flags=re.M)
+          path.write_text(text)
+          PY
+          git diff --stat -- Casks/hyperenv.rb
+
+      - name: Commit the cask
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git diff --quiet -- Casks/hyperenv.rb; then
+            echo "cask already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/hyperenv.rb
+          git commit -m "Point the Homebrew cask at $VERSION"
+          # The tag build is detached; push explicitly to the default branch.
+          git push origin HEAD:main
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
