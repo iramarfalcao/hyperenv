@@ -13,3 +13,10 @@
 
 /
   Cache-Control: public, max-age=3600
+
+# Short cache: this is piped straight into a shell, so a fix to it should reach
+# people quickly rather than sit in a CDN for a day. Served as plain text so it
+# can be read in a browser instead of downloaded.
+/install.sh
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300

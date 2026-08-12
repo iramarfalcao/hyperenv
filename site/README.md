@@ -11,6 +11,7 @@ site/
 ├── robots.txt          crawl policy + sitemap pointer
 ├── sitemap.xml         one URL, since it is one page
 ├── site.webmanifest    name, icons, theme colour
+├── install.sh          the one-command installer the page points at
 ├── _headers            caching + security headers (Netlify / Cloudflare Pages)
 └── assets/
     ├── icon-256.png            the icon as the page shows it
@@ -66,6 +67,29 @@ section.
 **Check the version.** `softwareVersion` in the JSON-LD is written by hand. It is
 the only place on the page that names a version, because every download link
 resolves through GitHub's `releases/latest`.
+
+## install.sh
+
+The page offers one command:
+
+```sh
+curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash
+```
+
+It must be served from the site's own domain, because that URL is printed in the
+README, on the page, and anywhere else the project is written about. If the site
+moves, that string moves with it.
+
+`_headers` gives it a five-minute cache and a `text/plain` content type. Short,
+because a script piped into a shell should be fixable quickly rather than sitting
+in a CDN for a day; plain text, so it can be read in a browser rather than
+downloaded as a file.
+
+What it does: uses Homebrew if present, falls back to the disk image if not,
+verifies the published SHA-256 **before** mounting anything, clears the
+quarantine attribute, and never uses `sudo`. It refuses to install when the
+checksum is missing, malformed or wrong — all three cases were tested against
+the live release.
 
 ## The download links
 

@@ -182,7 +182,7 @@
            data-download>
           Download for macOS
         </a>
-        <a class="button" href="#install">Install with Homebrew</a>
+        <a class="button" href="#install">Install from the terminal</a>
       </div>
 
       <p class="meta">
@@ -347,7 +347,22 @@ export DATABASE_URL='postgres://…'</code></pre>
     <div class="wrap narrow">
       <h2>Install</h2>
 
-      <h3>Homebrew</h3>
+      <h3>One command</h3>
+      <pre><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
+      <p>
+        Uses Homebrew if you have it, downloads the disk image if you do not, and
+        clears the quarantine attribute so the first launch works. It never uses
+        <code>sudo</code>, and it checks the download against the SHA-256
+        published with the release before installing anything.
+      </p>
+      <p class="note">
+        Piping a script into a shell is worth being careful about, including this
+        one. Read it first if you would rather:
+        <a href="install.sh">install.sh</a>, or
+        <code>curl -fsSL https://hyperenv.falcaosl.com/install.sh -o install.sh</code>.
+      </p>
+
+      <h3>Homebrew, step by step</h3>
       <pre><code>brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
 brew trust iramarfalcao/hyperenv
 brew install --cask hyperenv</code></pre>

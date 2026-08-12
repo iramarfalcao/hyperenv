@@ -121,6 +121,18 @@ one click rather than an act of memory.
 
 ## Install
 
+### One command
+
+```sh
+curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash
+```
+
+Uses Homebrew if you have it and the disk image if you do not, verifies the
+published SHA-256 before installing, and clears the quarantine attribute so the
+first launch works. It never uses `sudo`. The source is
+[`site/install.sh`](site/install.sh) — worth reading before piping anything into
+a shell, including this.
+
 ### Homebrew
 
 The repository doubles as a Homebrew tap:
