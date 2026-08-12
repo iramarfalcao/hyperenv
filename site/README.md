@@ -1,13 +1,18 @@
 # The HyperEnv site
 
-A static, single-page site for distributing the app. Two files do the work —
-`index.html` and `styles.css` — with no JavaScript, no build step, no
-dependencies and no external requests. Upload the folder and it runs.
+A static, single-page site for distributing the app. No build step, no
+dependencies, no external requests. Upload the folder and it runs.
+
+There is exactly one script, `copy.js`, and it is an enhancement rather than a
+feature: it creates the copy button on the install command at runtime, so a
+browser that cannot run it is left with a command that is still selectable in a
+single click instead of a button that does nothing.
 
 ```
 site/
 ├── index.html          the page
 ├── styles.css          the only stylesheet
+├── copy.js             the copy button, created at runtime
 ├── robots.txt          crawl policy + sitemap pointer
 ├── sitemap.xml         one URL, since it is one page
 ├── site.webmanifest    name, icons, theme colour
@@ -119,7 +124,8 @@ is why the site can promise a current download without knowing the version.
   a courtesy.
 - Real `<details>` elements for the FAQ: the answers are in the HTML whether or
   not they are open, so they are indexable.
-- No JavaScript and no web fonts. Nothing blocks the first paint.
+- No web fonts and no render-blocking script — `copy.js` is deferred and builds
+  its own button, so nothing waits on it.
 
 The FAQ answers on the page and the ones in the JSON-LD say the same thing on
 purpose. Structured data that contradicts the visible page is treated as

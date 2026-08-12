@@ -187,7 +187,7 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; }
 
 /* ---------- the install command, front and centre ---------- */
 
-.install-line { margin: 2.2rem auto 0; max-width: 640px; }
+.install-line { margin: 2.2rem auto 0; max-width: 720px; }
 
 .install-label {
   font-size: 0.78rem;
@@ -203,7 +203,9 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; }
   margin: 0;
   padding: 1.05rem 1.3rem;
   text-align: left;
-  font-size: clamp(0.8rem, 2.2vw, 0.97rem);
+  /* Sized so the command sits on one line at this block's width, and
+     wraps only when the viewport genuinely cannot hold it. */
+  font-size: clamp(0.78rem, 2vw, 0.92rem);
   background: var(--code-bg);
   border: 1px solid transparent;
   border-radius: 12px;
@@ -215,15 +217,70 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; }
   background-origin: border-box;
   background-clip: padding-box, border-box;
   box-shadow: 0 8px 28px rgb(92 68 230 / 0.18);
-  overflow-x: auto;
 }
 .command code {
   user-select: all;
   -webkit-user-select: all;
-  white-space: pre;
+  /* Wraps rather than scrolls. A command the reader has to drag sideways to
+     finish reading is worse than one that takes two lines, and copying is
+     unaffected either way — the clipboard gets the text, not the layout. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   background: none;
   border: 0;
   padding: 0;
+}
+
+/* Only applied once the script has run, so the layout for the button never
+   exists without the button.
+
+   A flex row rather than a button positioned over the block: the command does
+   not wrap, so an absolutely positioned button sits on top of the last few
+   characters however much padding is reserved for it. Here the code scrolls
+   inside its own share of the row and the two cannot overlap. */
+.command.has-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-right: 0.8rem;
+}
+.command.has-copy code {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.copy-button {
+  flex: none;
+  padding: 0.25rem 0.2rem;
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.copy-button:hover { color: var(--accent); }
+.copy-button.is-done { color: var(--dev); }
+.copy-button.is-failed { color: var(--hml); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 560px) {
+  /* Too narrow for both on one line: the button drops beneath the command. */
+  .command.has-copy { flex-wrap: wrap; padding-right: 1.3rem; }
+  .command.has-copy code { flex-basis: 100%; }
 }
 
 .install-note {

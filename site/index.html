@@ -181,7 +181,7 @@
         <!-- user-select: all on the code means a single click selects the whole
              line, which is the part of a copy button that actually matters and
              the only part that works without JavaScript. -->
-        <pre class="command" aria-labelledby="install-command-label"><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
+        <pre class="command" data-copy aria-labelledby="install-command-label"><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
         <p class="install-note">
           Homebrew if you have it, the disk image if you do not. Verifies the
           published checksum, never uses <code>sudo</code>, and you can
@@ -521,5 +521,6 @@ brew install --cask hyperenv</code></pre>
   </div>
 </footer>
 
+<script src="copy.js" defer></script>
 </body>
 </html>
