@@ -206,10 +206,14 @@ jobs:
               "build/HyperEnv-$VERSION.dmg.sha256"
           fi
 
+      # Kept even on failure, so a run that dies after packaging still leaves the
+      # artifact somewhere reachable. It must not turn a green run red when the
+      # failure happened before anything was built.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: HyperEnv-${{ steps.version.outputs.version }}
+          if-no-files-found: ignore
           path: |
             build/*.dmg
             build/*.sha256
