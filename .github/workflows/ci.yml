@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Core and shell checks
+    # Pinned rather than macos-latest: the app targets the macOS 26 SDK, and a
+    # runner rolling forward silently is not something a release should find
+    # out about at tag time.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          latest="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
+          swift --version
+
+      # The Core layer does no I/O, so it compiles and runs straight from
+      # swiftc — no app bundle, no test host, no simulator.
+      - name: Core checks
+        run: Tests/run-core-checks.sh
+
+      # The check that actually matters: a real zsh in an isolated ZDOTDIR,
+      # proving that sourcing the generated scripts produces the environment the
+      # app promised, and that un-applying puts the old values back.
+      - name: Shell integration
+        run: Tests/run-shell-integration.sh
+
+  build:
+    name: Build and package
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          latest="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
+
+      # Exactly the script the release workflow runs, so a packaging break shows
+      # up on a pull request instead of on a tag.
+      - name: Build (universal, ad-hoc signed)
+        run: Scripts/build-release.sh
+
+      - name: Package a disk image
+        run: Scripts/make-dmg.sh build/export/HyperEnv.app "ci-${GITHUB_SHA:0:7}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: HyperEnv-dmg
+          path: |
+            build/*.dmg
+            build/*.sha256
+          retention-days: 14

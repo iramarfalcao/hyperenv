@@ -1,0 +1,215 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, without the leading v (e.g. 1.0.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, package and publish
+    runs-on: macos-26
+    env:
+      # The `secrets` context is not available in a step-level `if`, so the two
+      # optional paths are resolved to plain strings once, here.
+      HAS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE != '' && 'yes' || 'no' }}
+      HAS_NOTARY: ${{ secrets.MACOS_NOTARY_PASSWORD != '' && 'yes' || 'no' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          latest="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::'$version' is not a semantic version"; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # A release nobody can trust is not a release: the same two suites CI runs
+      # gate the tag as well, so a broken shell contract cannot ship.
+      - name: Core checks
+        run: Tests/run-core-checks.sh
+
+      - name: Shell integration
+        run: Tests/run-shell-integration.sh
+
+      # Signing is optional and entirely secret-driven. With no secrets set the
+      # build is ad-hoc signed, which is what a public repository can honestly
+      # produce; adding a Developer ID later turns these steps on without
+      # touching anything else.
+      - name: Import signing certificate
+        if: env.HAS_CERTIFICATE == 'yes'
+        env:
+          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(uuidgen)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 900 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" >/dev/null
+          security list-keychain -d user -s "$keychain" login.keychain-db
+          rm -f "$RUNNER_TEMP/certificate.p12"
+
+      - name: Build (universal)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY || '-' }}
+          DEVELOPMENT_TEAM: ${{ secrets.MACOS_TEAM_ID }}
+        run: Scripts/build-release.sh "$VERSION"
+
+      - name: Notarize and staple
+        if: env.HAS_NOTARY == 'yes'
+        env:
+          APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+        run: |
+          ditto -c -k --keepParent build/export/HyperEnv.app "$RUNNER_TEMP/HyperEnv.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/HyperEnv.zip" \
+            --apple-id "$APPLE_ID" --team-id "$TEAM_ID" \
+            --password "$NOTARY_PASSWORD" --wait
+          xcrun stapler staple build/export/HyperEnv.app
+
+      - name: Package the disk image
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: Scripts/make-dmg.sh build/export/HyperEnv.app "$VERSION"
+
+      # State what was actually shipped, read back off the artifact rather than
+      # assumed from the inputs.
+      - name: Compose release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          signature="$(codesign -dv --verbose=2 build/export/HyperEnv.app 2>&1 \
+            | sed -n 's/^Signature=//p' | head -1)"
+          [ -n "$signature" ] || signature="unknown"
+          arches="$(lipo -archs build/export/HyperEnv.app/Contents/MacOS/HyperEnv)"
+          checksum="$(cut -d' ' -f1 < "build/HyperEnv-$VERSION.dmg.sha256")"
+
+          if [ "$signature" = "adhoc" ]; then
+            gatekeeper="This build is signed ad-hoc, not with a paid Apple Developer ID, so macOS blocks the first launch. Right-click HyperEnv in Applications and choose Open, or run the command below once."
+          else
+            gatekeeper="This build is signed and notarized, so it opens normally."
+          fi
+
+          # A quoted heredoc: the notes are written verbatim and the values are
+          # substituted afterwards, so nothing in the prose can be run as shell.
+          cat > "$RUNNER_TEMP/notes.md" <<'TEMPLATE'
+          ## HyperEnv @@VERSION@@
+
+          A macOS menu bar app that switches which environment variables your new
+          terminals inherit — per project, per environment, with an undo.
+
+          ### Install
+
+          1. Download **HyperEnv-@@VERSION@@.dmg** below.
+          2. Open it and drag **HyperEnv** into **Applications**.
+          3. @@GATEKEEPER@@
+
+          ~~~
+          xattr -dr com.apple.quarantine /Applications/HyperEnv.app
+          ~~~
+
+          ### What shipped
+
+          | | |
+          |---|---|
+          | Architectures | @@ARCHES@@ |
+          | Code signature | @@SIGNATURE@@ |
+          | Minimum macOS | 26.5 |
+          | SHA-256 | @@CHECKSUM@@ |
+
+          Verify the download before opening it:
+
+          ~~~
+          shasum -a 256 HyperEnv-@@VERSION@@.dmg
+          ~~~
+
+          ### Safety
+
+          HyperEnv writes only between its own markers in ~/.zprofile, backs the file
+          up before the first edit, and can restore it byte for byte. Setting
+          HYPERENV_DISABLE=1 makes every generated script a no-op.
+          TEMPLATE
+
+          python3 - "$RUNNER_TEMP/notes.md" <<PY
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          text = path.read_text()
+          for key, value in {
+              "@@VERSION@@": """$VERSION""",
+              "@@ARCHES@@": """$arches""",
+              "@@SIGNATURE@@": """$signature""",
+              "@@CHECKSUM@@": """$checksum""",
+              "@@GATEKEEPER@@": """$gatekeeper""",
+          }.items():
+              text = text.replace(key, value)
+          path.write_text(text)
+          PY
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="v$VERSION"
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then
+            git tag "$tag"
+            git push origin "$tag"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --title "HyperEnv $VERSION" \
+              --notes-file "$RUNNER_TEMP/notes.md"
+            gh release upload "$tag" \
+              "build/HyperEnv-$VERSION.dmg" \
+              "build/HyperEnv-$VERSION.dmg.sha256" --clobber
+          else
+            gh release create "$tag" \
+              --title "HyperEnv $VERSION" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              "build/HyperEnv-$VERSION.dmg" \
+              "build/HyperEnv-$VERSION.dmg.sha256"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: HyperEnv-${{ steps.version.outputs.version }}
+          path: |
+            build/*.dmg
+            build/*.sha256
