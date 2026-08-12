@@ -202,7 +202,10 @@ struct VariableEditor: View {
 
 // MARK: - Row
 
-private struct VariableRow: View {
+/// Internal rather than private so `Tests/LayoutChecks` can measure the width
+/// one row demands. A row that asks for more than the window has is the bug
+/// this type is most likely to reintroduce.
+struct VariableRow: View {
     @Bindable var variable: EnvVariable
     var onDelete: () -> Void
 
@@ -222,6 +225,10 @@ private struct VariableRow: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(keyColor)
+                    .lineLimit(1)
+                    // Same reasoning as the value field: a long name must not
+                    // widen the row either.
+                    .frame(minWidth: 40, idealWidth: 160, maxWidth: .infinity, alignment: .leading)
                     .help(variable.key.isEmpty || variable.isKeyValid
                           ? ""
                           : "Not a valid variable name. It will be skipped when applying.")
@@ -237,16 +244,24 @@ private struct VariableRow: View {
             }
             .frame(width: 210, alignment: .leading)
 
-            if variable.isSecret && !revealSecret {
-                SecureField("value", text: $variable.value)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .monospaced))
-            } else {
-                TextField("value", text: $variable.value)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(variable.isEnabled ? .primary : .secondary)
+            // A plain text field reports an ideal width that fits its whole
+            // value. PATH in the snapshot profile is 400+ characters, which asks
+            // for roughly 3000pt in a column a fifth that wide — enough to push
+            // every other column's content off screen and leave the window
+            // looking empty. Capping the ideal width stops the value's length
+            // from reaching the layout at all.
+            Group {
+                if variable.isSecret && !revealSecret {
+                    SecureField("value", text: $variable.value)
+                } else {
+                    TextField("value", text: $variable.value)
+                        .foregroundStyle(variable.isEnabled ? .primary : .secondary)
+                }
             }
+            .textFieldStyle(.plain)
+            .font(.system(size: 12, design: .monospaced))
+            .lineLimit(1)
+            .frame(minWidth: 80, idealWidth: 240, maxWidth: .infinity, alignment: .leading)
 
             // Seeded variables carry the reason they were classified the way
             // they were, so a switched-off row never looks arbitrary.

@@ -58,6 +58,9 @@ jobs:
       - name: Shell integration
         run: Tests/run-shell-integration.sh
 
+      - name: Layout checks
+        run: Tests/run-layout-checks.sh
+
       # Signing is optional and entirely secret-driven. With no secrets set the
       # build is ad-hoc signed, which is what a public repository can honestly
       # produce; adding a Developer ID later turns these steps on without

@@ -249,6 +249,7 @@ cd hyperenv
 
 Tests/run-core-checks.sh          # 121 pure-logic checks, no app bundle needed
 Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
+Tests/run-layout-checks.sh        # no view may demand more width than the window
 
 Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
 Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0

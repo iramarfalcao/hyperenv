@@ -38,6 +38,11 @@ jobs:
       - name: Shell integration
         run: Tests/run-shell-integration.sh
 
+      # A view that demands more width than the window has does not fail loudly.
+      # It renders with content pushed off screen, which reads as missing data.
+      - name: Layout checks
+        run: Tests/run-layout-checks.sh
+
   build:
     name: Build and package
     runs-on: macos-26
