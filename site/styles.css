@@ -173,7 +173,8 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; }
 .hero { padding-top: clamp(3rem, 7vw, 5rem); text-align: center; }
 .hero .wrap > * { margin-inline: auto; }
 .hero-icon {
-  border-radius: 24px;
+  /* No border-radius: the icon file already has its own shape and transparent
+     surround, and clipping a rounded box over it only risks cutting the glow. */
   margin-bottom: 1.4rem;
   filter: drop-shadow(0 12px 32px rgb(92 68 230 / 0.28));
 }
@@ -220,13 +221,19 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; }
 .meta { font-size: 0.88rem; color: var(--text-faint); max-width: none; }
 
 .shot { margin: 3rem 0 0; }
+
+/* The captures already carry the window's own rounded corners, with everything
+   outside them transparent. So no border, no border-radius and no background
+   here: each of those paints a rectangle behind a rounded shape, which shows up
+   as a hard corner poking out past the curve.
+
+   drop-shadow rather than box-shadow for the same reason — box-shadow follows
+   the element's box, drop-shadow follows the alpha channel, so the shadow traces
+   the window's actual outline. */
 .shot img {
   width: 100%;
   height: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.16);
-  background: var(--surface);
+  filter: drop-shadow(0 24px 50px rgb(0 0 0 / 0.28));
 }
 figcaption {
   margin-top: 0.85rem;
@@ -313,9 +320,7 @@ figcaption {
   margin: 1rem 0 0;
   max-width: 100%;
   height: auto;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+  filter: drop-shadow(0 10px 26px rgb(0 0 0 / 0.22));
 }
 
 /* ---------- faq ---------- */
