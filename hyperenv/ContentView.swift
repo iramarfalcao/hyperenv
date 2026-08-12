@@ -28,53 +28,97 @@ struct ContentView: View {
             ?? project.sortedProfiles.first
     }
 
+    /// Brings the selection IDs in line with what is actually on screen.
+    ///
+    /// The two lookups above fall back to the first item when their ID names
+    /// nothing in the current data — at launch, when both IDs are still nil, and
+    /// after switching project, when `selectedProfileID` still names a profile
+    /// belonging to the *previous* one. The fallback keeps the detail pane
+    /// populated, but the ID it resolved is not the ID `ProfileList` compares
+    /// against, so the editor showed one profile while no card looked selected.
+    ///
+    /// Writing the resolved values back makes the two agree. It is idempotent,
+    /// so re-running it on any change settles rather than oscillates.
+    private func normalizeSelection() {
+        if !projects.contains(where: { $0.id == selectedProjectID }) {
+            selectedProjectID = projects.first?.id
+        }
+
+        guard let project = selectedProject else {
+            selectedProfileID = nil
+            return
+        }
+
+        if !project.profiles.contains(where: { $0.id == selectedProfileID }) {
+            selectedProfileID = project.sortedProfiles.first?.id
+        }
+    }
+
     var body: some View {
-        // The status bar and the banners are siblings of the split view, not an
-        // overlay on top of it. Anything floating over the columns covers the
-        // bottom row of the sidebar, the profile list and the variables table at
-        // once, which is exactly where the data the user is reading lives.
-        VStack(spacing: 0) {
-            NavigationSplitView {
-                ProjectSidebar(
-                    projects: projects,
-                    selectedProjectID: $selectedProjectID,
-                    model: model)
-                .navigationSplitViewColumnWidth(min: 208, ideal: 236, max: 320)
-            } content: {
-                if let project = selectedProject {
-                    ProfileList(
-                        project: project,
-                        selectedProfileID: $selectedProfileID,
-                        model: model,
-                        onApply: requestApply)
-                    .navigationSplitViewColumnWidth(min: 264, ideal: 300, max: 380)
-                } else {
-                    ContentUnavailableView(
-                        "No project selected", systemImage: "folder",
-                        description: Text("Choose a project from the sidebar."))
-                }
-            } detail: {
-                if let profile = selectedProfile {
-                    VariableEditor(profile: profile, model: model)
-                } else {
-                    ContentUnavailableView(
-                        "No profile selected", systemImage: "square.stack.3d.up",
-                        description: Text("Choose a profile to edit its variables."))
-                }
+        // NavigationSplitView is the root, not a child of a VStack. On macOS it
+        // expects to own the whole content area; nesting it makes it negotiate a
+        // width it does not control, and it responds by collapsing columns as
+        // the selection changes.
+        //
+        // The bar below is attached as a safe area inset instead, which reserves
+        // its height so the last row of every column stays reachable. What made
+        // the previous version look like it covered data was not the inset — it
+        // was that the bar floated as a translucent capsule with margins around
+        // it, so scrolling content showed through and around it. A full-width
+        // opaque bar reads as chrome, and nothing is lost behind it.
+        NavigationSplitView {
+            ProjectSidebar(
+                projects: projects,
+                selectedProjectID: $selectedProjectID,
+                model: model)
+            .navigationSplitViewColumnWidth(min: 208, ideal: 236, max: 320)
+        } content: {
+            if let project = selectedProject {
+                ProfileList(
+                    project: project,
+                    selectedProfileID: $selectedProfileID,
+                    model: model,
+                    onApply: requestApply)
+                .navigationSplitViewColumnWidth(min: 264, ideal: 300, max: 380)
+            } else {
+                ContentUnavailableView(
+                    "No project selected", systemImage: "folder",
+                    description: Text("Choose a project from the sidebar."))
             }
+        } detail: {
+            if let profile = selectedProfile {
+                // Identity tied to the profile on purpose. Without it SwiftUI
+                // reuses one VariableEditor across profiles and its @State comes
+                // along: a filter typed for one profile hides the next profile's
+                // variables, and a revealed secret stays revealed at the same
+                // row of a different profile.
+                VariableEditor(profile: profile, model: model)
+                    .id(profile.id)
+            } else {
+                ContentUnavailableView(
+                    "No profile selected", systemImage: "square.stack.3d.up",
+                    description: Text("Choose a profile to edit its variables."))
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                NoticeStack(model: model)
 
-            NoticeStack(model: model)
-
-            ActiveProfileHUD(
-                model: model,
-                copied: $copied,
-                onRevert: { Task { await model.unapply() } })
+                ActiveProfileHUD(
+                    model: model,
+                    copied: $copied,
+                    onRevert: { Task { await model.unapply() } })
+            }
         }
         .task {
             await model.refresh()
             await model.seedIfNeeded(context: context)
+            normalizeSelection()
             await model.checkDrift()
         }
+        // Seeding and deletion both change what the IDs can legally point at.
+        .onChange(of: projects.count) { _, _ in normalizeSelection() }
+        .onChange(of: selectedProjectID) { _, _ in normalizeSelection() }
         .confirmationDialog(
             "Apply a production profile?",
             isPresented: .init(
@@ -137,7 +181,9 @@ private struct NoticeStack: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
-            .background(.regularMaterial)
+            // The same bar material the status bar uses, so the two read as one
+            // piece of chrome rather than a panel sitting on another panel.
+            .background(.bar)
             .overlay(alignment: .top) { Divider() }
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.smooth(duration: 0.25), value: model.hookStatus)
