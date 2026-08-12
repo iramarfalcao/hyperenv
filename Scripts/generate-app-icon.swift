@@ -180,6 +180,65 @@ print("wrote Contents.json")
 
 // MARK: - Shared assets
 
+// The accent colour is the icon's plate, so the app's selection highlight and
+// its icon are literally the same colour rather than two values that drift.
+// Light mode takes the midpoint of the plate gradient; dark mode lifts it,
+// because the unmodified colour does not carry enough contrast against a dark
+// window to read as a highlight.
+func component(_ light: Double, _ dark: Double) -> (light: Double, dark: Double) {
+    (light, dark)
+}
+
+let accentLight = (
+    red: (0.286 + 0.435) / 2,
+    green: (0.361 + 0.176) / 2,
+    blue: (0.949 + 0.855) / 2
+)
+let accentDark = (
+    red: min(accentLight.red + 0.10, 1),
+    green: min(accentLight.green + 0.14, 1),
+    blue: min(accentLight.blue + 0.05, 1)
+)
+
+func colorEntry(
+    _ value: (red: Double, green: Double, blue: Double),
+    appearances: [[String: String]]?
+) -> [String: Any] {
+    func hex(_ channel: Double) -> String {
+        String(format: "0x%02X", Int((channel * 255).rounded()))
+    }
+    var entry: [String: Any] = [
+        "idiom": "universal",
+        "color": [
+            "color-space": "srgb",
+            "components": [
+                "alpha": "1.000",
+                "blue": hex(value.blue),
+                "green": hex(value.green),
+                "red": hex(value.red),
+            ],
+        ],
+    ]
+    if let appearances { entry["appearances"] = appearances }
+    return entry
+}
+
+let accentSet = repo
+    .appending(path: "hyperenv/Assets.xcassets/AccentColor.colorset", directoryHint: .isDirectory)
+try FileManager.default.createDirectory(at: accentSet, withIntermediateDirectories: true)
+
+let accentContents: [String: Any] = [
+    "colors": [
+        colorEntry(accentLight, appearances: nil),
+        colorEntry(accentDark, appearances: [["appearance": "luminosity", "value": "dark"]]),
+    ],
+    "info": ["author": "hyperenv", "version": 1],
+]
+try JSONSerialization
+    .data(withJSONObject: accentContents, options: [.prettyPrinted, .sortedKeys])
+    .write(to: accentSet.appending(path: "Contents.json"))
+print("wrote AccentColor.colorset")
+
 let assets = repo.appending(path: "assets", directoryHint: .isDirectory)
 try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
 

@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var selectedProfileID: UUID?
     @State private var confirmingProfile: Profile?
     @State private var copied = false
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     private var selectedProject: Project? {
         projects.first { $0.id == selectedProjectID } ?? projects.first
@@ -66,7 +67,15 @@ struct ContentView: View {
         // was that the bar floated as a translucent capsule with margins around
         // it, so scrolling content showed through and around it. A full-width
         // opaque bar reads as chrome, and nothing is lost behind it.
-        NavigationSplitView {
+        // Column visibility is stated, not inherited.
+        //
+        // AppKit persists the split view's subview frames per window and restores
+        // them before the app can object. A build that laid the split view out
+        // differently can therefore leave saved geometry that no longer describes
+        // three columns — and the restored state wins on every subsequent launch,
+        // which looks exactly like the data failing to load. Owning the value
+        // means a bad restore cannot hide a column permanently.
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             ProjectSidebar(
                 projects: projects,
                 selectedProjectID: $selectedProjectID,

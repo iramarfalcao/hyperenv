@@ -66,9 +66,12 @@ struct hyperenvApp: App {
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView(model: model)
-                // Below this the three columns cannot all hold their minimum
-                // width, and the status bar summary starts truncating.
-                .frame(minWidth: 860, minHeight: 480)
+                // Below this width the three columns cannot all hold their
+                // minimum and the status bar summary starts truncating. The
+                // height floor is deliberately lower than any window AppKit is
+                // likely to restore, so a saved frame and this minimum never
+                // fight over the layout.
+                .frame(minWidth: 860, minHeight: 420)
         }
         .modelContainer(container)
         .defaultSize(width: 1120, height: 720)
