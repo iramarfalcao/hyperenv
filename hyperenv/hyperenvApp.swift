@@ -63,6 +63,44 @@ struct hyperenvApp: App {
     /// Shared so the window and the menu bar agree on what is applied.
     @State private var model = AppModel()
 
+    /// Keeps the window inside the screen it opens on.
+    ///
+    /// `defaultSize` only applies to a window with no saved frame. AppKit
+    /// restores the frame from a previous session first, and a frame saved on a
+    /// larger display — or one written by an earlier build that laid this window
+    /// out differently — comes back taller than the screen can show. The columns
+    /// then extend past the bottom edge, which reads as a sidebar running off the
+    /// screen rather than as a window that is simply too big.
+    ///
+    /// Only ever shrinks. A window the user has deliberately sized is left alone.
+    private struct WindowFitter: NSViewRepresentable {
+        func makeNSView(context: Context) -> NSView {
+            let view = NSView()
+            DispatchQueue.main.async { fit(view.window) }
+            return view
+        }
+
+        func updateNSView(_ nsView: NSView, context: Context) {}
+
+        private func fit(_ window: NSWindow?) {
+            guard let window, let screen = window.screen ?? NSScreen.main else { return }
+            let visible = screen.visibleFrame
+            let frame = window.frame
+            guard frame.height > visible.height || frame.width > visible.width else { return }
+
+            let fitted = NSSize(
+                width: min(frame.width, visible.width),
+                height: min(frame.height, visible.height))
+            window.setFrame(
+                NSRect(
+                    x: visible.midX - fitted.width / 2,
+                    y: visible.midY - fitted.height / 2,
+                    width: fitted.width,
+                    height: fitted.height),
+                display: true)
+        }
+    }
+
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView(model: model)
@@ -72,9 +110,15 @@ struct hyperenvApp: App {
                 // likely to restore, so a saved frame and this minimum never
                 // fight over the layout.
                 .frame(minWidth: 860, minHeight: 420)
+                .background(WindowFitter())
         }
         .modelContainer(container)
-        .defaultSize(width: 1120, height: 720)
+        // Opens at HD, centred. AppKit clamps this to the screen's *visible*
+        // frame, so on a 1920x1080 display the window comes up 1920x1050 rather
+        // than sliding its bottom edge under the Dock — which is what made the
+        // sidebar look taller than the screen.
+        .defaultSize(width: 1920, height: 1080)
+        .defaultPosition(.center)
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(replacing: .newItem) {}

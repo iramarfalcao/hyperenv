@@ -15,7 +15,8 @@
 //  to be, so an editor-level assertion passes with the bug present and proves
 //  nothing.
 //
-//  Nothing here needs a window: NSHostingView reports a fitting size headlessly.
+//  Most of it needs no window. The height check does: a hosting view left to
+//  its own devices reports its fitting size and never reproduces the overflow.
 //
 
 import AppKit
@@ -66,6 +67,10 @@ func makeVariable(key: String, value: String) -> (ModelContainer, EnvVariable) {
     return (container, variable)
 }
 
+// The window-backed check needs an app object, but not a visible one.
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)
+
 let checks = Checks()
 
 /// A realistic 412-character PATH, the length actually seeded from a machine.
@@ -106,6 +111,67 @@ checks.expect(
             .modelContainer(secretContainer)
     },
     atMost: ceiling)
+
+// MARK: - Nothing may be taller than the window
+
+// The second failure this file exists for. `.fixedSize(vertical: true)` on a
+// long Text measures against a near-zero proposed width, wraps into a ~2000pt
+// column, and drags the whole split view with it — inside a 472pt window. The
+// columns then extend far past the bottom edge and the app looks empty.
+//
+// The snapshot notice is only shown for the Default profile, so only the
+// Default project was affected, which made it look like a data problem.
+@MainActor
+func splitViewHeight(windowHeight: CGFloat) -> CGFloat {
+    let (container, variable) = makeVariable(key: "PATH", value: longPath)
+    guard let profile = variable.profile else { return -1 }
+
+    let window = NSWindow(
+        contentRect: NSRect(x: 0, y: 0, width: 1107, height: windowHeight),
+        styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+    let hosting = NSHostingView(
+        rootView: NavigationSplitView {
+            Text("sidebar")
+        } content: {
+            Text("profiles")
+        } detail: {
+            VariableEditor(profile: profile, model: AppModel())
+        }
+        .modelContainer(container))
+    // Track the window the way a WindowGroup's hosting view does; without this
+    // the hosting view keeps its own fitting height and the test proves nothing.
+    hosting.autoresizingMask = [.width, .height]
+    hosting.sizingOptions = []
+    window.contentView = hosting
+    window.setContentSize(NSSize(width: 1107, height: windowHeight))
+    window.orderFront(nil)
+
+    RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+    window.contentView?.layoutSubtreeIfNeeded()
+
+    func find(_ view: NSView) -> NSSplitView? {
+        if let split = view as? NSSplitView { return split }
+        for sub in view.subviews {
+            if let found = find(sub) { return found }
+        }
+        return nil
+    }
+    let height = find(window.contentView!)?.frame.height ?? -1
+    window.orderOut(nil)
+    return height
+}
+
+// A little slack for the titlebar the split view sits under; the failure mode
+// this guards against overshoots by a factor of four, not by a few points.
+let windowHeight: CGFloat = 472
+let measured = splitViewHeight(windowHeight: windowHeight)
+if measured > 0 && measured <= windowHeight + 80 {
+    checks.passed += 1
+} else {
+    checks.failed += 1
+    print("FAIL the editor fits the window's height")
+    print("     window is \(Int(windowHeight))pt, split view laid out at \(Int(measured))pt")
+}
 
 print("")
 print("passed: \(checks.passed)")

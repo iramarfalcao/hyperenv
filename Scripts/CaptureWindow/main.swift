@@ -63,8 +63,14 @@ let window = NSWindow(
     styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
     backing: .buffered,
     defer: false)
-window.contentView = NSHostingView(
+let hosting = NSHostingView(
     rootView: ContentView(model: AppModel()).modelContainer(container))
+// Track the window, the way a WindowGroup's hosting view does. Setting
+// contentView alone lets the hosting view keep its own fitting height.
+hosting.autoresizingMask = [.width, .height]
+hosting.sizingOptions = []
+window.contentView = hosting
+window.setContentSize(NSSize(width: 1107, height: 472))
 window.orderFront(nil)
 
 @MainActor

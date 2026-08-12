@@ -90,7 +90,6 @@ struct ActiveProfileHUD: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .fixedSize(horizontal: false, vertical: true)
         } else {
             HStack(spacing: 8) {
                 Text("Nothing applied")
@@ -189,10 +188,12 @@ private struct Banner<Trailing: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
+                // Deliberately not .fixedSize(vertical:) — see the note in
+                // VariableEditor's snapshot notice. It measures against a
+                // near-zero width and returns a height that wrecks the window.
                 Text(detail)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 12)

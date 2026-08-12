@@ -154,10 +154,15 @@ struct VariableEditor: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("This is a snapshot of your machine, not a configuration.")
                     .font(.system(size: 12, weight: .medium))
+                // No .fixedSize(vertical:) here, however tempting it looks for
+                // stopping truncation. It asks for the text's *ideal* height,
+                // and during the split view's measuring pass the proposed width
+                // is nearly zero — so the text wraps into a column some 2000pt
+                // tall and drags the entire window's layout with it. Text in a
+                // width-bounded stack already wraps without help.
                 Text("You can edit it, but it cannot be applied — re-exporting a whole stale environment would freeze your shell. Duplicate it to make an appliable profile.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
