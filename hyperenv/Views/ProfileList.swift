@@ -20,14 +20,42 @@ struct ProfileList: View {
     var body: some View {
         Group {
             if project.sortedProfiles.isEmpty {
+                // A new project starts empty rather than being handed dev, hml
+                // and prd it may not want, so this is the normal first screen —
+                // not an error state. It offers the three as one click each,
+                // which is why creating them automatically was not worth the
+                // profiles people had to delete.
                 ContentUnavailableView {
                     Label("No profiles yet", systemImage: "square.stack.3d.up")
                 } description: {
-                    Text("Add a profile to describe one environment for this project.")
+                    Text("A profile is one environment — its name, its variables, and the risk it carries.")
                 } actions: {
-                    Button("Add Development Profile") { addProfile(kind: .dev) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(project.isDefault)
+                    if project.isDefault {
+                        Text("The Default project holds the snapshot of your machine.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // Stacked, not in a row: this column is around 300pt
+                        // wide, and four side-by-side buttons truncate to their
+                        // icons.
+                        VStack(spacing: 8) {
+                            Button("Add All Three", action: addStandardProfiles)
+                                .buttonStyle(.borderedProminent)
+                                .help("Create development, homologation and production profiles")
+
+                            Menu("Add One…") {
+                                ForEach(ProfileKind.creatable, id: \.self) { kind in
+                                    Button {
+                                        addProfile(kind: kind)
+                                    } label: {
+                                        Label(kind.label, systemImage: kind.symbol)
+                                    }
+                                }
+                            }
+                            .menuStyle(.borderlessButton)
+                            .fixedSize()
+                        }
+                    }
                 }
             } else {
                 ScrollView {
@@ -69,7 +97,7 @@ struct ProfileList: View {
             }
         }
         .sheet(item: $renaming) { profile in
-            RenameSheet(title: "Rename Profile", name: $draftName) {
+            NameSheet(title: "Rename Profile", name: $draftName) {
                 profile.name = draftName
                 try? context.save()
             }
@@ -176,13 +204,30 @@ struct ProfileList: View {
         try? context.save()
     }
 
-    private func addProfile(kind: ProfileKind) {
+    @discardableResult
+    private func addProfile(kind: ProfileKind, select: Bool = true) -> Profile {
         let profile = Profile(
             name: kind.rawValue, kind: kind, sortIndex: project.profiles.count)
         profile.project = project
         context.insert(profile)
         try? context.save()
-        selectedProfileID = profile.id
+        if select { selectedProfileID = profile.id }
+        return profile
+    }
+
+    /// Creates the three profiles the hierarchy is built around, and lands on
+    /// development.
+    ///
+    /// Selecting whichever was created last would leave the user looking at
+    /// production, which is the one screen this app should never open on by
+    /// accident.
+    private func addStandardProfiles() {
+        var first: Profile?
+        for kind in [ProfileKind.dev, .hml, .prd] {
+            let profile = addProfile(kind: kind, select: false)
+            if first == nil { first = profile }
+        }
+        selectedProfileID = first?.id
     }
 
     /// Copies a profile into a normal, appliable one. This is how the Default

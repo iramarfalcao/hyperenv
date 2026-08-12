@@ -15,6 +15,8 @@ struct ProjectSidebar: View {
     @Environment(\.modelContext) private var context
     @State private var renaming: Project?
     @State private var draftName = ""
+    @State private var isCreating = false
+    @State private var newProjectName = ""
 
     var body: some View {
         List(selection: $selectedProjectID) {
@@ -29,12 +31,24 @@ struct ProjectSidebar: View {
         .listStyle(.sidebar)
         .toolbar {
             ToolbarItem {
-                Button("New Project", systemImage: "plus", action: addProject)
+                Button("New Project", systemImage: "plus") {
+                    newProjectName = ""
+                    isCreating = true
+                }
+                .help("Create a project")
             }
         }
+        .sheet(isPresented: $isCreating) {
+            NameSheet(
+                title: "New Project",
+                prompt: "Name this project after the codebase or client it belongs to.",
+                confirmLabel: "Create",
+                name: $newProjectName,
+                onCommit: addProject)
+        }
         .sheet(item: $renaming) { project in
-            RenameSheet(title: "Rename Project", name: $draftName) {
-                project.name = draftName
+            NameSheet(title: "Rename Project", name: $draftName) {
+                project.name = draftName.trimmingCharacters(in: .whitespaces)
                 try? context.save()
             }
         }
@@ -127,18 +141,19 @@ struct ProjectSidebar: View {
         try? context.save()
     }
 
+    /// Creates an empty project under the name the user typed.
+    ///
+    /// No profiles are created for it. Guessing at dev/hml/prd meant every new
+    /// project arrived with three profiles most people then had to rename or
+    /// delete, and a profile that exists but holds nothing is indistinguishable
+    /// from one that was configured and left empty. The profile list's empty
+    /// state offers the three as one click each instead.
     private func addProject() {
-        let project = Project(name: "New Project", sortIndex: projects.count)
+        let name = newProjectName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+
+        let project = Project(name: name, sortIndex: projects.count)
         context.insert(project)
-
-        // A project with no profiles is a dead end, so start with the three the
-        // hierarchy is built around.
-        for (index, kind) in [ProfileKind.dev, .hml, .prd].enumerated() {
-            let profile = Profile(name: kind.rawValue, kind: kind, sortIndex: index)
-            profile.project = project
-            context.insert(profile)
-        }
-
         try? context.save()
         selectedProjectID = project.id
     }
@@ -157,30 +172,42 @@ struct ProjectSidebar: View {
     }
 }
 
-// MARK: - Rename sheet
+// MARK: - Naming sheet
 
-struct RenameSheet: View {
+/// Asks for a name, for both creating and renaming.
+struct NameSheet: View {
     let title: String
+    var prompt: String?
+    var confirmLabel = "Save"
     @Binding var name: String
     var onCommit: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.headline)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                if let prompt {
+                    Text(prompt)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             TextField("Name", text: $name)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 280)
+                .focused($isFocused)
                 .onSubmit(commit)
 
             HStack(spacing: 10) {
                 Spacer()
                 Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save", action: commit)
+                Button(confirmLabel, action: commit)
                     .buttonStyle(.glassProminent)
                     .keyboardShortcut(.defaultAction)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -188,6 +215,7 @@ struct RenameSheet: View {
         }
         .padding(20)
         .frame(minWidth: 320)
+        .onAppear { isFocused = true }
     }
 
     private func commit() {
