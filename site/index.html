@@ -176,13 +176,26 @@
         putting it back is one click.
       </p>
 
+      <div class="install-line">
+        <p class="install-label" id="install-command-label">Install in one command</p>
+        <!-- user-select: all on the code means a single click selects the whole
+             line, which is the part of a copy button that actually matters and
+             the only part that works without JavaScript. -->
+        <pre class="command" aria-labelledby="install-command-label"><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
+        <p class="install-note">
+          Homebrew if you have it, the disk image if you do not. Verifies the
+          published checksum, never uses <code>sudo</code>, and you can
+          <a href="install.sh">read it first</a>.
+        </p>
+      </div>
+
       <div class="cta">
         <a class="button primary"
            href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg"
            data-download>
-          Download for macOS
+          Download the .dmg
         </a>
-        <a class="button" href="#install">Install from the terminal</a>
+        <a class="button" href="#install">Other ways to install</a>
       </div>
 
       <p class="meta">
