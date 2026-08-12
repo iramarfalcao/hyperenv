@@ -29,6 +29,9 @@ export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Develope
 rm -rf "$ARCHIVE" "$EXPORT"
 mkdir -p "$BUILD"
 
+# An unversioned build (CI on a branch) leaves this empty, and /bin/bash on
+# macOS is 3.2, where expanding an empty array under `set -u` is an error — so
+# the expansion below is guarded rather than plain "${version_flags[@]}".
 version_flags=()
 if [ -n "$VERSION" ]; then
   version_flags+=("MARKETING_VERSION=$VERSION" "CURRENT_PROJECT_VERSION=$BUILD_NUMBER")
@@ -47,7 +50,7 @@ xcodebuild archive \
   CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
   DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}" \
   PROVISIONING_PROFILE_SPECIFIER="" \
-  "${version_flags[@]}" \
+  ${version_flags[@]+"${version_flags[@]}"} \
   | grep -E 'error:|warning:.*\.swift|ARCHIVE|BUILD' || true
 
 APP="$ARCHIVE/Products/Applications/HyperEnv.app"
