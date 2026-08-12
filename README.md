@@ -106,14 +106,20 @@ The repository doubles as a Homebrew tap:
 
 ```sh
 brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
+brew trust iramarfalcao/hyperenv
 brew install --cask hyperenv
 ```
 
-The download carries macOS's quarantine attribute and Homebrew does not strip
-it, so the first launch still needs one command — `brew` prints it, and it is
-the same one in [First launch](#first-launch) below. Upgrades are
-`brew upgrade --cask hyperenv`; `brew uninstall --cask hyperenv` removes the
-app, and `--zap` also removes `~/.config/hyperenv`.
+The `brew trust` step is not optional. Homebrew refuses to load a cask from a
+third-party tap until you say you trust it — a tap can run code with your user's
+privileges, so it wants that stated once, explicitly.
+
+The download also carries macOS's quarantine attribute, and Homebrew does not
+strip it, so the first launch still needs one command — `brew` prints it, and it
+is the same one in [First launch](#first-launch) below.
+
+Upgrades are `brew upgrade --cask hyperenv`; `brew uninstall --cask hyperenv`
+removes the app, and `--zap` also removes `~/.config/hyperenv`.
 
 Uninstalling does not touch the block in `~/.zprofile`. Remove the hook from
 inside the app first if you want it gone — a leftover block is harmless either

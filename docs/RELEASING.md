@@ -77,8 +77,14 @@ two-argument `brew tap` form, which accepts any repository name:
 
 ```sh
 brew tap iramarfalcao/hyperenv https://github.com/iramarfalcao/hyperenv
+brew trust iramarfalcao/hyperenv
 brew install --cask hyperenv
 ```
+
+`brew trust` is required: Homebrew 6 refuses to load a cask from a third-party
+tap without it, and the refusal is an error rather than a prompt. It is easy to
+leave out of instructions, because a tap you authored yourself is already trusted
+on your own machine.
 
 The release workflow rewrites the cask's `version` and `sha256` from the disk
 image it just built and commits that back to `main`. A cask carrying a stale
