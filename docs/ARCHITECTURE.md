@@ -104,9 +104,23 @@ Two layout rules follow from bugs that were expensive to find:
   ~550pt column, and the split view answered by pushing every column's content
   off screen — which reads as the data failing to load. Text fields therefore cap
   their `idealWidth`, and `Tests/run-layout-checks.sh` enforces it.
-- **`ContentView` owns `columnVisibility`.** AppKit persists split-view subview
-  frames per window and restores them before the app can object, so geometry
-  saved by a differently-laid-out build can hide a column on every later launch.
+- **No view may report an ideal height larger than the window either.**
+  `.fixedSize(horizontal: false, vertical: true)` on a long `Text` asks for its
+  ideal height, and during the split view's measuring pass the proposed width is
+  nearly zero — so the text wrapped into a column around 2000pt tall and took the
+  whole window with it, columns running far past the bottom edge. The layout
+  checks host the editor in a 472pt window and fail at 1795pt.
+
+`NavigationSplitView` is given no `columnVisibility` binding. One was added to
+guard against AppKit restoring stale split-view geometry, but measuring showed it
+changed nothing about how the columns are built — and the geometry corruption it
+was meant to solve turned out to be a symptom of the width bug above.
+
+`Scripts/capture-window.sh` is how any claim in this section gets checked: it
+hosts the real view in an offscreen window, reports how many columns AppKit built,
+dumps the view tree and writes a PNG. Its limits are worth knowing —
+`cacheDisplay` does not draw vibrancy or Liquid Glass, so a blank sidebar in the
+image proves nothing; the column count and the tree are the trustworthy parts.
 
 `Design/ProfileStyle.swift` holds the visual language. Colour there is doing real
 work rather than decoration: the question the app exists to answer is "which
