@@ -4,6 +4,59 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org).
 
+## [1.0.1] — 2026-08-12
+
+### Fixed
+
+- **The window rendered with every column's content pushed off screen.**
+  `.fixedSize(horizontal: false, vertical: true)` on the snapshot notice's long
+  line asked for the text's ideal height, and during the split view's measuring
+  pass the proposed width is nearly zero — so it wrapped into a column around
+  2000pt tall and dragged the whole layout with it, columns running far past the
+  bottom edge. The notice only renders for the Default profile, which is the
+  first project and the one the selection falls back to at launch, so the app
+  appeared to open empty and to lose its data whenever Default was selected.
+- **One long value pushed the columns sideways.** A plain `TextField` reports an
+  ideal width that fits its entire value, and the snapshot holds a 412-character
+  `PATH`. That row asked for 3417pt inside a column a fifth as wide.
+- **Exporting the snapshot wrote a file with no variables in it.** Every variable
+  in it is switched off — correctly, since a search path must never be replayed
+  into a shell — and the exporter only ever wrote the switched-on ones. Export
+  now takes a scope, and an export that would carry nothing says so instead of
+  writing an empty file.
+- Selecting a profile carried the previous one's filter text and revealed
+  secrets, because SwiftUI reused a single editor across profiles.
+- The selection could name a profile from the previous project, so the editor
+  showed one profile while no card looked selected.
+- Deleting a project left the selection pointing into the subtree being deleted.
+
+### Changed
+
+- Creating a project asks for a name instead of making one called "New Project",
+  and no longer invents three profiles for it.
+- Creating a profile asks for a name and a badge, in a sheet like the project
+  one. The same sheet edits an existing profile.
+- The window opens at HD, centred, and shrinks to fit the screen it opens on.
+- Liquid Glass now covers the status bar and both notices, grouped in one
+  container so a banner blends into the bar rather than stacking on it.
+- The icon's palette drives the interface: the environment tints and the accent
+  colour are generated from the constants the icon is drawn with. Development
+  moves from mint to green. The one-time setup notice is no longer orange, which
+  read as a warning and collided with the homologation tint.
+- Sound for four events — applied, reverted, copied, failed — honouring macOS's
+  own interface-sound preference and a toggle in the Environment menu.
+- Installable with Homebrew: the repository doubles as a tap.
+
+### Infrastructure
+
+- `Tests/run-layout-checks.sh` and `Tests/run-export-checks.sh`, both verified by
+  reintroducing the bug they guard and watching them fail.
+- `Scripts/capture-window.sh` renders the real window offscreen and reports what
+  AppKit actually built.
+- The release workflow signs with a secure timestamp, notarizes and staples the
+  app *before* building the disk image, then notarizes and staples the image and
+  re-checksums it.
+
 ## [1.0.0] — 2026-08-12
 
 First public release.
@@ -46,4 +99,5 @@ First public release.
   integration suite in an isolated `ZDOTDIR`, and the full build-and-package path.
 - Optional, secret-driven Developer ID signing and notarization.
 
+[1.0.1]: https://github.com/iramarfalcao/hyperenv/releases/tag/v1.0.1
 [1.0.0]: https://github.com/iramarfalcao/hyperenv/releases/tag/v1.0.0
