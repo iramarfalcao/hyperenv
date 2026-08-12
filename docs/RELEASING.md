@@ -55,12 +55,29 @@ step turns itself on when its secret is present, and nothing else changes.
 | `MACOS_NOTARY_APPLE_ID` | The Apple ID used for notarization |
 | `MACOS_NOTARY_PASSWORD` | An app-specific password for that Apple ID |
 
-Producing the certificate secret:
+`Scripts/setup-notarization.sh` sets all six. Run it yourself rather than
+handing the values to anyone — the certificate and both passwords never leave
+your machine except as GitHub secrets, and nothing sensitive is echoed or left in
+your shell history:
 
 ```sh
-# Export "Developer ID Application" from Keychain Access as certificate.p12 first
-base64 -i certificate.p12 | pbcopy
+Scripts/setup-notarization.sh
 ```
+
+It reads the identity and team ID straight out of your keychain, invents the
+`.p12` passphrase so there is no password for you to choose or reuse, and checks
+the notary credentials against Apple **before** setting anything — a wrong
+app-specific password otherwise surfaces as a failed release rather than as a
+failed login.
+
+It is all-or-nothing on purpose. The workflow decides whether to sign with a real
+identity by reading `MACOS_SIGN_IDENTITY`, so a half-configured repository fails
+every build at the signing step instead of falling back to ad-hoc.
+
+It refuses to run without a **Developer ID Application** certificate. The "Apple
+Development" certificate Xcode creates for you is a testing certificate; Apple's
+notary service rejects it, and a paid Developer Program membership is the only
+way to get the other one.
 
 With `MACOS_CERTIFICATE` set the workflow imports it into a throwaway keychain
 that self-locks after 15 minutes. With `MACOS_NOTARY_PASSWORD` set it also
