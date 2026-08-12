@@ -54,7 +54,10 @@ struct VariableEditor: View {
                         }
                     }
                     .listStyle(.inset)
-                    .alternatingRowBackgrounds()
+                    // No alternating row backgrounds: they are drawn for the
+                    // full height of the table, so a short profile renders a
+                    // dozen empty striped rows below the real ones that read as
+                    // content which failed to load.
                     .overlay {
                         if visibleVariables.isEmpty {
                             ContentUnavailableView.search(text: search)
