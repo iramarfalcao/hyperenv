@@ -87,9 +87,26 @@ values, and it is the failure users otherwise spend an afternoon on.
 ## Views
 
 `ContentView` is a three-column `NavigationSplitView` — projects, profiles,
-variables — with the notices and the status bar as **siblings** of the split
-view, not overlays on it. An element floating over the columns covers the bottom
-row of all three at once, which is exactly where the data being read lives.
+variables — with the notices and the status bar attached as a bottom safe area
+inset. The split view is the root and must stay that way: on macOS it expects to
+own the whole content area, and nesting it inside a stack makes it negotiate a
+width it does not control, which it answers by collapsing columns.
+
+The bar is full-width and opaque rather than a floating capsule. A capsule with
+margins lets scrolling rows show through and around it, which is what made an
+earlier version look like it was covering data.
+
+Two layout rules follow from bugs that were expensive to find:
+
+- **No view may report an ideal width larger than the window.** A plain
+  `TextField` reports an ideal width that fits its entire value, and the snapshot
+  profile holds a 400-character `PATH`. One such row asked for 3417pt inside a
+  ~550pt column, and the split view answered by pushing every column's content
+  off screen — which reads as the data failing to load. Text fields therefore cap
+  their `idealWidth`, and `Tests/run-layout-checks.sh` enforces it.
+- **`ContentView` owns `columnVisibility`.** AppKit persists split-view subview
+  frames per window and restores them before the app can object, so geometry
+  saved by a differently-laid-out build can hide a column on every later launch.
 
 `Design/ProfileStyle.swift` holds the visual language. Colour there is doing real
 work rather than decoration: the question the app exists to answer is "which
