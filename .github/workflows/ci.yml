@@ -43,6 +43,11 @@ jobs:
       - name: Layout checks
         run: Tests/run-layout-checks.sh
 
+      # An export that writes a header and no variables looks like success until
+      # the file is opened.
+      - name: Export checks
+        run: Tests/run-export-checks.sh
+
   cask:
     name: Homebrew cask
     runs-on: macos-26

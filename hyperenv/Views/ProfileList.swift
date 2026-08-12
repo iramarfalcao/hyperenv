@@ -52,7 +52,7 @@ struct ProfileList: View {
                                 }
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.glassProminent)
                         .fixedSize()
                     }
                 }

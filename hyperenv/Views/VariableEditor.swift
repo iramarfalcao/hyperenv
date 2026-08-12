@@ -44,8 +44,9 @@ struct VariableEditor: View {
                 } actions: {
                     HStack {
                         Button("Add Variable", action: addVariable)
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.glassProminent)
                         Button("Import .env") { transfer.beginImport() }
+                            .buttonStyle(.glass)
                     }
                 }
             } else {
@@ -81,13 +82,21 @@ struct VariableEditor: View {
             ToolbarSpacer(.flexible)
             ToolbarItem {
                 Menu {
-                    ForEach(DotenvDialect.allCases) { dialect in
-                        Button {
-                            transfer.export(profile: profile, dialect: dialect)
-                        } label: {
-                            VStack(alignment: .leading) {
-                                Text(dialect.displayName)
-                                Text(dialect.summary)
+                    // Scope first, then dialect. A snapshot profile has nothing
+                    // switched on, so without "All Variables" its only export is
+                    // an empty file — which is what this menu used to produce.
+                    ForEach(DotenvTransfer.Scope.allCases) { scope in
+                        Section(scope.label) {
+                            ForEach(DotenvDialect.allCases) { dialect in
+                                Button {
+                                    transfer.export(
+                                        profile: profile, dialect: dialect, scope: scope)
+                                } label: {
+                                    VStack(alignment: .leading) {
+                                        Text(dialect.displayName)
+                                        Text(dialect.summary)
+                                    }
+                                }
                             }
                         }
                     }
@@ -95,6 +104,9 @@ struct VariableEditor: View {
                     Label("Export .env", systemImage: "square.and.arrow.up")
                 }
                 .disabled(profile.variables.isEmpty)
+                .help(profile.enabledVariableCount == 0
+                      ? "Nothing in \(profile.name) is switched on — use All Variables"
+                      : "Write these variables to a .env file")
             }
             ToolbarItem {
                 Button("Import .env", systemImage: "square.and.arrow.down") {

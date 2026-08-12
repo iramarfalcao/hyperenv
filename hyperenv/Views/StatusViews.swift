@@ -65,7 +65,13 @@ struct ActiveProfileHUD: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .background(.bar)
+            // Glass, because this is chrome — the navigation layer, where the
+            // material belongs. It stays full width and square-cornered: the
+            // version that floated as a capsule with margins let scrolling rows
+            // show through the gaps around it and read as covering data.
+            .glassEffect(
+                .regular.tint(isApplied ? tint.opacity(0.12) : nil),
+                in: .rect(cornerRadius: 0))
         }
         .animation(.smooth(duration: 0.25), value: model.applied?.profileID)
         .accessibilityElement(children: .contain)
@@ -210,16 +216,15 @@ private struct Banner<Trailing: View>: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background {
-            if usesBrand {
-                RoundedRectangle(cornerRadius: 10).fill(Brand.tint(0.12))
-            } else {
-                RoundedRectangle(cornerRadius: 10).fill(symbolTint.opacity(0.10))
-            }
-        }
+        // Tinted glass rather than a flat fill. The tint is what distinguishes
+        // the two notices from one another; the material is what makes them read
+        // as chrome floating over the content rather than as content themselves.
+        .glassEffect(
+            .regular.tint((usesBrand ? Brand.accent : symbolTint).opacity(0.18)),
+            in: .rect(cornerRadius: 10))
         .overlay {
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(accent.opacity(0.28), lineWidth: 1)
+                .strokeBorder(accent.opacity(0.25), lineWidth: 0.5)
         }
     }
 }
@@ -245,12 +250,12 @@ struct SetupBanner: View {
                 Button("Reveal in Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([Paths.zprofile])
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
             } else {
                 Button("Install Hook") {
                     Task { await model.installHook() }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .disabled(model.isBusy)
             }
         }
@@ -290,7 +295,7 @@ struct DriftBanner: View {
             detail: drift.map(describe).joined(separator: "\n")
         ) {
             Button("Re-check") { Task { await model.checkDrift() } }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
         }
     }
 

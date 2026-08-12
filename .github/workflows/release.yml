@@ -61,6 +61,11 @@ jobs:
       - name: Layout checks
         run: Tests/run-layout-checks.sh
 
+      # An export that writes a header and no variables looks like success until
+      # the file is opened.
+      - name: Export checks
+        run: Tests/run-export-checks.sh
+
       # Signing is optional and entirely secret-driven. With no secrets set the
       # build is ad-hoc signed, which is what a public repository can honestly
       # produce; adding a Developer ID later turns these steps on without

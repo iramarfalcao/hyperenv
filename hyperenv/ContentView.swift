@@ -123,13 +123,19 @@ struct ContentView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                NoticeStack(model: model)
+            // One container for the whole bottom chrome, so a banner appearing
+            // above the bar blends into it rather than stacking a second sheet
+            // of glass on top — which the material's rules forbid and which
+            // reads as muddy in practice.
+            GlassEffectContainer(spacing: 10) {
+                VStack(spacing: 0) {
+                    NoticeStack(model: model)
 
-                ActiveProfileHUD(
-                    model: model,
-                    copied: $copied,
-                    onRevert: { Task { await model.unapply() } })
+                    ActiveProfileHUD(
+                        model: model,
+                        copied: $copied,
+                        onRevert: { Task { await model.unapply() } })
+                }
             }
         }
         .task {
@@ -203,10 +209,8 @@ private struct NoticeStack: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
-            // The same bar material the status bar uses, so the two read as one
-            // piece of chrome rather than a panel sitting on another panel.
-            .background(.bar)
-            .overlay(alignment: .top) { Divider() }
+            // No background of its own: each banner carries its own glass, and
+            // a plate behind them would be a second sheet under the first.
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.smooth(duration: 0.25), value: model.hookStatus)
         }
