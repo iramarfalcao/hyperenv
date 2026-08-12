@@ -2,8 +2,7 @@ cask "hyperenv" do
   version "1.0.0"
   sha256 "4e547a3d26fd74bbc0528952a76f25e7d36f24983d6f01f79a7cbaa03d9b9447"
 
-  url "https://github.com/iramarfalcao/hyperenv/releases/download/v#{version}/HyperEnv-#{version}.dmg",
-      verified: "github.com/iramarfalcao/hyperenv/"
+  url "https://github.com/iramarfalcao/hyperenv/releases/download/v#{version}/HyperEnv-#{version}.dmg"
   name "HyperEnv"
   desc "Switches the environment variables new terminals inherit, per project"
   homepage "https://github.com/iramarfalcao/hyperenv"

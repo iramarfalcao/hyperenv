@@ -43,6 +43,30 @@ jobs:
       - name: Layout checks
         run: Tests/run-layout-checks.sh
 
+  cask:
+    name: Homebrew cask
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      # Homebrew refuses to lint a cask that is not inside a tap, so it gets a
+      # throwaway one. This is here because the cask already went stale once:
+      # `verified:` was deprecated out from under it, and nothing said so.
+      - name: Lint the cask
+        run: |
+          brew tap-new hyperenv-ci/local --no-git
+          tap="$(brew --repository)/Library/Taps/hyperenv-ci/homebrew-local"
+          mkdir -p "$tap/Casks"
+          cp Casks/hyperenv.rb "$tap/Casks/"
+          brew style --cask hyperenv-ci/local/hyperenv
+
+      # Online audit checks the release asset really exists and its checksum
+      # matches the cask. Skipped on pull requests from forks, which have no
+      # need to reach the network for this.
+      - name: Audit the cask against the published release
+        if: github.event_name != 'pull_request'
+        run: brew audit --cask --online hyperenv-ci/local/hyperenv
+
   build:
     name: Build and package
     runs-on: macos-26

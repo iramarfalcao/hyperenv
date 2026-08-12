@@ -62,10 +62,34 @@ cp -R "$APP" "$EXPORT/HyperEnv.app"
 # The archive step signs, but re-signing here is what makes the *whole* bundle
 # consistent after the copy, and it is the seam a Developer ID identity plugs
 # into without any other change.
-echo "==> signing"
-codesign --force --options runtime --timestamp=none \
+#
+# The timestamp is the part that matters for distribution. Apple's notary
+# service rejects a signature without a secure timestamp, so `--timestamp=none`
+# — which is right for ad-hoc, where no timestamp authority is involved and the
+# request would only slow the build — must not be used with a real identity.
+if [ "$SIGN_IDENTITY" = "-" ]; then
+  timestamp_flag="--timestamp=none"
+else
+  timestamp_flag="--timestamp"
+fi
+
+echo "==> signing (timestamp: ${timestamp_flag#--timestamp})"
+codesign --force --options runtime "$timestamp_flag" \
   --sign "$SIGN_IDENTITY" "$EXPORT/HyperEnv.app"
-codesign --verify --deep --strict --verbose=2 "$EXPORT/HyperEnv.app"
+codesign --verify --strict --verbose=2 "$EXPORT/HyperEnv.app"
+
+# Catches the failure that otherwise only surfaces at the notary service.
+if [ "$SIGN_IDENTITY" != "-" ]; then
+  echo "==> checking the signature is distributable"
+  codesign --display --verbose=4 "$EXPORT/HyperEnv.app" 2>&1 | grep -q "^Timestamp=" || {
+    echo "signature carries no secure timestamp; notarization would reject it"
+    exit 1
+  }
+  codesign --test-requirement="=notarized" --verify --verbose=2 \
+    "$EXPORT/HyperEnv.app" 2>/dev/null \
+    && echo "already notarized" \
+    || echo "not yet notarized (expected before the notary step)"
+fi
 
 echo "==> architectures"
 lipo -archs "$EXPORT/HyperEnv.app/Contents/MacOS/HyperEnv"
