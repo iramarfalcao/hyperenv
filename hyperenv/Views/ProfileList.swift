@@ -35,26 +35,20 @@ struct ProfileList: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     } else {
-                        // Stacked, not in a row: this column is around 300pt
-                        // wide, and four side-by-side buttons truncate to their
-                        // icons.
-                        VStack(spacing: 8) {
-                            Button("Add All Three", action: addStandardProfiles)
-                                .buttonStyle(.borderedProminent)
-                                .help("Create development, homologation and production profiles")
-
-                            Menu("Add One…") {
-                                ForEach(ProfileKind.creatable, id: \.self) { kind in
-                                    Button {
-                                        addProfile(kind: kind)
-                                    } label: {
-                                        Label(kind.label, systemImage: kind.symbol)
-                                    }
+                        // One control. The kind is picked from the menu rather
+                        // than split across a second button, so the empty state
+                        // says one thing.
+                        Menu("Add Profile") {
+                            ForEach(ProfileKind.creatable, id: \.self) { kind in
+                                Button {
+                                    addProfile(kind: kind)
+                                } label: {
+                                    Label(kind.label, systemImage: kind.symbol)
                                 }
                             }
-                            .menuStyle(.borderlessButton)
-                            .fixedSize()
                         }
+                        .buttonStyle(.borderedProminent)
+                        .fixedSize()
                     }
                 }
             } else {
@@ -204,30 +198,13 @@ struct ProfileList: View {
         try? context.save()
     }
 
-    @discardableResult
-    private func addProfile(kind: ProfileKind, select: Bool = true) -> Profile {
+    private func addProfile(kind: ProfileKind) {
         let profile = Profile(
             name: kind.rawValue, kind: kind, sortIndex: project.profiles.count)
         profile.project = project
         context.insert(profile)
         try? context.save()
-        if select { selectedProfileID = profile.id }
-        return profile
-    }
-
-    /// Creates the three profiles the hierarchy is built around, and lands on
-    /// development.
-    ///
-    /// Selecting whichever was created last would leave the user looking at
-    /// production, which is the one screen this app should never open on by
-    /// accident.
-    private func addStandardProfiles() {
-        var first: Profile?
-        for kind in [ProfileKind.dev, .hml, .prd] {
-            let profile = addProfile(kind: kind, select: false)
-            if first == nil { first = profile }
-        }
-        selectedProfileID = first?.id
+        selectedProfileID = profile.id
     }
 
     /// Copies a profile into a normal, appliable one. This is how the Default
