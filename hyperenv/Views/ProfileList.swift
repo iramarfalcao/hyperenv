@@ -162,11 +162,18 @@ struct ProfileList: View {
                 renaming = profile
             }
             Divider()
-            Button("Delete", role: .destructive) {
-                context.delete(profile)
-                try? context.save()
-            }
+            Button("Delete", role: .destructive) { delete(profile) }
         }
+    }
+
+    /// Moves the selection off the profile before deleting it, so the detail
+    /// column is never resolving an object that is being torn down.
+    private func delete(_ profile: Profile) {
+        if selectedProfileID == profile.id {
+            selectedProfileID = project.sortedProfiles.first { $0.id != profile.id }?.id
+        }
+        context.delete(profile)
+        try? context.save()
     }
 
     private func addProfile(kind: ProfileKind) {

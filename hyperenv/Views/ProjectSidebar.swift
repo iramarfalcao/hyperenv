@@ -109,11 +109,22 @@ struct ProjectSidebar: View {
         }
         if !project.isDefault {
             Divider()
-            Button("Delete", role: .destructive) {
-                context.delete(project)
-                try? context.save()
-            }
+            Button("Delete", role: .destructive) { delete(project) }
         }
+    }
+
+    /// Drops the selection before the object it names goes away.
+    ///
+    /// Deleting a project cascades to its profiles and variables. If the
+    /// selection still points into that subtree while SwiftData tears it down,
+    /// the detail column is resolving a profile through an object that is being
+    /// deleted underneath it.
+    private func delete(_ project: Project) {
+        if selectedProjectID == project.id {
+            selectedProjectID = projects.first { $0.id != project.id }?.id
+        }
+        context.delete(project)
+        try? context.save()
     }
 
     private func addProject() {
