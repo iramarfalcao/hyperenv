@@ -17,7 +17,9 @@ extension ProfileKind {
         case .dev: .mint
         case .hml: .orange
         case .prd: .red
-        case .custom: .blue
+        // Custom carries no inherent risk, so it takes the app's own colour
+        // rather than borrowing one that means something elsewhere.
+        case .custom: Brand.accent
         case .systemDefault: .gray
         }
     }

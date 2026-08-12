@@ -114,8 +114,7 @@ struct ActiveProfileHUD: View {
         // Applying cannot reach shells that are already open, so the command
         // that can is always one click away.
         Button {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(model.reloadCommand, forType: .string)
+            model.copyReloadCommand()
             copied = true
             Task {
                 try? await Task.sleep(for: .seconds(2))
@@ -175,13 +174,20 @@ private struct Banner<Trailing: View>: View {
     let symbolTint: Color
     let title: String
     let detail: String
+    /// Setup is the app introducing itself, not a warning, so it wears the
+    /// icon's own gradient. Drift keeps a flat warning colour.
+    var usesBrand = false
     @ViewBuilder var trailing: Trailing
+
+    private var accent: AnyShapeStyle {
+        usesBrand ? AnyShapeStyle(Brand.gradient) : AnyShapeStyle(symbolTint)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 11) {
             Image(systemName: symbol)
                 .font(.system(size: 14))
-                .foregroundStyle(symbolTint)
+                .foregroundStyle(accent)
                 .frame(width: 18)
                 .padding(.top, 1)
 
@@ -204,10 +210,16 @@ private struct Banner<Trailing: View>: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(symbolTint.opacity(0.10), in: .rect(cornerRadius: 10))
+        .background {
+            if usesBrand {
+                RoundedRectangle(cornerRadius: 10).fill(Brand.tint(0.12))
+            } else {
+                RoundedRectangle(cornerRadius: 10).fill(symbolTint.opacity(0.10))
+            }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(symbolTint.opacity(0.28), lineWidth: 1)
+                .strokeBorder(accent.opacity(0.28), lineWidth: 1)
         }
     }
 }
@@ -218,11 +230,15 @@ struct SetupBanner: View {
     let model: AppModel
 
     var body: some View {
+        // Not orange any more: that read as a warning and, worse, collided with
+        // the tint homologation uses, so the one-time setup notice looked like
+        // it was saying something about an environment.
         Banner(
             symbol: "wrench.and.screwdriver.fill",
-            symbolTint: .orange,
+            symbolTint: Brand.accent,
             title: title,
-            detail: detail
+            detail: detail,
+            usesBrand: true
         ) {
             if case .malformed = model.hookStatus {
                 // Refuse to guess where a damaged block ends; the user edits it.

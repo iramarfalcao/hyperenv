@@ -90,9 +90,15 @@ struct ContentView: View {
                     onApply: requestApply)
                 .navigationSplitViewColumnWidth(min: 264, ideal: 300, max: 380)
             } else {
-                ContentUnavailableView(
-                    "No project selected", systemImage: "folder",
-                    description: Text("Choose a project from the sidebar."))
+                ContentUnavailableView {
+                    Label {
+                        Text("No project selected")
+                    } icon: {
+                        Image(systemName: "folder").foregroundStyle(Brand.gradient)
+                    }
+                } description: {
+                    Text("Choose a project from the sidebar.")
+                }
             }
         } detail: {
             if let profile = selectedProfile {
@@ -104,9 +110,16 @@ struct ContentView: View {
                 VariableEditor(profile: profile, model: model)
                     .id(profile.id)
             } else {
-                ContentUnavailableView(
-                    "No profile selected", systemImage: "square.stack.3d.up",
-                    description: Text("Choose a profile to edit its variables."))
+                ContentUnavailableView {
+                    Label {
+                        Text("No profile selected")
+                    } icon: {
+                        Image(systemName: "square.stack.3d.up")
+                            .foregroundStyle(Brand.gradient)
+                    }
+                } description: {
+                    Text("Choose a profile to edit its variables.")
+                }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

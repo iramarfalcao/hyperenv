@@ -26,7 +26,12 @@ struct ProfileList: View {
                 // which is why creating them automatically was not worth the
                 // profiles people had to delete.
                 ContentUnavailableView {
-                    Label("No profiles yet", systemImage: "square.stack.3d.up")
+                    Label {
+                        Text("No profiles yet")
+                    } icon: {
+                        Image(systemName: "square.stack.3d.up")
+                            .foregroundStyle(Brand.gradient)
+                    }
                 } description: {
                     Text("A profile is one environment — its name, its variables, and the risk it carries.")
                 } actions: {
@@ -119,7 +124,13 @@ struct ProfileList: View {
 
                     Spacer(minLength: 4)
 
-                    if isApplied { ActiveBadge(tint: profile.kind.tint) }
+                    if isApplied {
+                        ActiveBadge(tint: profile.kind.tint)
+                            // Grows out of the card rather than blinking in, so
+                            // the eye is drawn to the profile that just went
+                            // live instead of having to find it.
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    }
                 }
 
                 Divider().opacity(0.4)
@@ -166,6 +177,11 @@ struct ProfileList: View {
                     isSelected ? profile.kind.tint.opacity(0.85) : .clear,
                     lineWidth: 2)
         }
+        // A card that just became live lifts slightly. The scale is small on
+        // purpose: this is the one card the user should notice, not a bounce.
+        .scaleEffect(isApplied ? 1.015 : 1)
+        .animation(.smooth(duration: 0.28), value: isApplied)
+        .animation(.smooth(duration: 0.18), value: isSelected)
         // A card is a target, not decoration: hit-testing covers the padding
         // too, and it answers the keyboard and VoiceOver like any other control.
         .contentShape(.rect(cornerRadius: 14))

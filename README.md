@@ -92,6 +92,10 @@ one click rather than an act of memory.
 - **`.env` import and export** — three dialects (POSIX shell, quoted dotenv,
   `docker --env-file`), with a preview before anything is written.
 - **Secret masking** — values can be hidden in the interface.
+- **Sound and motion for the moments that matter** — a cue when a profile is
+  applied, reverted or copied, and when something fails; the card that just went
+  live animates in. Sound is limited to those four events, respects macOS's own
+  interface-sound setting, and can be switched off in the Environment menu.
 - **Menu bar switching** — change profile without bringing the window forward.
 
 ## Install

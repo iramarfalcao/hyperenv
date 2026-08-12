@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		79DB13EB30238479000D5EB4 /* hyperenv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hyperenv.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		79DB13EB30238479000D5EB4 /* hyperenv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = hyperenv.app; path = HyperEnv.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -259,14 +259,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright \U00a9 2026 Iramar Falcao. MIT licensed.";
+				INFOPLIST_KEY_CFBundleDisplayName = HyperEnv;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Iramar Falcao. MIT licensed.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.falcaosl.hyperenv;
-				INFOPLIST_KEY_CFBundleDisplayName = HyperEnv;
 				PRODUCT_NAME = HyperEnv;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -292,14 +292,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright \U00a9 2026 Iramar Falcao. MIT licensed.";
+				INFOPLIST_KEY_CFBundleDisplayName = HyperEnv;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Iramar Falcao. MIT licensed.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.falcaosl.hyperenv;
-				INFOPLIST_KEY_CFBundleDisplayName = HyperEnv;
 				PRODUCT_NAME = HyperEnv;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

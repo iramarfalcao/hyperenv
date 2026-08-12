@@ -115,6 +115,37 @@ roughly one man in twelve, the environment class is always stated redundantly �
 symbol, colour and text — and in the menu bar, where icons are rendered as
 monochrome templates, production is carried by a *shape* no other state uses.
 
+## Colour, sound and motion
+
+Colour in this app is doing real work, so it is split in two and the halves are
+kept apart.
+
+**Environment colour** — the `dev` / `hml` / `prd` tints in `ProfileStyle.swift`
+— answers "which environment am I about to point my tools at". It appears on
+profile badges, the applied card, the status bar wash and the sidebar's live
+dot, and nowhere else.
+
+**Identity colour** — the icon's plate gradient, in the generated `Brand.swift` —
+is for surfaces that carry no risk: empty states, the one-time setup notice, the
+`custom` profile kind, the accent colour. Spreading it over the first kind would
+dilute the only signal that matters. The setup notice used to be orange, which
+both read as a warning and collided with the tint homologation uses.
+
+`Brand.swift` and `AccentColor.colorset` are both written by
+`Scripts/generate-app-icon.swift` from the same constants the icon is drawn
+from, so the interface cannot drift away from the icon.
+
+**Sound** (`Feedback.swift`) is limited to four events: applied, reverted,
+copied, failed. Those are the moments where the user's attention is plausibly in
+a terminal rather than on this window, and sound is the only channel that
+reaches them there. It honours both an in-app toggle and macOS's own "play user
+interface sound effects" preference — someone who turned interface sounds off
+system-wide has already answered the question.
+
+**Motion** marks state changes rather than decorating them: the ACTIVE badge
+scales in on the card that just went live, that card lifts by 1.5%, the sidebar
+dot arrives with it, and the status dot breathes while work is in flight.
+
 ## The icon
 
 `Scripts/generate-app-icon.swift` renders the mark once and writes it to all

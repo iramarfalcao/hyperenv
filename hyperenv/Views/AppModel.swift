@@ -5,6 +5,7 @@
 //  Bridges SwiftUI to the engine actor.
 //
 
+import AppKit
 import Foundation
 import SwiftData
 import SwiftUI
@@ -80,6 +81,7 @@ final class AppModel {
     func apply(_ profile: Profile) async {
         guard let snapshot = SnapshotMapper.snapshot(of: profile) else {
             errorMessage = "This profile is not attached to a project."
+            Feedback.play(.failed)
             return
         }
         await withBusy("Applying \(snapshot.displayPath)…") {
@@ -88,6 +90,7 @@ final class AppModel {
             hookStatus = await engine.hookStatus()
             statusMessage = "Applied \(snapshot.displayPath). Open a new terminal, or run the reload command."
             _ = outcome.plan
+            Feedback.play(.applied)
         }
     }
 
@@ -96,7 +99,18 @@ final class AppModel {
             _ = try await engine.unapply()
             applied = nil
             statusMessage = "Reverted. New terminals are back to your own environment."
+            Feedback.play(.reverted)
         }
+    }
+
+    /// Copies the command an already-open shell needs, and says so out loud.
+    ///
+    /// Lives here rather than in the two views that offer it, so the window and
+    /// the menu bar cannot drift on what they copy or whether it makes a sound.
+    func copyReloadCommand() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(reloadCommand, forType: .string)
+        Feedback.play(.copied)
     }
 
     // MARK: Drift
@@ -120,6 +134,7 @@ final class AppModel {
         } catch {
             statusMessage = nil
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            Feedback.play(.failed)
         }
     }
 }

@@ -33,7 +33,12 @@ struct VariableEditor: View {
             // against the material's rules.
             if profile.variables.isEmpty {
                 ContentUnavailableView {
-                    Label("No variables", systemImage: "text.append")
+                    Label {
+                        Text("No variables")
+                    } icon: {
+                        Image(systemName: "text.append")
+                            .foregroundStyle(Brand.gradient)
+                    }
                 } description: {
                     Text("Add one by hand, or import an existing .env file.")
                 } actions: {

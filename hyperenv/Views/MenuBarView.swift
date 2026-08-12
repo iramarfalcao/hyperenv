@@ -25,10 +25,7 @@ struct MenuBarView: View {
 
                 Divider()
 
-                Button("Copy Reload Command") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(model.reloadCommand, forType: .string)
-                }
+                Button("Copy Reload Command") { model.copyReloadCommand() }
                 Button("Revert") { Task { await model.unapply() } }
                     .disabled(model.isBusy)
             } else {

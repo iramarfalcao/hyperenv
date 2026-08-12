@@ -63,6 +63,10 @@ struct hyperenvApp: App {
     /// Shared so the window and the menu bar agree on what is applied.
     @State private var model = AppModel()
 
+    /// Mirrors the key Feedback reads, so the menu item reflects and sets the
+    /// same preference rather than keeping a second copy of it.
+    @AppStorage("soundEffectsEnabled") private var soundEffects = true
+
     /// Keeps the window inside the screen it opens on.
     ///
     /// `defaultSize` only applies to a window with no saved frame. AppKit
@@ -123,16 +127,18 @@ struct hyperenvApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Environment") {
-                Button("Copy Reload Command") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(model.reloadCommand, forType: .string)
-                }
-                .keyboardShortcut("c", modifiers: [.command, .shift])
-                .disabled(model.applied == nil)
+                Button("Copy Reload Command") { model.copyReloadCommand() }
+                    .keyboardShortcut("c", modifiers: [.command, .shift])
+                    .disabled(model.applied == nil)
 
                 Button("Revert") { Task { await model.unapply() } }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
                     .disabled(model.applied == nil || model.isBusy)
+
+                Divider()
+
+                Toggle("Sound Effects", isOn: $soundEffects)
+                    .help("Play a sound when a profile is applied or reverted")
             }
         }
 

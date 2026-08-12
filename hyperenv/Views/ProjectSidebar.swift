@@ -85,10 +85,12 @@ struct ProjectSidebar: View {
                     .fill(liveKind.tint)
                     .frame(width: 7, height: 7)
                     .shadow(color: liveKind.tint.opacity(0.5), radius: 3)
+                    .transition(.scale.combined(with: .opacity))
                     .help("A \(liveKind.label.lowercased()) profile from this project is applied")
             }
         }
         .padding(.vertical, 3)
+        .animation(.smooth(duration: 0.28), value: liveKind)
     }
 
     private func liveProfileKind(in project: Project) -> ProfileKind? {
