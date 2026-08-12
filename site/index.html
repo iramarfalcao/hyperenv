@@ -9,7 +9,7 @@
 <meta name="description" content="HyperEnv is a native macOS app that switches the environment variables your terminals inherit, per project and per environment. See which one is live at a glance, revert in one click, and import or export .env files. Free and open source.">
 <link rel="canonical" href="https://hyperenv.falcaosl.com/">
 
-<meta name="author" content="Iramar Falcao">
+<meta name="author" content="Francisco Iramar Falcao Junior">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#5C44E6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E0E14" media="(prefers-color-scheme: dark)">
@@ -44,6 +44,27 @@
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Person",
+      "@id": "https://falcaosl.com/#iramar",
+      "name": "Francisco Iramar Falcao Junior",
+      "alternateName": [
+        "Francisco Iramar Falc\u00e3o Junior",
+        "Iramar Falc\u00e3o",
+        "Iramar Falcao"
+      ],
+      "jobTitle": "Software developer",
+      "url": "https://falcaosl.com/",
+      "sameAs": ["https://github.com/iramarfalcao"],
+      "worksFor": { "@id": "https://falcaosl.com/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://falcaosl.com/#org",
+      "name": "Falcao SL",
+      "url": "https://falcaosl.com/",
+      "founder": { "@id": "https://falcaosl.com/#iramar" }
+    },
+    {
       "@type": "SoftwareApplication",
       "@id": "https://hyperenv.falcaosl.com/#app",
       "name": "HyperEnv",
@@ -62,11 +83,8 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "author": {
-        "@type": "Person",
-        "name": "Iramar Falcao",
-        "url": "https://github.com/iramarfalcao"
-      },
+      "author": { "@id": "https://falcaosl.com/#iramar" },
+      "publisher": { "@id": "https://falcaosl.com/#org" },
       "featureList": [
         "Switch environment variables per project and per environment",
         "See which environment is live in the menu bar",
@@ -82,7 +100,7 @@
       "url": "https://hyperenv.falcaosl.com/",
       "name": "HyperEnv",
       "inLanguage": "en",
-      "publisher": { "@id": "https://hyperenv.falcaosl.com/#app" }
+      "publisher": { "@id": "https://falcaosl.com/#org" }
     },
     {
       "@type": "FAQPage",
@@ -509,7 +527,8 @@ brew install --cask hyperenv</code></pre>
     <p>
       <strong>HyperEnv</strong> — an environment variable manager for macOS.
       MIT licensed. Built by
-      <a href="https://github.com/iramarfalcao" rel="noopener me">Iramar Falcao</a>.
+      <a href="https://github.com/iramarfalcao" rel="noopener me">Francisco Iramar Falcao Junior</a>
+      at <a href="https://falcaosl.com/" rel="noopener">Falcao SL</a>.
     </p>
     <ul>
       <li><a href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Source</a></li>
