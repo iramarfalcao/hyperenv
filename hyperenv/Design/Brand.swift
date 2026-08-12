@@ -23,6 +23,15 @@ nonisolated enum Brand {
     static let accent = Color(
         .sRGB, red: 0.360, green: 0.268, blue: 0.902)
 
+    // The three dots on the icon. ProfileStyle gives them their meaning; this
+    // is only where the numbers live, so a badge and a dot cannot disagree.
+    static let development = Color(
+        .sRGB, red: 0.204, green: 0.780, blue: 0.349)
+    static let homologation = Color(
+        .sRGB, red: 1.000, green: 0.624, blue: 0.039)
+    static let production = Color(
+        .sRGB, red: 1.000, green: 0.271, blue: 0.227)
+
     /// The plate, as it appears on the icon.
     static let gradient = LinearGradient(
         colors: [plateTop, plateBottom],

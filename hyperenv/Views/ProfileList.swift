@@ -14,8 +14,10 @@ struct ProfileList: View {
 
     @Environment(\.modelContext) private var context
     @Namespace private var glass
-    @State private var renaming: Profile?
+    @State private var editing: Profile?
+    @State private var isCreating = false
     @State private var draftName = ""
+    @State private var draftKind = ProfileKind.dev
 
     var body: some View {
         Group {
@@ -40,20 +42,12 @@ struct ProfileList: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     } else {
-                        // One control. The kind is picked from the menu rather
-                        // than split across a second button, so the empty state
-                        // says one thing.
-                        Menu("Add Profile") {
-                            ForEach(ProfileKind.creatable, id: \.self) { kind in
-                                Button {
-                                    addProfile(kind: kind)
-                                } label: {
-                                    Label(kind.label, systemImage: kind.symbol)
-                                }
-                            }
-                        }
-                        .buttonStyle(.glassProminent)
-                        .fixedSize()
+                        // One control, and the same one the toolbar offers:
+                        // name and badge are chosen in the sheet rather than
+                        // guessed from a menu item.
+                        Button("Add Profile", action: beginCreating)
+                            .buttonStyle(.glassProminent)
+                            .fixedSize()
                     }
                 }
             } else {
@@ -78,26 +72,32 @@ struct ProfileList: View {
         .navigationSubtitle(subtitle)
         .toolbar {
             ToolbarItem {
-                Menu {
-                    ForEach(ProfileKind.creatable, id: \.self) { kind in
-                        Button {
-                            addProfile(kind: kind)
-                        } label: {
-                            Label(kind.label, systemImage: kind.symbol)
-                        }
-                    }
-                } label: {
-                    Label("New Profile", systemImage: "plus")
-                }
-                .disabled(project.isDefault)
-                .help(project.isDefault
-                      ? "The Default project holds the snapshot of your machine."
-                      : "Add a profile")
+                Button("New Profile", systemImage: "plus", action: beginCreating)
+                    .disabled(project.isDefault)
+                    .help(project.isDefault
+                          ? "The Default project holds the snapshot of your machine."
+                          : "Create a profile")
             }
         }
-        .sheet(item: $renaming) { profile in
-            NameSheet(title: "Rename Profile", name: $draftName) {
+        .sheet(isPresented: $isCreating) {
+            ProfileSheet(
+                title: "New Profile",
+                confirmLabel: "Create",
+                name: $draftName,
+                kind: $draftKind,
+                onCommit: addProfile)
+        }
+        .sheet(item: $editing) { profile in
+            // The same sheet, so a badge can be corrected later rather than
+            // being fixed at the moment of creation.
+            ProfileSheet(
+                title: "Edit Profile",
+                confirmLabel: "Save",
+                name: $draftName,
+                kind: $draftKind
+            ) {
                 profile.name = draftName
+                profile.kind = draftKind
                 try? context.save()
             }
         }
@@ -195,9 +195,10 @@ struct ProfileList: View {
     private func menu(for profile: Profile) -> some View {
         Button("Duplicate as Editable Profile") { duplicate(profile) }
         if !profile.isDefault {
-            Button("Rename…") {
+            Button("Edit…") {
                 draftName = profile.name
-                renaming = profile
+                draftKind = profile.kind
+                editing = profile
             }
             Divider()
             Button("Delete", role: .destructive) { delete(profile) }
@@ -214,9 +215,20 @@ struct ProfileList: View {
         try? context.save()
     }
 
-    private func addProfile(kind: ProfileKind) {
+    private func beginCreating() {
+        // Pre-filled rather than blank: development is the safe default, and its
+        // name is what most people would type anyway.
+        draftKind = .dev
+        draftName = ProfileKind.dev.rawValue
+        isCreating = true
+    }
+
+    private func addProfile() {
+        let name = draftName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+
         let profile = Profile(
-            name: kind.rawValue, kind: kind, sortIndex: project.profiles.count)
+            name: name, kind: draftKind, sortIndex: project.profiles.count)
         profile.project = project
         context.insert(profile)
         try? context.save()

@@ -26,7 +26,7 @@ import SwiftUI
 private let plateTop = Color(red: 0.286, green: 0.361, blue: 0.949)   // #4A5CF2
 private let plateBottom = Color(red: 0.435, green: 0.176, blue: 0.855) // #6F2DDA
 
-private let devTint = Color(red: 0.239, green: 0.839, blue: 0.659)  // mint
+private let devTint = Color(red: 0.204, green: 0.780, blue: 0.349)  // green
 private let hmlTint = Color(red: 1.000, green: 0.624, blue: 0.039)  // orange
 private let prdTint = Color(red: 1.000, green: 0.271, blue: 0.227)  // red
 
@@ -272,6 +272,12 @@ nonisolated enum Brand {
 \(swiftColor("plateTop", (0.286, 0.361, 0.949)))
 \(swiftColor("plateBottom", (0.435, 0.176, 0.855)))
 \(swiftColor("accent", accentLight))
+
+    // The three dots on the icon. ProfileStyle gives them their meaning; this
+    // is only where the numbers live, so a badge and a dot cannot disagree.
+\(swiftColor("development", (0.204, 0.780, 0.349)))
+\(swiftColor("homologation", (1.000, 0.624, 0.039)))
+\(swiftColor("production", (1.000, 0.271, 0.227)))
 
     /// The plate, as it appears on the icon.
     static let gradient = LinearGradient(

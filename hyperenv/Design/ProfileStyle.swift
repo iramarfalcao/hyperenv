@@ -14,9 +14,12 @@ import SwiftUI
 extension ProfileKind {
     var tint: Color {
         switch self {
-        case .dev: .mint
-        case .hml: .orange
-        case .prd: .red
+        // The exact values the icon's three dots are drawn with, so a badge in
+        // the app and a dot on the icon are the same colour rather than two
+        // that happen to look alike.
+        case .dev: Brand.development
+        case .hml: Brand.homologation
+        case .prd: Brand.production
         // Custom carries no inherent risk, so it takes the app's own colour
         // rather than borrowing one that means something elsewhere.
         case .custom: Brand.accent
@@ -41,6 +44,17 @@ extension ProfileKind {
         case .prd: "Production"
         case .custom: "Custom"
         case .systemDefault: "System snapshot"
+        }
+    }
+
+    /// One line on what this class is for, shown while choosing a badge.
+    var summary: String {
+        switch self {
+        case .dev: "Your own machine and throwaway data."
+        case .hml: "A staging or homologation backend."
+        case .prd: "Live systems and real customer data."
+        case .custom: "Anything that is not one of the three."
+        case .systemDefault: "A snapshot of this machine's environment."
         }
     }
 
