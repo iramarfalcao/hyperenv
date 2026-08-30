@@ -3,3 +3,5 @@
 .intellijPlatform
 .qodana
 build
+# macOS
+.DS_Store
