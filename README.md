@@ -354,3 +354,19 @@ Signing and notarization are optional and entirely secret-driven — see
 ## License
 
 [MIT](LICENSE) © Iramar Falcao
+
+## Documentação de produto
+
+| Documento | Assunto |
+|---|---|
+| [`docs/PRODUTO.md`](docs/PRODUTO.md) | O que é, para quem, o que não faz |
+| [`docs/STATUS.md`](docs/STATUS.md) | Etapa atual, o que falta, riscos e data-alvo |
+| [`docs/MONETIZACAO.md`](docs/MONETIZACAO.md) | Modelo de cobrança |
+| [`docs/MARKETING.md`](docs/MARKETING.md) | Posicionamento, mensagens e ativos de campanha |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | Processo de release |
+
+Site: [hyperenv.falcaosl.com](https://hyperenv.falcaosl.com) — fonte em [`site/`](site), imagem de deploy em [`deploy/site/`](deploy/site).
+
+---
+
+Um app da [Falcao SL](https://falcaosl.com).
