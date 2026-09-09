@@ -191,10 +191,7 @@ struct VariableEditor: View {
     }
 
     private func addVariable() {
-        let variable = EnvVariable(
-            key: "", value: "", sortIndex: profile.variables.count)
-        variable.profile = profile
-        context.insert(variable)
+        Authoring.addVariable(to: profile, context: context)
         try? context.save()
     }
 
@@ -204,22 +201,7 @@ struct VariableEditor: View {
     }
 
     private func apply(imported entries: [DotenvEntry]) {
-        var existing: [String: EnvVariable] = [:]
-        for variable in profile.variables { existing[variable.key] = variable }
-
-        for entry in entries {
-            if let match = existing[entry.key.rawValue] {
-                match.value = entry.value.rawValue
-            } else {
-                let variable = EnvVariable(
-                    key: entry.key.rawValue,
-                    value: entry.value.rawValue,
-                    sortIndex: profile.variables.count,
-                    origin: .imported)
-                variable.profile = profile
-                context.insert(variable)
-            }
-        }
+        Authoring.merge(entries, into: profile, context: context)
         try? context.save()
         transfer.pendingImport = nil
     }

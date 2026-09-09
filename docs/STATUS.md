@@ -21,6 +21,12 @@
 - Site próprio no ar, com instalador de um comando.
 - CI no GitHub Actions, releases assinadas e `Casks/` para Homebrew.
 - `docs/ARCHITECTURE.md` e `docs/RELEASING.md` escritos.
+- Seis suítes de verificação, todas na CI: núcleo puro, shell real em
+  `ZDOTDIR` isolado, exportação, layout, **modelo** (criar projeto, perfil e
+  variáveis; duplicar; importar; o que vira snapshot) e **motor** (aplicar,
+  reaplicar, desfazer e remover o hook contra um sistema de arquivos em
+  memória). As duas últimas entraram em 2026-09-09; antes, criar e aplicar só
+  eram provados clicando.
 
 ## O que falta
 

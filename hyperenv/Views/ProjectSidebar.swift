@@ -151,11 +151,8 @@ struct ProjectSidebar: View {
     /// from one that was configured and left empty. The profile list's empty
     /// state offers the three as one click each instead.
     private func addProject() {
-        let name = newProjectName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
-
-        let project = Project(name: name, sortIndex: projects.count)
-        context.insert(project)
+        guard let project = Authoring.createProject(
+            named: newProjectName, sortIndex: projects.count, in: context) else { return }
         try? context.save()
         selectedProjectID = project.id
     }

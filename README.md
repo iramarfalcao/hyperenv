@@ -334,10 +334,12 @@ changes. Nothing in the plugin can break an app release, and the reverse holds.
 git clone https://github.com/iramarfalcao/hyperenv.git
 cd hyperenv
 
-Tests/run-core-checks.sh          # 121 pure-logic checks, no app bundle needed
+Tests/run-core-checks.sh          # pure-logic checks, no app bundle needed
 Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
 Tests/run-layout-checks.sh        # no view may outgrow the window
 Tests/run-export-checks.sh        # an export carries the variables it claims to
+Tests/run-model-checks.sh         # create / duplicate / import rules, and what a profile turns into
+Tests/run-engine-checks.sh        # the engine's whole life against an in-memory filesystem
 
 Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
 Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
@@ -349,6 +351,12 @@ The shell integration suite is the one that matters: unit tests prove the
 generated strings are correct, but only a real `zsh` proves that sourcing them
 produces the environment the app promised — and that un-applying puts the
 previous values back. It refuses to run anywhere near your real `$HOME`.
+
+The engine suite covers what the shell one has to take on trust: the journal
+is written before the dotfile, a key's baseline is captured once and never
+re-measured, the backup and the hook happen once, a malformed block is refused
+rather than guessed at, and a held lock turns a second writer away. It runs
+against an in-memory filesystem, so it never touches `$HOME` either.
 
 ## Releasing
 

@@ -224,13 +224,8 @@ struct ProfileList: View {
     }
 
     private func addProfile() {
-        let name = draftName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
-
-        let profile = Profile(
-            name: name, kind: draftKind, sortIndex: project.profiles.count)
-        profile.project = project
-        context.insert(profile)
+        guard let profile = Authoring.createProfile(
+            named: draftName, kind: draftKind, in: project, context: context) else { return }
         try? context.save()
         selectedProfileID = profile.id
     }
@@ -238,26 +233,7 @@ struct ProfileList: View {
     /// Copies a profile into a normal, appliable one. This is how the Default
     /// snapshot becomes a usable starting point.
     private func duplicate(_ profile: Profile) {
-        let copy = Profile(
-            name: "\(profile.name) copy",
-            kind: profile.kind == .systemDefault ? .custom : profile.kind,
-            sortIndex: project.profiles.count)
-        copy.project = profile.project
-        context.insert(copy)
-
-        for variable in profile.sortedVariables {
-            let duplicated = EnvVariable(
-                key: variable.key,
-                value: variable.value,
-                isEnabled: variable.isEnabled,
-                isSecret: variable.isSecret,
-                note: variable.note,
-                sortIndex: variable.sortIndex,
-                origin: .authored)
-            duplicated.profile = copy
-            context.insert(duplicated)
-        }
-
+        let copy = Authoring.duplicate(profile, context: context)
         try? context.save()
         selectedProfileID = copy.id
     }

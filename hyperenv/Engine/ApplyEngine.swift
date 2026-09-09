@@ -31,15 +31,20 @@ actor ApplyEngine {
     private let fileSystem: any FileSystemGateway
     private let journal: any JournalStore
     private let probe: any EnvironmentProbe
+    /// The one path that bypasses the gateway: `flock` needs a real descriptor.
+    /// Injectable so a test can lock a temporary file instead of the user's.
+    private let lockFile: URL
 
     init(
         fileSystem: any FileSystemGateway = RealFileSystem(),
         journal: (any JournalStore)? = nil,
-        probe: (any EnvironmentProbe)? = nil
+        probe: (any EnvironmentProbe)? = nil,
+        lockFile: URL = Paths.lockFile
     ) {
         self.fileSystem = fileSystem
         self.journal = journal ?? FileJournalStore(fileSystem: fileSystem)
         self.probe = probe ?? ZshLoginShellProbe(runner: RealProcessRunner())
+        self.lockFile = lockFile
     }
 
     // MARK: Current state
@@ -250,7 +255,7 @@ actor ApplyEngine {
     private func withLock<T>(_ work: () throws -> T) throws -> T {
         try fileSystem.createDirectory(Paths.configDirectory)
         try fileSystem.createDirectory(Paths.historyDirectory)
-        return try FileLock.withLock(at: Paths.lockFile, work)
+        return try FileLock.withLock(at: lockFile, work)
     }
 
     /// The lock is not reentrant, so the apply path calls this instead of
