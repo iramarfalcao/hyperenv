@@ -16,7 +16,15 @@ version = providers.gradleProperty("pluginVersion").get()
 
 // Set the JVM language level used to build the project.
 kotlin {
-    jvmToolchain(17)
+    // IntelliJ 2024.2 and later run on Java 21.
+    jvmToolchain(21)
+    compilerOptions {
+        // Without this, Kotlin emits compatibility stubs for every default
+        // method of a platform interface (ToolWindowFactory.getIcon, getAnchor,
+        // manage…) and the plugin verifier reads them as overrides of internal
+        // API. JetBrains' own guidance for plugins targeting 2024.2+.
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
+    }
 }
 
 // Configure project's dependencies
@@ -43,7 +51,6 @@ dependencies {
         // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file for plugin from JetBrains Marketplace.
         plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
 
-        instrumentationTools()
         pluginVerifier()
         zipSigner()
         testFramework(TestFrameworkType.Platform)
@@ -83,7 +90,9 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
-            untilBuild = providers.gradleProperty("pluginUntilBuild")
+            // No upper bound: an absent provider omits the attribute, whereas
+            // an empty string renders until-build="" and fails verification.
+            untilBuild = providers.gradleProperty("pluginUntilBuild").filter { it.isNotBlank() }
         }
     }
 

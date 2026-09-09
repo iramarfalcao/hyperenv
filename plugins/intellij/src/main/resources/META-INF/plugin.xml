@@ -1,18 +1,19 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.iramarfalcao.hyperenvplugin</id>
+    <id>com.falcaosl.hyperenv</id>
     <name>HyperEnv</name>
-    <vendor>iramarfalcao</vendor>
+    <vendor url="https://falcaosl.com">Falcao SL</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+    <resource-bundle>messages.HyperEnvBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.iramarfalcao.hyperenvplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow id="HyperEnv" anchor="right" icon="AllIcons.Nodes.ConfigFolder"
+                    factoryClass="com.falcaosl.hyperenv.toolWindow.HyperEnvToolWindowFactory"/>
+        <notificationGroup id="HyperEnv" displayType="BALLOON"/>
+        <applicationConfigurable parentId="tools" id="com.falcaosl.hyperenv.settings"
+                                 displayName="HyperEnv"
+                                 instance="com.falcaosl.hyperenv.settings.HyperEnvConfigurable"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.iramarfalcao.hyperenvplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>

@@ -17,6 +17,19 @@ All notable changes to this project are documented here. The format follows
   since 1.0.0. The next apply rewrites the block correctly; nothing to do by
   hand. Six checks now pin the rendered path.
 
+### Added
+
+- **The `hyperenv` command**, inside the app at `Contents/Helpers/hyperenv`.
+  Same Core, Engine and Models; same store, same journal. `status`,
+  `projects`, `project`/`profile`/`var` create-update-delete, `apply`,
+  `unapply`, `hook` — with `--json` for tools. See `docs/CLI.md`.
+- **IntelliJ plugin** (`plugins/intellij`) and **VS Code extension**
+  (`plugins/vscode`): the same five things the app does — create a project,
+  create a profile, create and edit variables, apply, revert — plus duplicate,
+  install the hook and copy the reload command. Neither carries an engine;
+  both drive the command, so there is one writer to `~/.zprofile` whichever
+  window pressed Apply.
+
 ### Changed
 
 - **Signed with a Developer ID and notarized.** The disk image opens normally;

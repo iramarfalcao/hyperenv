@@ -1,13 +1,13 @@
 # Status — HyperEnv
 
-> Atualizado em **2026-08-30**. Este arquivo é a fonte única de "em que pé está".
+> Atualizado em **2026-09-09**. Este arquivo é a fonte única de "em que pé está".
 > Ao mudar o estágio, mude também a linha correspondente no índice do portfólio
 > (`~/Github/CLAUDE.md`) e o selo do site em `site/index.html`.
 
 | Campo | Valor |
 |---|---|
 | **Estágio** | **Publicado** — release pública no GitHub, MIT |
-| **Formato** | Monorepo: app macOS, `plugins/` (família IntelliJ), `site/` e `docs/` |
+| **Formato** | Monorepo: app macOS, comando `hyperenv` (`cli/`), `plugins/` (IntelliJ e VS Code), `site/` e `docs/` |
 | **Plataformas** | macOS 26.5+ |
 | **Stack** | Swift/SwiftUI, Xcode |
 | **Site** | https://hyperenv.falcaosl.com |
@@ -18,6 +18,13 @@
 ## O que já está pronto
 
 - App funcional: perfis por projeto e por ambiente, classe de risco por perfil, reversão em um clique.
+- **Comando `hyperenv`** dentro do app (`Contents/Helpers`): mesmo Core, Engine e
+  Models, mesmo store e journal. É a porta única dos plugins — um motor, um
+  escritor em `~/.zprofile`. 50 checks contra um store descartável.
+- **Plugin IntelliJ** (Kotlin, Gradle 9.7.1, plataforma 2025.2, `verifyPlugin`
+  compatível) e **extensão VS Code** (TypeScript, `.vsix` empacotado): os
+  mesmos cinco fluxos do app — criar projeto, criar perfil, criar e editar
+  variáveis, aplicar, desfazer — mais duplicar, hook e comando de reload.
 - Site próprio no ar, com instalador de um comando.
 - CI no GitHub Actions, releases assinadas e `Casks/` para Homebrew.
 - `docs/ARCHITECTURE.md` e `docs/RELEASING.md` escritos.
@@ -32,10 +39,13 @@
 
 - Divulgação: o app está pronto e quase ninguém sabe que existe (ver `docs/MARKETING.md`).
 - Ampliar a cobertura de shells além de zsh/bash.
-- **Plugin da família IntelliJ** (`plugins/intellij/`, unificado aqui em
-  2026-09-09): hoje é o template da JetBrains com o pacote renomeado, sem
-  nenhuma funcionalidade do HyperEnv. O primeiro passo é decidir como o plugin
-  lê os perfis — pelos mesmos arquivos em disco, ou por uma interface do app.
+- Smoke test dos plugins dentro dos editores (`./gradlew runIde`, F5 no VS
+  Code): a lógica está provada por 19 + 11 testes de unidade e pelo cliente
+  rodando contra o binário real, mas a árvore e os diálogos ainda não foram
+  clicados por uma pessoa.
+- O app não percebe uma mudança feita por plugin até reabrir a janela: os dois
+  processos abrem o mesmo store SQLite, que serializa a escrita mas não avisa
+  o outro lado.
 - Coletar feedback dos primeiros usuários antes de acrescentar recurso novo.
 
 ## Riscos e bloqueios
