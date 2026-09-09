@@ -10,7 +10,6 @@
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
   "keywords": ["environment", "env", "dotenv", "profiles", "macos", "zsh"],
-  "os": ["darwin"],
   "main": "./out/extension.js",
   "activationEvents": [],
   "contributes": {
