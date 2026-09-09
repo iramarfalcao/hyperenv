@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+
+- **Signed with a Developer ID and notarized.** The disk image opens normally;
+  no right-click → Open, no quarantine attribute to strip. This is also what
+  makes the cask eligible for Homebrew's acceptance rules, which reject any app
+  that needs Gatekeeper bypassed.
+- Importing a `.env` that repeats a key no longer creates two rows: the last
+  value wins, as the parser already decided.
+
+### Internal
+
+- Two verification suites, both in CI. `run-model-checks` proves the create,
+  duplicate and import rules against an in-memory store and what a profile
+  turns into when applied. `run-engine-checks` drives the real engine through
+  apply, re-apply, un-apply and hook removal against an in-memory filesystem —
+  the journal is written before the dotfile, a baseline is captured once and
+  never re-measured, backup and hook happen once, and a held lock refuses a
+  second writer. 263 checks in total, up from 148.
+- The authoring rules moved out of the views into `Authoring`, so the buttons
+  and the suite run the same code.
+
 ## [1.0.1] — 2026-08-12
 
 ### Fixed
