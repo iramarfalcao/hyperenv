@@ -1,0 +1,7 @@
+.gradle
+.idea
+.intellijPlatform
+.qodana
+build
+# macOS
+.DS_Store
