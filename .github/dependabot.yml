@@ -1,0 +1,12 @@
+# Reposto ao unificar o hyperenv-idea-plugin aqui: aquele repositório tinha dez
+# PRs de dependabot abertas e foi apagado. As de GitHub Actions eram dos
+# workflows do template, hoje inertes; as de Gradle são reais e voltam por aqui.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /plugins/intellij
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "plugin"
