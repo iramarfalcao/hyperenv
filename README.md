@@ -33,7 +33,7 @@
 | [What it is](#what-it-is) · [The problem it solves](#the-problem-it-solves) · [Where it is useful](#where-it-is-useful) | Why it exists |
 | [Features](#features) · [Install](#install) · [How it works](#how-it-works) | Using it |
 | [Safety model](#safety-model) · [SECURITY.md](SECURITY.md) | What it will and will not do to your machine |
-| [Building from source](#building-from-source) · [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [CONTRIBUTING.md](CONTRIBUTING.md) | Working on it |
+| [Repository layout](#repository-layout) · [Building from source](#building-from-source) · [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [CONTRIBUTING.md](CONTRIBUTING.md) | Working on it |
 | [Releasing](#releasing) · [RELEASING.md](docs/RELEASING.md) | Shipping it |
 
 ## What it is
@@ -305,6 +305,29 @@ step is reversible.
   would any `.env`: it is `0600` in your home directory, and secrets in it are
   secrets on disk.
 
+## Repository layout
+
+One repository holds the app, the editor plugins, the website and the docs.
+They ship on different schedules but describe one product, and a change to the
+profile format has to be able to touch the app and the plugin in a single
+commit.
+
+```
+hyperenv/            the macOS app — SwiftUI, Xcode project at the root
+Tests/               four suites, run from Scripts or CI
+Scripts/             build, sign, package
+plugins/             editor and IDE integrations — see plugins/README.md
+  intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
+site/                hyperenv.falcaosl.com, served from deploy/site/
+docs/                architecture, releasing, product docs
+Casks/               the Homebrew cask, updated on release
+```
+
+Each part builds on its own: the app from Xcode or `Scripts/`, the plugin from
+`plugins/intellij` with Gradle. CI keeps them apart too — the macOS workflow
+ignores `plugins/**`, and the plugin workflow only runs when `plugins/**`
+changes. Nothing in the plugin can break an app release, and the reverse holds.
+
 ## Building from source
 
 ```sh
@@ -350,6 +373,7 @@ Signing and notarization are optional and entirely secret-driven — see
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose a change |
 | [CHANGELOG.md](CHANGELOG.md) | What changed, per version |
 | [Casks/hyperenv.rb](Casks/hyperenv.rb) | The Homebrew cask, updated automatically on release |
+| [plugins/README.md](plugins/README.md) | The editor plugins, and what state they are actually in |
 
 ## License
 

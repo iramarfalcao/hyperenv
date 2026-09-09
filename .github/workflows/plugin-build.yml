@@ -1,0 +1,64 @@
+# Build do plugin da família IntelliJ (plugins/intellij).
+#
+# Enxuto de propósito. Os três workflows que vieram do template da JetBrains
+# continuam em `plugins/intellij/.github/workflows/` como referência e estão
+# inertes: o GitHub só executa workflow que esteja na raiz do repositório.
+#
+# O `release.yml` de lá NÃO foi promovido, e isso é deliberado — ele dispara em
+# `release: [prereleased, released]`, e neste monorepo quem cria release é o
+# aplicativo macOS. Promovê-lo faria todo lançamento do HyperEnv tentar publicar
+# o plugin na JetBrains Marketplace. Quando o plugin tiver o que publicar, ele
+# volta com gatilho próprio (tag `plugin-v*`), não no release do app.
+
+name: Plugin (IntelliJ)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "plugins/intellij/**"
+      - ".github/workflows/plugin-build.yml"
+  pull_request:
+    paths:
+      - "plugins/intellij/**"
+      - ".github/workflows/plugin-build.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: plugins/intellij
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: plugins/intellij
+
+      - name: Build, test and verify
+        run: ./gradlew build verifyPlugin --console=plain
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-distribution
+          path: plugins/intellij/build/distributions/*.zip
+          if-no-files-found: warn

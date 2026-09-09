@@ -7,6 +7,7 @@
 | Campo | Valor |
 |---|---|
 | **Estágio** | **Publicado** — release pública no GitHub, MIT |
+| **Formato** | Monorepo: app macOS, `plugins/` (família IntelliJ), `site/` e `docs/` |
 | **Plataformas** | macOS 26.5+ |
 | **Stack** | Swift/SwiftUI, Xcode |
 | **Site** | https://hyperenv.falcaosl.com |
@@ -25,6 +26,10 @@
 
 - Divulgação: o app está pronto e quase ninguém sabe que existe (ver `docs/MARKETING.md`).
 - Ampliar a cobertura de shells além de zsh/bash.
+- **Plugin da família IntelliJ** (`plugins/intellij/`, unificado aqui em
+  2026-09-09): hoje é o template da JetBrains com o pacote renomeado, sem
+  nenhuma funcionalidade do HyperEnv. O primeiro passo é decidir como o plugin
+  lê os perfis — pelos mesmos arquivos em disco, ou por uma interface do app.
 - Coletar feedback dos primeiros usuários antes de acrescentar recurso novo.
 
 ## Riscos e bloqueios

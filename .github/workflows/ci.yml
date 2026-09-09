@@ -3,7 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+    # O plugin da família IntelliJ tem CI própria (plugin-build.yml). Este job
+    # roda em runner macOS com Xcode; disparar por mudança de Kotlin é minuto
+    # de runner gasto à toa.
+    paths-ignore: ["plugins/**"]
   pull_request:
+    paths-ignore: ["plugins/**"]
   workflow_dispatch:
 
 concurrency:
