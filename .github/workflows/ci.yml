@@ -79,8 +79,13 @@ jobs:
       # Online audit checks the release asset really exists and its checksum
       # matches the cask. Skipped on pull requests from forks, which have no
       # need to reach the network for this.
+      # Authenticated, or the audit shares the runner IP's anonymous quota with
+      # every other job on GitHub's fleet and fails on "rate limit exceeded"
+      # for reasons that have nothing to do with the cask.
       - name: Audit the cask against the published release
         if: github.event_name != 'pull_request'
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: brew audit --cask --online hyperenv-ci/local/hyperenv
 
   build:
