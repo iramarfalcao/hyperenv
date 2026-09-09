@@ -159,6 +159,7 @@
   ]
 }
 </script>
+<link rel="stylesheet" href="showcase.css?v=1">
 </head>
 
 <body>
@@ -222,10 +223,10 @@
         <a href="https://github.com/iramarfalcao/hyperenv/releases/latest" rel="noopener">Release notes and checksum</a>
       </p>
 
-      <figure class="shot">
+      <figure data-motion class="shot">
         <picture>
           <source srcset="assets/screenshot-dark.png" media="(prefers-color-scheme: dark)">
-          <img src="assets/screenshot-light.png"
+          <img data-zoom src="assets/screenshot-light.png"
                alt="The HyperEnv window: a sidebar of projects, a column of colour-coded profiles for development, homologation and production, and a table of environment variables"
                width="1280" height="800" fetchpriority="high" decoding="async">
         </picture>
@@ -245,15 +246,15 @@
         pointed at.
       </p>
       <div class="cards">
-        <article>
+        <article data-motion>
           <h3>A pile of .env files</h3>
           <p>Nothing on screen says which one is loaded. Two identical-looking shells, two different databases.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Editing dotfiles by hand</h3>
           <p>The file drifts, backups pile up, and one typo costs you a working login shell.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>A terminal profile per environment</h3>
           <p>Every other tool — an editor terminal, a task runner, a CI shim — starts outside the setup.</p>
         </article>
@@ -265,35 +266,35 @@
     <div class="wrap">
       <h2>What HyperEnv does</h2>
       <div class="features">
-        <article>
+        <article data-motion>
           <h3>Projects and profiles</h3>
           <p>A project per codebase or client. Inside it, a profile per environment — development, homologation, production, or your own — each holding its own set of variables.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Colour that means something</h3>
           <p>Every profile carries an environment class. Production is red wherever it appears, asks for confirmation before it is applied, and takes a shape in the menu bar that no other state uses.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>You can always see what is live</h3>
           <p>A bar along the bottom of the window names the applied profile and its variable count. The menu bar shows it without switching apps.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Revert restores, it does not blank</h3>
           <p>Reverting puts back each variable&rsquo;s previous value, and unsets only the ones that did not exist before. A variable that was empty comes back empty.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Open terminals are handled honestly</h3>
           <p>No process can rewrite a running shell&rsquo;s environment. HyperEnv says so plainly and puts the one command that fixes it a single click away.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Drift detection</h3>
           <p>It tells you when your shell stops matching what was applied — including the case a checksum cannot catch, where something set the same variable after HyperEnv&rsquo;s block and quietly won.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>Import and export .env</h3>
           <p>Three dialects — POSIX shell, quoted dotenv and <code>docker --env-file</code> — with a preview before anything is written.</p>
         </article>
-        <article>
+        <article data-motion>
           <h3>It reads your machine first</h3>
           <p>On first launch it takes a snapshot of your existing shell environment, sorted by whether each variable is safe to reuse, so you start from what you already have.</p>
         </article>
@@ -346,7 +347,7 @@ export DATABASE_URL='postgres://…'</code></pre>
         <li>
           <h3>Create a project</h3>
           <p>Name it after the codebase or client it belongs to. It starts empty — no profiles are invented for you.</p>
-          <img class="step-shot" src="assets/step-new-project.png"
+          <img data-zoom class="step-shot" src="assets/step-new-project.png"
                alt="The New Project sheet in HyperEnv, with a name field reading payments and a Create button"
                width="380" height="182" loading="lazy" decoding="async">
         </li>
@@ -357,7 +358,7 @@ export DATABASE_URL='postgres://…'</code></pre>
             choosing red is also choosing to be asked for confirmation before
             that profile is ever applied.
           </p>
-          <img class="step-shot" src="assets/step-new-profile.png"
+          <img data-zoom class="step-shot" src="assets/step-new-profile.png"
                alt="The New Profile sheet, showing a name field and four colour swatches for development, homologation, production and custom"
                width="380" height="290" loading="lazy" decoding="async">
         </li>
@@ -541,5 +542,6 @@ brew install --cask hyperenv</code></pre>
 </footer>
 
 <script src="copy.js" defer></script>
+<script src="showcase.js?v=1" defer></script>
 </body>
 </html>
