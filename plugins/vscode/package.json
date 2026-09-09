@@ -1,0 +1,108 @@
+{
+  "name": "hyperenv",
+  "displayName": "HyperEnv",
+  "description": "Switch the environment variables your terminals inherit — per project, per environment — from inside VS Code.",
+  "version": "0.1.0",
+  "publisher": "falcaosl",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/iramarfalcao/hyperenv", "directory": "plugins/vscode" },
+  "homepage": "https://hyperenv.falcaosl.com",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "keywords": ["environment", "env", "dotenv", "profiles", "macos", "zsh"],
+  "os": ["darwin"],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "hyperenv", "title": "HyperEnv", "icon": "$(symbol-variable)" }
+      ]
+    },
+    "views": {
+      "hyperenv": [
+        { "id": "hyperenv.tree", "name": "Environments", "contextualTitle": "HyperEnv" }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "hyperenv.tree",
+        "contents": "No projects yet.\n[New Project](command:hyperenv.newProject)\n\nHyperEnv needs the HyperEnv app installed: the extension drives the `hyperenv` command that ships inside it. [Settings](command:workbench.action.openSettings?%22hyperenv%22)",
+        "when": "!hyperenv.hasProjects"
+      }
+    ],
+    "commands": [
+      { "command": "hyperenv.refresh", "title": "Refresh", "category": "HyperEnv", "icon": "$(refresh)" },
+      { "command": "hyperenv.newProject", "title": "New Project", "category": "HyperEnv", "icon": "$(add)" },
+      { "command": "hyperenv.newProfile", "title": "New Profile", "category": "HyperEnv", "icon": "$(new-folder)" },
+      { "command": "hyperenv.newVariable", "title": "Add Variable", "category": "HyperEnv", "icon": "$(symbol-variable)" },
+      { "command": "hyperenv.editVariable", "title": "Edit Variable", "category": "HyperEnv", "icon": "$(edit)" },
+      { "command": "hyperenv.toggleVariable", "title": "Switch On/Off", "category": "HyperEnv", "icon": "$(circle-slash)" },
+      { "command": "hyperenv.duplicateProfile", "title": "Duplicate Profile", "category": "HyperEnv", "icon": "$(copy)" },
+      { "command": "hyperenv.delete", "title": "Delete", "category": "HyperEnv", "icon": "$(trash)" },
+      { "command": "hyperenv.apply", "title": "Apply", "category": "HyperEnv", "icon": "$(play)" },
+      { "command": "hyperenv.unapply", "title": "Revert", "category": "HyperEnv", "icon": "$(debug-stop)" },
+      { "command": "hyperenv.copyReload", "title": "Copy Reload Command", "category": "HyperEnv", "icon": "$(clippy)" },
+      { "command": "hyperenv.installHook", "title": "Install Shell Hook", "category": "HyperEnv", "icon": "$(gear)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "hyperenv.newProject", "when": "view == hyperenv.tree", "group": "navigation@1" },
+        { "command": "hyperenv.unapply", "when": "view == hyperenv.tree && hyperenv.applied", "group": "navigation@2" },
+        { "command": "hyperenv.refresh", "when": "view == hyperenv.tree", "group": "navigation@3" },
+        { "command": "hyperenv.copyReload", "when": "view == hyperenv.tree && hyperenv.applied", "group": "1_env" },
+        { "command": "hyperenv.installHook", "when": "view == hyperenv.tree && !hyperenv.hookInstalled", "group": "1_env" }
+      ],
+      "view/item/context": [
+        { "command": "hyperenv.newProfile", "when": "view == hyperenv.tree && viewItem =~ /^project/", "group": "inline@1" },
+        { "command": "hyperenv.newProfile", "when": "view == hyperenv.tree && viewItem =~ /^project/", "group": "1_new" },
+        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem == project", "group": "3_delete" },
+
+        { "command": "hyperenv.apply", "when": "view == hyperenv.tree && viewItem == profile", "group": "inline@1" },
+        { "command": "hyperenv.newVariable", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "inline@2" },
+        { "command": "hyperenv.apply", "when": "view == hyperenv.tree && viewItem == profile", "group": "0_apply" },
+        { "command": "hyperenv.newVariable", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "1_new" },
+        { "command": "hyperenv.duplicateProfile", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "2_edit" },
+        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem == profile", "group": "3_delete" },
+
+        { "command": "hyperenv.editVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "inline@1" },
+        { "command": "hyperenv.toggleVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "inline@2" },
+        { "command": "hyperenv.editVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "2_edit" },
+        { "command": "hyperenv.toggleVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "2_edit" },
+        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "3_delete" }
+      ],
+      "commandPalette": [
+        { "command": "hyperenv.editVariable", "when": "false" },
+        { "command": "hyperenv.toggleVariable", "when": "false" },
+        { "command": "hyperenv.duplicateProfile", "when": "false" },
+        { "command": "hyperenv.delete", "when": "false" },
+        { "command": "hyperenv.newProfile", "when": "false" },
+        { "command": "hyperenv.newVariable", "when": "false" },
+        { "command": "hyperenv.apply", "when": "false" }
+      ]
+    },
+    "configuration": {
+      "title": "HyperEnv",
+      "properties": {
+        "hyperenv.cliPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the `hyperenv` command. Leave empty to use the one on your `PATH` or inside `HyperEnv.app`."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test out/test/",
+    "package": "vsce package --no-dependencies",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,46 +1,63 @@
 # plugins/
 
-Integrações do HyperEnv com editores e IDEs. Cada subpasta é um plugin
-independente, com o próprio build e o próprio ciclo de versão — o que
-compartilham é o repositório, a licença e a documentação em `docs/`.
+Editor integrations. Each subfolder is an independent plugin with its own
+build and its own version; what they share is the repository, the licence,
+and — the part that matters — **the engine**.
 
-| Pasta | Alvo | Estado |
+| Folder | Target | Build |
 |---|---|---|
-| `intellij/` | Família IntelliJ — IDEA, PyCharm, WebStorm, GoLand, RustRover, CLion | **Esqueleto** — template da JetBrains, sem funcionalidade do HyperEnv ainda |
+| `intellij/` | IntelliJ family — IDEA, PyCharm, WebStorm, GoLand, RustRover, CLion | Gradle, Kotlin |
+| `vscode/` | Visual Studio Code | npm, TypeScript |
 
-## intellij/
+## One engine
 
-Gradle, Kotlin, IntelliJ Platform Gradle Plugin. Para trabalhar nele:
+Neither plugin carries an engine. Both drive the `hyperenv` command that
+ships inside `HyperEnv.app` (`Contents/Helpers/hyperenv`), which opens the
+same SwiftData store and the same journal the app does. So the app, the
+IntelliJ plugin and the VS Code extension are three windows onto one state,
+with one writer to `~/.zprofile` — and everything the engine suite proves
+(journal before dotfile, baseline captured once, backup once, lock) holds
+whichever surface pressed Apply. The command's grammar and JSON shapes are in
+[`docs/CLI.md`](../docs/CLI.md).
 
-```bash
-cd plugins/intellij
-./gradlew build          # compila e testa
-./gradlew runIde         # sobe uma IDE com o plugin carregado
-./gradlew verifyPlugin   # checa compatibilidade com as builds declaradas
+The consequence is honest and worth stating: **the plugins need the HyperEnv
+app installed, and are macOS-only** — as the product is.
+
+## What each one does
+
+The same five things the app does: create a project, create a profile
+(dev, hml, prd, custom), create and edit variables (with secret and on/off),
+apply, revert. Plus duplicate a profile (how the machine snapshot becomes
+something you can apply), install the shell hook, and copy the reload command
+for a terminal that is already open.
+
+| | IntelliJ | VS Code |
+|---|---|---|
+| Surface | Tool window, right side | Activity-bar view "HyperEnv" |
+| Applied indicator | Bold row with ● in the tree | Status bar item |
+| Command location | Settings › Tools › HyperEnv | `hyperenv.cliPath` |
+| Unit tests | JUnit: envelope, lookup order, name rule | `node --test`: same, plus how each call is built |
+| Editor-in-the-loop | `./gradlew runIde` | F5 (Run Extension) |
+
+Both look for the command in the same order: the setting, then `PATH`, then
+`/Applications/HyperEnv.app/Contents/Helpers/hyperenv`, then the same under
+`~/Applications`.
+
+## Building
+
+```sh
+cd plugins/intellij && ./gradlew build verifyPlugin     # unit tests + IDE compatibility
+cd plugins/vscode   && npm install && npm test && npm run package
 ```
-
-As faixas de build suportadas e a versão da plataforma estão em
-`intellij/gradle.properties`.
-
-### Estado real, sem enfeite
-
-O que existe hoje é o **template da JetBrains com o pacote renomeado**:
-`MyToolWindowFactory`, `MyProjectService` e um botão que sorteia um número.
-Nenhuma linha lê perfil, projeto ou variável do HyperEnv. Está no repositório
-porque monorepo é o lugar certo para ele nascer, não porque esteja pronto.
-
-O primeiro trabalho de verdade é decidir **como o plugin conversa com o app**:
-lendo os mesmos arquivos de perfil no disco, ou por uma interface que o app
-exponha. Essa decisão vem antes de qualquer tela.
 
 ## CI
 
-`.github/workflows/plugin-build.yml`, na raiz do repositório, compila e
-verifica o plugin quando algo em `plugins/**` muda. Os workflows que vieram do
-template continuam em `intellij/.github/workflows/` como referência e estão
-inertes — o GitHub só executa o que está na raiz.
+`.github/workflows/plugin-build.yml` runs both when anything under
+`plugins/**` changes: Gradle build + `verifyPlugin` for IntelliJ, `npm test` +
+`vsce package` for VS Code. The app's own workflow ignores `plugins/**`, so
+neither side can break the other's release.
 
-O `release.yml` do template **não** foi promovido de propósito: ele dispara em
-qualquer release do repositório, e neste monorepo quem lança release é o
-aplicativo macOS. Publicar na JetBrains Marketplace a cada versão do app não é
-o que se quer. Quando houver o que publicar, ele volta com gatilho próprio.
+The JetBrains template's `release.yml` is kept in `intellij/.github/workflows/`
+as reference and is inert: it fires on any GitHub release, and here releases
+belong to the macOS app. When the plugin has something to publish it gets a
+gate of its own.

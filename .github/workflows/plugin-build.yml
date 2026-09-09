@@ -10,17 +10,17 @@
 # o plugin na JetBrains Marketplace. Quando o plugin tiver o que publicar, ele
 # volta com gatilho próprio (tag `plugin-v*`), não no release do app.
 
-name: Plugin (IntelliJ)
+name: Plugins
 
 on:
   push:
     branches: [main]
     paths:
-      - "plugins/intellij/**"
+      - "plugins/**"
       - ".github/workflows/plugin-build.yml"
   pull_request:
     paths:
-      - "plugins/intellij/**"
+      - "plugins/**"
       - ".github/workflows/plugin-build.yml"
   workflow_dispatch:
 
@@ -28,14 +28,13 @@ concurrency:
   group: plugin-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: plugins/intellij
-
 jobs:
-  build:
-    name: Build and verify
+  intellij:
+    name: IntelliJ — build and verify
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/intellij
     steps:
       - uses: actions/checkout@v4
 
@@ -62,3 +61,34 @@ jobs:
           name: plugin-distribution
           path: plugins/intellij/build/distributions/*.zip
           if-no-files-found: warn
+
+  vscode:
+    name: VS Code — test and package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/vscode
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: plugins/vscode/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Test (plain Node, no editor)
+        run: npm test
+
+      - name: Package
+        run: npm run package
+
+      - name: Upload extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: plugins/vscode/*.vsix
+          if-no-files-found: error
