@@ -59,6 +59,9 @@ jobs:
       - name: Engine checks
         run: Tests/run-engine-checks.sh
 
+      - name: CLI checks
+        run: Tests/run-cli-checks.sh
+
   cask:
     name: Homebrew cask
     runs-on: macos-26

@@ -54,20 +54,36 @@ nonisolated enum Paths {
 
     // MARK: Display
 
+    /// The home path with no trailing slash, whatever Foundation hands back.
+    ///
+    /// `URL(fileURLWithPath:)` marks an existing directory as one, and the
+    /// modern `path(percentEncoded:)` then keeps its trailing slash —
+    /// `/Users/me/`. Dropping that many characters from `/Users/me/.zprofile`
+    /// eats the slash after the home directory as well, and the hook ends up
+    /// pointing at `${HOME}.config/hyperenv/session.zsh`: a path that never
+    /// exists, guarded by `[ -r ]`, so every new shell silently inherited
+    /// nothing. Shipped in 1.0.0 and 1.0.1.
+    private static var homePrefix: String {
+        var path = home.path(percentEncoded: false)
+        while path.count > 1, path.hasSuffix("/") { path.removeLast() }
+        return path
+    }
+
+    private static func relative(_ url: URL, to root: String) -> String? {
+        var path = url.path(percentEncoded: false)
+        while path.count > 1, path.hasSuffix("/") { path.removeLast() }
+        guard path == homePrefix || path.hasPrefix(homePrefix + "/") else { return nil }
+        return root + path.dropFirst(homePrefix.count)
+    }
+
     /// `$HOME`-relative form, for writing into shell scripts so the block stays
     /// valid if the home directory is ever remounted elsewhere.
     static func shellRelative(_ url: URL) -> String {
-        let homePath = home.path(percentEncoded: false)
-        let path = url.path(percentEncoded: false)
-        guard path.hasPrefix(homePath) else { return path }
-        return "${HOME}" + path.dropFirst(homePath.count)
+        relative(url, to: "${HOME}") ?? url.path(percentEncoded: false)
     }
 
     /// `~`-relative form for the interface.
     static func displayPath(_ url: URL) -> String {
-        let homePath = home.path(percentEncoded: false)
-        let path = url.path(percentEncoded: false)
-        guard path.hasPrefix(homePath) else { return path }
-        return "~" + path.dropFirst(homePath.count)
+        relative(url, to: "~") ?? url.path(percentEncoded: false)
     }
 }

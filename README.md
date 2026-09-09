@@ -314,19 +314,27 @@ commit.
 
 ```
 hyperenv/            the macOS app — SwiftUI, Xcode project at the root
-Tests/               four suites, run from Scripts or CI
+cli/                 the `hyperenv` command — same Core, Engine and Models, same store
+Tests/               seven suites, run from Scripts or CI
 Scripts/             build, sign, package
 plugins/             editor and IDE integrations — see plugins/README.md
   intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
+  vscode/            VS Code — TypeScript
 site/                hyperenv.falcaosl.com, served from deploy/site/
 docs/                architecture, releasing, product docs
 Casks/               the Homebrew cask, updated on release
 ```
 
-Each part builds on its own: the app from Xcode or `Scripts/`, the plugin from
-`plugins/intellij` with Gradle. CI keeps them apart too — the macOS workflow
-ignores `plugins/**`, and the plugin workflow only runs when `plugins/**`
-changes. Nothing in the plugin can break an app release, and the reverse holds.
+The plugins do not carry an engine of their own. They call the `hyperenv`
+command, which ships inside the app bundle and opens the same store and the
+same journal the window does — so whichever surface pressed Apply, there is one
+engine and one writer to `~/.zprofile`. See [docs/CLI.md](docs/CLI.md).
+
+Each part builds on its own: the app from Xcode or `Scripts/`, the command from
+`Scripts/build-cli.sh`, the plugins from their own directories. CI keeps them
+apart too — the macOS workflow ignores `plugins/**`, and the plugin workflow
+only runs when `plugins/**` changes. Nothing in a plugin can break an app
+release, and the reverse holds.
 
 ## Building from source
 
@@ -340,6 +348,8 @@ Tests/run-layout-checks.sh        # no view may outgrow the window
 Tests/run-export-checks.sh        # an export carries the variables it claims to
 Tests/run-model-checks.sh         # create / duplicate / import rules, and what a profile turns into
 Tests/run-engine-checks.sh        # the engine's whole life against an in-memory filesystem
+Tests/run-cli-checks.sh           # the hyperenv command, against a throwaway store
+Scripts/build-cli.sh              # -> build/hyperenv, universal
 
 Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
 Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
@@ -381,6 +391,7 @@ Signing and notarization are optional and entirely secret-driven — see
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose a change |
 | [CHANGELOG.md](CHANGELOG.md) | What changed, per version |
 | [Casks/hyperenv.rb](Casks/hyperenv.rb) | The Homebrew cask, updated automatically on release |
+| [docs/CLI.md](docs/CLI.md) | The `hyperenv` command: grammar, JSON shapes, what the plugins rely on |
 | [plugins/README.md](plugins/README.md) | The editor plugins, and what state they are actually in |
 
 ## License

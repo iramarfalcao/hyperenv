@@ -136,6 +136,31 @@ func freshEngine(zprofile: String? = userZprofile)
     return (fs, probe, engine)
 }
 
+// MARK: - 0. Paths: the hook must point where the file is
+
+// Foundation returns "/Users/me/" for an existing home directory. The 1.0.x
+// hook was rendered from that and pointed at "${HOME}.config/…" — a path that
+// does not exist, so every new shell silently inherited nothing.
+check("paths/home has no trailing slash in the shell form",
+      Paths.shellRelative(Paths.sessionScript) == "${HOME}/.config/hyperenv/session.zsh",
+      Paths.shellRelative(Paths.sessionScript))
+check("paths/display form keeps the slash", Paths.displayPath(Paths.zprofile) == "~/.zprofile",
+      Paths.displayPath(Paths.zprofile))
+check("paths/the home directory itself displays as ~", Paths.displayPath(Paths.home) == "~")
+// "/Users/me-other/x" shares every character of "/Users/me" and must not be
+// mistaken for something inside it.
+let homeNoSlash: String = {
+    var h = Paths.home.path(percentEncoded: false)
+    while h.count > 1, h.hasSuffix("/") { h.removeLast() }
+    return h
+}()
+check("paths/a sibling of home is not rewritten",
+      Paths.shellRelative(URL(fileURLWithPath: homeNoSlash + "-other/x")) == homeNoSlash + "-other/x",
+      Paths.shellRelative(URL(fileURLWithPath: homeNoSlash + "-other/x")))
+check("paths/the rendered hook points at a real path",
+      SessionScriptRenderer.hookBody(sessionPath: Paths.shellRelative(Paths.sessionScript))
+        .joined().contains("\"${HOME}/.config/hyperenv/session.zsh\""))
+
 // MARK: - 1. Nothing applied yet
 
 do {
@@ -169,6 +194,9 @@ check("apply/session exports the override",
 check("apply/hook is installed", await engine.hookStatus() == .installed)
 check("apply/user's lines survive above the block",
       fs.text(at: Paths.zprofile)?.hasPrefix(userZprofile) == true)
+check("apply/the block written to the dotfile points at ${HOME}/.config",
+      fs.text(at: Paths.zprofile)?.contains("${HOME}/.config/hyperenv/session.zsh") == true,
+      fs.text(at: Paths.zprofile) ?? "")
 // One write from the fixture, one from installing the hook.
 check("apply/installing the hook wrote the dotfile once", fs.writeCount(of: Paths.zprofile) == 2,
       "writes=\(fs.writeCount(of: Paths.zprofile))")

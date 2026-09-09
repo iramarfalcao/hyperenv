@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The hook never sourced the session file.** The line written to
+  `~/.zprofile` read `[ -r "${HOME}.config/hyperenv/session.zsh" ]` — no slash
+  after the home directory. Foundation reports an existing directory's path
+  with a trailing slash, and the code dropped that many characters from the
+  file's path, eating the next slash too. The guard made it a silent no-op:
+  applying reported success, and every new terminal inherited nothing. Present
+  since 1.0.0. The next apply rewrites the block correctly; nothing to do by
+  hand. Six checks now pin the rendered path.
+
 ### Changed
 
 - **Signed with a Developer ID and notarized.** The disk image opens normally;

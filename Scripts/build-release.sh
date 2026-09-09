@@ -59,6 +59,15 @@ APP="$ARCHIVE/Products/Applications/HyperEnv.app"
 mkdir -p "$EXPORT"
 cp -R "$APP" "$EXPORT/HyperEnv.app"
 
+# The command-line tool ships inside the bundle. It is what the editor plugins
+# call, and it opens the same store and journal as the app, so the plugins get
+# the app's engine rather than one of their own. Helpers/ is where macOS
+# expects a nested executable that is not a separate app.
+echo "==> bundling the hyperenv command"
+HELPERS="$EXPORT/HyperEnv.app/Contents/Helpers"
+mkdir -p "$HELPERS"
+"$REPO/Scripts/build-cli.sh" "${VERSION:-dev}" "$HELPERS/hyperenv" | sed 's/^/    /'
+
 # The archive step signs, but re-signing here is what makes the *whole* bundle
 # consistent after the copy, and it is the seam a Developer ID identity plugs
 # into without any other change.
@@ -74,6 +83,11 @@ else
 fi
 
 echo "==> signing (timestamp: ${timestamp_flag#--timestamp})"
+# Nested code first: codesign does not descend into Helpers/ on its own, and an
+# unsigned helper inside a signed bundle fails --strict verification (and the
+# notary service).
+codesign --force --options runtime "$timestamp_flag" \
+  --sign "$SIGN_IDENTITY" "$HELPERS/hyperenv"
 codesign --force --options runtime "$timestamp_flag" \
   --sign "$SIGN_IDENTITY" "$EXPORT/HyperEnv.app"
 codesign --verify --strict --verbose=2 "$EXPORT/HyperEnv.app"
@@ -93,5 +107,6 @@ fi
 
 echo "==> architectures"
 lipo -archs "$EXPORT/HyperEnv.app/Contents/MacOS/HyperEnv"
+lipo -archs "$HELPERS/hyperenv"
 
 echo "==> done: $EXPORT/HyperEnv.app"
