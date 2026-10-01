@@ -67,7 +67,9 @@ h3 { font-size: 1.2rem; letter-spacing: -.02em; }
 }
 .eyebrow::before { content: ""; width: 26px; height: 2px; flex: none; background: currentColor; }
 .lead { max-width: 62ch; margin-top: 20px; font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.7; color: var(--muted); }
-.section-head { max-width: 740px; margin-bottom: clamp(32px, 5vh, 56px); }
+.section-head { max-width: 680px; margin: 0 auto clamp(36px, 5vw, 60px); text-align: center; }
+.section-head .eyebrow { justify-content: center; }
+.section-head .lead { margin-inline: auto; }
 
 /* cabeçalho */
 .top {
@@ -87,8 +89,30 @@ h3 { font-size: 1.2rem; letter-spacing: -.02em; }
 .top nav a:hover { color: var(--fg); }
 
 /* hero */
-.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(30px, 5vw, 60px); }
-.hero-icon { width: clamp(64px, 8vw, 92px); height: auto; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 16px 36px #00000045; }
+/* Herói centralizado e empilhado: ícone, nome, frase, botão. Sem imagem ao
+   lado — as capturas vêm logo abaixo, numa fileira própria. */
+.hero { max-width: 720px; margin-inline: auto; text-align: center; }
+.hero .eyebrow { justify-content: center; }
+.hero .lead { margin-inline: auto; }
+.hero .actions { justify-content: center; }
+.hero-icon {
+  width: clamp(76px, 9vw, 104px); height: auto; margin: 0 auto 26px;
+  border-radius: 23px; box-shadow: 0 18px 40px #00000040;
+}
+
+/* Capturas em fileira, sem moldura de aparelho: a arte já é a peça. */
+.shots-section { padding-top: 0; }
+.shots {
+  display: grid; gap: clamp(14px, 2vw, 22px);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+.shots img {
+  width: 100%; height: auto; border-radius: 18px;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 44px #00000030;
+}
+.shots figure { margin: 0; }
+.shots figcaption { margin-top: 12px; font-size: .86rem; line-height: 1.5; color: var(--muted); }
 .tagline { margin-top: 10px; font-size: clamp(1.15rem, 2vw, 1.5rem); font-weight: 500; letter-spacing: -.02em; color: var(--accent); }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .btn {
@@ -158,13 +182,15 @@ h3 { font-size: 1.2rem; letter-spacing: -.02em; }
    em tela cheia, antes da seção de estado. */
 .cta { background: var(--card); }
 .cta-box {
-  display: grid; gap: clamp(22px, 3vw, 34px); justify-items: start;
+  display: grid; gap: clamp(22px, 3vw, 34px); justify-items: center; text-align: center;
   padding: clamp(30px, 5vw, 56px);
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
   border-radius: 24px;
   background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg) 70%);
 }
-.cta-box h2 { max-width: 18ch; }
+.cta-box h2 { max-width: 20ch; }
+.cta-box .eyebrow { justify-content: center; }
+.cta-actions { justify-content: center; }
 .cta-box .lead { margin-top: 0; }
 .cta-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; }
 
