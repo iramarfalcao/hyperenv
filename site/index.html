@@ -35,7 +35,7 @@
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>HyperEnv</a>
+    <a class="brand" href="/"><img class="mark" src="assets/icon-256.png" width="28" height="28" alt="">HyperEnv</a>
     <nav aria-label="Main">
       <a href="#features">Features</a>
       <a href="#state">Status</a>
@@ -50,6 +50,7 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
+          <img class="hero-icon" src="assets/icon-256.png" width="256" height="256" alt="HyperEnv app icon">
           <p class="eyebrow">macOS · Open source, MIT</p>
           <h1>HyperEnv</h1>
           <p class="tagline">Your environment, in the right place.</p>
@@ -76,8 +77,6 @@
         <article class="card reveal"><span class="card-n">02</span><h3>A risk class on each profile</h3><p>Production is marked as production. The app knows which switch deserves a second look before it happens.</p></article>
         <article class="card reveal"><span class="card-n">03</span><h3>Undo in one click</h3><p>Applying records what was there before. When the switch was wrong, the previous values come back without you reconstructing them from memory.</p></article>
         <article class="card reveal"><span class="card-n">04</span><h3>The hyperenv command</h3><p>Shipped inside the app, on the same core, store and journal. One engine, one writer in ~/.zprofile — not two tools disagreeing.</p></article>
-        <article class="card reveal"><span class="card-n">05</span><h3>IntelliJ and VS Code</h3><p>A plugin and an extension with the same five flows as the app: create a project, create a profile, create and edit variables, apply, undo.</p></article>
-        <article class="card reveal"><span class="card-n">06</span><h3>Free and open source</h3><p>MIT, with signed releases, a Homebrew cask and six verification suites running in CI.</p></article>
       </div>
     </div>
   </section>
@@ -97,14 +96,31 @@
     </div>
   </section>
 
-  <section class="section" id="state" aria-labelledby="state-title">
+
+  <section class="section cta" id="get" aria-labelledby="get-title">
     <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">Where it stands</p>
-        <h2 id="state-title">Published, and quietly waiting for users.</h2>
-        <p class="lead">The public release is on GitHub under MIT, the CI signs it, and the site installs it with one command. The honest gap is distribution.</p>
+      <div class="cta-box reveal">
+        <div>
+          <p class="eyebrow">Get HyperEnv</p>
+          <h2 id="get-title">One command, and it is yours.</h2>
+          <p class="lead">Free and open source under MIT. Homebrew if you have it, the signed disk image if you do not — and you can read the script before you run it.</p>
+        </div>
+        <div class="cta-actions"><a class="btn btn-primary" href="#install">Install it now <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases <span aria-hidden="true">↗</span></a></div>
+        <p class="cta-fine">macOS 26.5 or later. No account, no licence key, no telemetry.</p>
       </div>
+    </div>
+  </section>
+
+  <section class="section state-strip" id="state" aria-labelledby="state-title">
+    <div class="wrap">
       <div class="state reveal">
+        <div>
+          <p class="eyebrow">Where it stands</p>
+          <h2 id="state-title">Published, and quietly waiting for users.</h2>
+          <p class="lead">The public release is on GitHub under MIT, the CI signs it, and the site installs it with one command. The honest gap is distribution.</p>
+          <p class="lead">What is left is not code: a stable Homebrew Cask distribution and a first batch of external users. The app is finished and almost nobody knows it exists.</p>
+          <div class="actions"><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases <span aria-hidden="true">↗</span></a></div>
+        </div>
         <dl>
           <div><dt>Stage</dt><dd>Published</dd></div>
           <div><dt>Platform</dt><dd>macOS 26.5 or later</dd></div>
@@ -112,10 +128,6 @@
           <div><dt>Licence</dt><dd>MIT — free and open source</dd></div>
           <div><dt>Next milestone</dt><dd>Stable Homebrew Cask and first external users</dd></div>
         </dl>
-        <div>
-          <p class="lead" style="margin-top:0">What is left is not code: a stable Homebrew Cask distribution and a first batch of external users. The app is finished and almost nobody knows it exists.</p>
-          <div class="actions"><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases <span aria-hidden="true">↗</span></a></div>
-        </div>
       </div>
     </div>
   </section>
