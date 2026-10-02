@@ -83,6 +83,16 @@ install_with_homebrew() {
   if brew list --cask hyperenv >/dev/null 2>&1; then
     info "already installed — upgrading if there is anything newer"
     brew upgrade --cask hyperenv || true
+
+    # Dragging the app to the Trash does not remove Homebrew's receipt. The
+    # Caskroom entry is only a symlink into /Applications, so deleting the app
+    # leaves it dangling while `brew list` still reports the cask as installed
+    # and `brew upgrade` finds nothing newer to do. Reinstalling is the only
+    # thing that puts the app back, and it is cheap when nothing is wrong.
+    if [ ! -d "$APPDIR/$APP_NAME" ]; then
+      info "the receipt is here but $APP_NAME is not — reinstalling"
+      brew reinstall --cask hyperenv
+    fi
   else
     brew install --cask hyperenv
   fi
@@ -148,7 +158,9 @@ fi
 app="$APPDIR/$APP_NAME"
 [ -d "$app" ] || app="$(brew --prefix 2>/dev/null)/Caskroom/hyperenv/*/$APP_NAME"
 app="$(ls -d $app 2>/dev/null | head -1 || true)"
-[ -n "$app" ] && [ -d "$app" ] || die "installed, but $APP_NAME was not found in $APPDIR"
+[ -n "$app" ] && [ -d "$app" ] || die "installed, but $APP_NAME was not found in $APPDIR.
+    If you removed the app by hand, Homebrew still holds the receipt. Run:
+        brew reinstall --cask hyperenv"
 
 step "Clearing the quarantine attribute"
 info "releases are signed ad-hoc rather than with a paid Apple Developer ID,"
