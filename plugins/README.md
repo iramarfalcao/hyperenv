@@ -6,7 +6,7 @@ matters — **the engine**.
 
 | Folder | Target | Store | Build |
 |---|---|---|---|
-| `intellij/` | IntelliJ family — IDEA, PyCharm, WebStorm, GoLand, RustRover, CLion | JetBrains Marketplace | Gradle, Kotlin |
+| `intellij/` | IntelliJ family — IDEA, PyCharm, WebStorm, GoLand, RustRover, CLion | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/34830-hyperenv) (vendor `falcaosl`) | Gradle, Kotlin |
 | `vscode/` | VS Code, plus Cursor, VSCodium, Windsurf (Open VSX) | Visual Studio Marketplace, Open VSX | npm, TypeScript |
 
 ## One engine
