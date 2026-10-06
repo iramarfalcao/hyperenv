@@ -24,6 +24,7 @@ site/
     ├── apple-touch-icon.png    180px
     ├── favicon-32.png
     ├── app-macos.webp          the macOS app, light
+    ├── app-macos-dark.webp     the macOS app, dark (shown in dark mode)
     ├── app-desktop.webp        the Windows/Linux app, dark
     ├── plugin-vscode.webp      the VS Code extension
     ├── plugin-intellij.webp    the JetBrains plugin
