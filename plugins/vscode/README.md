@@ -3,6 +3,12 @@
 Apply a profile of environment variables to every new terminal, and undo it,
 from inside VS Code.
 
+![Profiles in the HyperEnv view, secrets masked](https://raw.githubusercontent.com/iramarfalcao/hyperenv/main/docs/store/vscode-1-profiles.png)
+
+![web-staging applied, with the reload command](https://raw.githubusercontent.com/iramarfalcao/hyperenv/main/docs/store/vscode-2-applied.png)
+
+![Dark theme, secrets revealed](https://raw.githubusercontent.com/iramarfalcao/hyperenv/main/docs/store/vscode-3-dark-revealed.png)
+
 A **HyperEnv** view in the activity bar lists your profiles. Each one expands to
 its variables; secrets are masked until you reveal them, and switched-off
 variables say so. From the view you can:
