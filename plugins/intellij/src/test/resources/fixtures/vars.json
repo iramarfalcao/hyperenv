@@ -1,0 +1,1 @@
+{"data":[{"isEnabled":true,"isSecret":false,"key":"API_URL","value":"https://api.test/v1?a=b"},{"isEnabled":true,"isSecret":true,"key":"TOKEN","value":"s3cret"},{"isEnabled":false,"isSecret":false,"key":"DEBUG","value":"1"}],"ok":true}

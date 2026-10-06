@@ -1,0 +1,1 @@
+{"data":{"drift":[],"hook":"notInstalled","pendingRecoveries":0,"reloadCommand":"source ~/.config/hyperenv/session.zsh","sessionScript":"~/.config/hyperenv/session.zsh","shell":"zsh","startupFile":"~/.zprofile","store":"~/.config/hyperenv/profiles.json","undoCommand":"source ~/.config/hyperenv/unsession.zsh","version":"2.0.0-alpha.3"},"ok":true}

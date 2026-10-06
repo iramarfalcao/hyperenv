@@ -1,83 +1,442 @@
 {
   "name": "hyperenv",
   "displayName": "HyperEnv",
-  "description": "Switch the environment variables your terminals inherit — per project, per environment — from inside VS Code.",
-  "version": "0.1.0",
+  "description": "Apply and undo a profile of environment variables for every new terminal, from inside VS Code. Drives HyperEnv 2's hyperenv command.",
+  "version": "2.0.0-alpha.1",
   "publisher": "falcaosl",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/iramarfalcao/hyperenv", "directory": "plugins/vscode" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iramarfalcao/hyperenv",
+    "directory": "plugins/vscode"
+  },
   "homepage": "https://hyperenv.falcaosl.com",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "keywords": ["environment", "env", "dotenv", "profiles", "macos", "zsh"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "environment",
+    "env",
+    "dotenv",
+    "profiles",
+    "terminal",
+    "variables"
+  ],
   "main": "./out/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
-        { "id": "hyperenv", "title": "HyperEnv", "icon": "$(symbol-variable)" }
+        {
+          "id": "hyperenv",
+          "title": "HyperEnv",
+          "icon": "media/hyperenv.svg"
+        }
       ]
     },
     "views": {
       "hyperenv": [
-        { "id": "hyperenv.tree", "name": "Environments", "contextualTitle": "HyperEnv" }
+        {
+          "id": "hyperenv.tree",
+          "name": "Profiles",
+          "contextualTitle": "HyperEnv",
+          "icon": "media/hyperenv.svg"
+        }
       ]
     },
     "viewsWelcome": [
       {
         "view": "hyperenv.tree",
-        "contents": "No projects yet.\n[New Project](command:hyperenv.newProject)\n\nHyperEnv needs the HyperEnv app installed: the extension drives the `hyperenv` command that ships inside it. [Settings](command:workbench.action.openSettings?%22hyperenv%22)",
-        "when": "!hyperenv.hasProjects"
+        "contents": "The hyperenv command was not found, or it is older than 2.0.\n\nmacOS / Linux:\n`curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh`\n\nWindows (PowerShell):\n`irm https://hyperenv.falcaosl.com/install.ps1 | iex`\n\n[Open Settings](command:workbench.action.openSettings?%22hyperenv.cliPath%22)\n[Try Again](command:hyperenv.refresh)",
+        "when": "hyperenv.missing"
+      },
+      {
+        "view": "hyperenv.tree",
+        "contents": "No profiles yet. A profile is a set of environment variables that every new terminal starts with once you apply it.\n[New Profile](command:hyperenv.newProfile)",
+        "when": "hyperenv.ready && !hyperenv.missing && !hyperenv.hasProfiles"
       }
     ],
     "commands": [
-      { "command": "hyperenv.refresh", "title": "Refresh", "category": "HyperEnv", "icon": "$(refresh)" },
-      { "command": "hyperenv.newProject", "title": "New Project", "category": "HyperEnv", "icon": "$(add)" },
-      { "command": "hyperenv.newProfile", "title": "New Profile", "category": "HyperEnv", "icon": "$(new-folder)" },
-      { "command": "hyperenv.newVariable", "title": "Add Variable", "category": "HyperEnv", "icon": "$(symbol-variable)" },
-      { "command": "hyperenv.editVariable", "title": "Edit Variable", "category": "HyperEnv", "icon": "$(edit)" },
-      { "command": "hyperenv.toggleVariable", "title": "Switch On/Off", "category": "HyperEnv", "icon": "$(circle-slash)" },
-      { "command": "hyperenv.duplicateProfile", "title": "Duplicate Profile", "category": "HyperEnv", "icon": "$(copy)" },
-      { "command": "hyperenv.delete", "title": "Delete", "category": "HyperEnv", "icon": "$(trash)" },
-      { "command": "hyperenv.apply", "title": "Apply", "category": "HyperEnv", "icon": "$(play)" },
-      { "command": "hyperenv.unapply", "title": "Revert", "category": "HyperEnv", "icon": "$(debug-stop)" },
-      { "command": "hyperenv.copyReload", "title": "Copy Reload Command", "category": "HyperEnv", "icon": "$(clippy)" },
-      { "command": "hyperenv.installHook", "title": "Install Shell Hook", "category": "HyperEnv", "icon": "$(gear)" }
+      {
+        "command": "hyperenv.refresh",
+        "title": "Refresh",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.focus",
+        "title": "Show Profiles",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.newProfile",
+        "title": "New Profile",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/add.svg",
+          "dark": "media/icons/dark/add.svg"
+        }
+      },
+      {
+        "command": "hyperenv.renameProfile",
+        "title": "Rename Profile…",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.duplicateProfile",
+        "title": "Duplicate Profile…",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.deleteProfile",
+        "title": "Delete Profile…",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/delete.svg",
+          "dark": "media/icons/dark/delete.svg"
+        }
+      },
+      {
+        "command": "hyperenv.addVariable",
+        "title": "Add Variable",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/add.svg",
+          "dark": "media/icons/dark/add.svg"
+        }
+      },
+      {
+        "command": "hyperenv.editVariable",
+        "title": "Edit Value",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.deleteVariable",
+        "title": "Delete Variable",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/delete.svg",
+          "dark": "media/icons/dark/delete.svg"
+        }
+      },
+      {
+        "command": "hyperenv.enableVariable",
+        "title": "Switch On",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/confirm.svg",
+          "dark": "media/icons/dark/confirm.svg"
+        }
+      },
+      {
+        "command": "hyperenv.disableVariable",
+        "title": "Switch Off",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/close.svg",
+          "dark": "media/icons/dark/close.svg"
+        }
+      },
+      {
+        "command": "hyperenv.markSecret",
+        "title": "Mark as Secret",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/secret.svg",
+          "dark": "media/icons/dark/secret.svg"
+        }
+      },
+      {
+        "command": "hyperenv.unmarkSecret",
+        "title": "Unmark Secret",
+        "category": "HyperEnv"
+      },
+      {
+        "command": "hyperenv.copyValue",
+        "title": "Copy Value",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/copy.svg",
+          "dark": "media/icons/dark/copy.svg"
+        }
+      },
+      {
+        "command": "hyperenv.revealVariable",
+        "title": "Reveal Value",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/reveal.svg",
+          "dark": "media/icons/dark/reveal.svg"
+        }
+      },
+      {
+        "command": "hyperenv.concealVariable",
+        "title": "Hide Value",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/conceal.svg",
+          "dark": "media/icons/dark/conceal.svg"
+        }
+      },
+      {
+        "command": "hyperenv.revealSecrets",
+        "title": "Reveal Secrets",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/reveal.svg",
+          "dark": "media/icons/dark/reveal.svg"
+        }
+      },
+      {
+        "command": "hyperenv.concealSecrets",
+        "title": "Hide Secrets",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/conceal.svg",
+          "dark": "media/icons/dark/conceal.svg"
+        }
+      },
+      {
+        "command": "hyperenv.apply",
+        "title": "Apply Profile",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/apply.svg",
+          "dark": "media/icons/dark/apply.svg"
+        }
+      },
+      {
+        "command": "hyperenv.unapply",
+        "title": "Undo",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/undo.svg",
+          "dark": "media/icons/dark/undo.svg"
+        }
+      },
+      {
+        "command": "hyperenv.copyReload",
+        "title": "Copy Reload Command",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/terminal.svg",
+          "dark": "media/icons/dark/terminal.svg"
+        }
+      },
+      {
+        "command": "hyperenv.import",
+        "title": "Import .env…",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/import.svg",
+          "dark": "media/icons/dark/import.svg"
+        }
+      },
+      {
+        "command": "hyperenv.export",
+        "title": "Export as .env…",
+        "category": "HyperEnv",
+        "icon": {
+          "light": "media/icons/light/export.svg",
+          "dark": "media/icons/dark/export.svg"
+        }
+      }
     ],
     "menus": {
       "view/title": [
-        { "command": "hyperenv.newProject", "when": "view == hyperenv.tree", "group": "navigation@1" },
-        { "command": "hyperenv.unapply", "when": "view == hyperenv.tree && hyperenv.applied", "group": "navigation@2" },
-        { "command": "hyperenv.refresh", "when": "view == hyperenv.tree", "group": "navigation@3" },
-        { "command": "hyperenv.copyReload", "when": "view == hyperenv.tree && hyperenv.applied", "group": "1_env" },
-        { "command": "hyperenv.installHook", "when": "view == hyperenv.tree && !hyperenv.hookInstalled", "group": "1_env" }
+        {
+          "command": "hyperenv.newProfile",
+          "when": "view == hyperenv.tree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "hyperenv.unapply",
+          "when": "view == hyperenv.tree && hyperenv.applied",
+          "group": "navigation@2"
+        },
+        {
+          "command": "hyperenv.revealSecrets",
+          "when": "view == hyperenv.tree && !hyperenv.secretsShown",
+          "group": "navigation@3"
+        },
+        {
+          "command": "hyperenv.concealSecrets",
+          "when": "view == hyperenv.tree && hyperenv.secretsShown",
+          "group": "navigation@3"
+        },
+        {
+          "command": "hyperenv.refresh",
+          "when": "view == hyperenv.tree",
+          "group": "1_view@1"
+        },
+        {
+          "command": "hyperenv.copyReload",
+          "when": "view == hyperenv.tree && hyperenv.applied",
+          "group": "1_view@2"
+        },
+        {
+          "command": "hyperenv.import",
+          "when": "view == hyperenv.tree",
+          "group": "2_file@1"
+        },
+        {
+          "command": "hyperenv.export",
+          "when": "view == hyperenv.tree",
+          "group": "2_file@2"
+        }
       ],
       "view/item/context": [
-        { "command": "hyperenv.newProfile", "when": "view == hyperenv.tree && viewItem =~ /^project/", "group": "inline@1" },
-        { "command": "hyperenv.newProfile", "when": "view == hyperenv.tree && viewItem =~ /^project/", "group": "1_new" },
-        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem == project", "group": "3_delete" },
-
-        { "command": "hyperenv.apply", "when": "view == hyperenv.tree && viewItem == profile", "group": "inline@1" },
-        { "command": "hyperenv.newVariable", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "inline@2" },
-        { "command": "hyperenv.apply", "when": "view == hyperenv.tree && viewItem == profile", "group": "0_apply" },
-        { "command": "hyperenv.newVariable", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "1_new" },
-        { "command": "hyperenv.duplicateProfile", "when": "view == hyperenv.tree && viewItem =~ /^profile/", "group": "2_edit" },
-        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem == profile", "group": "3_delete" },
-
-        { "command": "hyperenv.editVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "inline@1" },
-        { "command": "hyperenv.toggleVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "inline@2" },
-        { "command": "hyperenv.editVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "2_edit" },
-        { "command": "hyperenv.toggleVariable", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "2_edit" },
-        { "command": "hyperenv.delete", "when": "view == hyperenv.tree && viewItem =~ /^variable/", "group": "3_delete" }
+        {
+          "command": "hyperenv.apply",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "inline@1"
+        },
+        {
+          "command": "hyperenv.unapply",
+          "when": "view == hyperenv.tree && viewItem == profile-applied",
+          "group": "inline@2"
+        },
+        {
+          "command": "hyperenv.addVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "inline@3"
+        },
+        {
+          "command": "hyperenv.apply",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "0_apply@1"
+        },
+        {
+          "command": "hyperenv.unapply",
+          "when": "view == hyperenv.tree && viewItem == profile-applied",
+          "group": "0_apply@2"
+        },
+        {
+          "command": "hyperenv.addVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "1_edit@1"
+        },
+        {
+          "command": "hyperenv.renameProfile",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "hyperenv.duplicateProfile",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "1_edit@3"
+        },
+        {
+          "command": "hyperenv.import",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "2_file@1"
+        },
+        {
+          "command": "hyperenv.export",
+          "when": "view == hyperenv.tree && viewItem =~ /^profile/",
+          "group": "2_file@2"
+        },
+        {
+          "command": "hyperenv.deleteProfile",
+          "when": "view == hyperenv.tree && viewItem == profile",
+          "group": "9_delete"
+        },
+        {
+          "command": "hyperenv.revealVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /-hidden$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "hyperenv.concealVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /-shown$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "hyperenv.copyValue",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable/",
+          "group": "inline@2"
+        },
+        {
+          "command": "hyperenv.copyValue",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable/",
+          "group": "0_copy"
+        },
+        {
+          "command": "hyperenv.editVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable/",
+          "group": "1_edit@1"
+        },
+        {
+          "command": "hyperenv.disableVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable-\\w+-on/",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "hyperenv.enableVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable-\\w+-off/",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "hyperenv.markSecret",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable-plain/",
+          "group": "1_edit@3"
+        },
+        {
+          "command": "hyperenv.unmarkSecret",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable-secret/",
+          "group": "1_edit@3"
+        },
+        {
+          "command": "hyperenv.deleteVariable",
+          "when": "view == hyperenv.tree && viewItem =~ /^variable/",
+          "group": "9_delete"
+        }
       ],
       "commandPalette": [
-        { "command": "hyperenv.editVariable", "when": "false" },
-        { "command": "hyperenv.toggleVariable", "when": "false" },
-        { "command": "hyperenv.duplicateProfile", "when": "false" },
-        { "command": "hyperenv.delete", "when": "false" },
-        { "command": "hyperenv.newProfile", "when": "false" },
-        { "command": "hyperenv.newVariable", "when": "false" },
-        { "command": "hyperenv.apply", "when": "false" }
+        {
+          "command": "hyperenv.editVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.deleteVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.enableVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.disableVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.markSecret",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.unmarkSecret",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.copyValue",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.revealVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.concealVariable",
+          "when": "false"
+        },
+        {
+          "command": "hyperenv.unapply",
+          "when": "hyperenv.applied"
+        }
       ]
     },
     "configuration": {
@@ -86,7 +445,8 @@
         "hyperenv.cliPath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path to the `hyperenv` command. Leave empty to use the one on your `PATH` or inside `HyperEnv.app`."
+          "scope": "machine",
+          "markdownDescription": "Path to HyperEnv 2's `hyperenv` command. Leave empty to search: inside `HyperEnv.app` (macOS), then `PATH`, then `~/.local/bin` (macOS/Linux) or `%LOCALAPPDATA%\\Programs\\hyperenv` (Windows)."
         }
       }
     }

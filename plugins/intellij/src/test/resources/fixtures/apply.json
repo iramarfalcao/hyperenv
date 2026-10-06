@@ -1,0 +1,1 @@
+{"data":{"applied":"dev","captured":["API_URL","TOKEN"],"exported":["API_URL","TOKEN"],"reloadCommand":"source ~/.config/hyperenv/session.zsh","restored":[],"undoCommand":"source ~/.config/hyperenv/unsession.zsh"},"ok":true}

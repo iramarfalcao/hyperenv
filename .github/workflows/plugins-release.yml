@@ -1,0 +1,185 @@
+# Publishes the editor plugins to their stores on a `plugins-v*` tag.
+#
+#   VS Code extension → Visual Studio Marketplace (VS Code)
+#                     → Open VSX (Cursor, VSCodium, Windsurf, Gitpod)
+#   IntelliJ plugin   → JetBrains Marketplace (IDEA, PyCharm, WebStorm, …)
+#
+# The plugins version separately from the app: a plugin fix ships without an
+# app release. The tag must match both manifests (plugins/vscode/package.json
+# and plugins/intellij/gradle.properties), and the job refuses otherwise.
+#
+# A version with a pre-release suffix (2.0.0-alpha.1) goes to each store's
+# pre-release channel — VS Code's "pre-release", JetBrains' channel named
+# after the suffix — so only people who opted in get it.
+#
+# Each store is published only when its secret exists; without it the step is
+# skipped, and the artifacts still land on the GitHub release. Secrets:
+#   VSCE_PAT                 Visual Studio Marketplace (Azure DevOps token)
+#   OVSX_PAT                 Open VSX
+#   JETBRAINS_PUBLISH_TOKEN  JetBrains Marketplace
+#   JETBRAINS_CERTIFICATE_CHAIN, JETBRAINS_PRIVATE_KEY,
+#   JETBRAINS_PRIVATE_KEY_PASSWORD   plugin signing (JetBrains requires it)
+
+name: Plugins release
+
+on:
+  push:
+    tags: ["plugins-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and publish (e.g. plugins-v2.0.0-alpha.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  check:
+    name: Versions match the tag
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          set -euo pipefail
+          version="${TAG#plugins-v}"
+          vscode="$(node -p "require('./plugins/vscode/package.json').version")"
+          intellij="$(sed -n 's/^pluginVersion *= *//p' plugins/intellij/gradle.properties)"
+          echo "tag $version · vscode $vscode · intellij $intellij"
+          [ "$vscode" = "$version" ] || { echo "::error::package.json says $vscode, tag says $version"; exit 1; }
+          [ "$intellij" = "$version" ] || { echo "::error::gradle.properties says $intellij, tag says $version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$version" in *-*) echo "prerelease=true" ;; *) echo "prerelease=false" ;; esac >> "$GITHUB_OUTPUT"
+
+  vscode:
+    needs: check
+    name: VS Code extension
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: plugins/vscode
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: plugins/vscode/package-lock.json
+
+      # The integration test drives the real command against a throwaway home.
+      - name: Build the hyperenv command
+        working-directory: .
+        run: |
+          rustup toolchain install stable --profile minimal && rustup default stable
+          cargo build --release --locked -p hyperenv-cli
+
+      - name: Install, build and test
+        env:
+          HYPERENV_CLI: ${{ github.workspace }}/target/release/hyperenv
+        run: |
+          npm ci
+          npm run compile
+          npm test
+
+      - name: Package
+        run: npx --yes @vscode/vsce package --no-dependencies ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }} -o hyperenv.vsix
+
+      - name: Publish to the Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        if: env.VSCE_PAT != ''
+        run: npx --yes @vscode/vsce publish --packagePath hyperenv.vsix ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }}
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        if: env.OVSX_PAT != ''
+        run: npx --yes ovsx publish hyperenv.vsix ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }} -p "$OVSX_PAT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode
+          path: plugins/vscode/hyperenv.vsix
+
+  intellij:
+    needs: check
+    name: IntelliJ plugin
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: plugins/intellij
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: plugins/intellij
+
+      - name: Build the hyperenv command
+        working-directory: .
+        run: |
+          rustup toolchain install stable --profile minimal && rustup default stable
+          cargo build --release --locked -p hyperenv-cli
+
+      - name: Build, test and verify
+        env:
+          HYPERENV_CLI: ${{ github.workspace }}/target/release/hyperenv
+        run: ./gradlew build verifyPlugin --console=plain
+
+      # Signs and uploads in one step; the channel comes from the version's
+      # pre-release suffix (build.gradle.kts), "default" for a plain version.
+      - name: Publish to the JetBrains Marketplace
+        env:
+          PUBLISH_TOKEN: ${{ secrets.JETBRAINS_PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
+        if: env.PUBLISH_TOKEN != '' && env.PRIVATE_KEY != ''
+        run: ./gradlew publishPlugin --console=plain
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: intellij
+          path: plugins/intellij/build/distributions/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: [check, vscode, intellij]
+    name: GitHub release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.check.outputs.version }}"
+          mv dist/vscode/hyperenv.vsix "dist/hyperenv-vscode-$version.vsix"
+          for z in dist/intellij/*.zip; do mv "$z" "dist/hyperenv-intellij-$version.zip"; done
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            # Never "latest": the app's installer downloads releases/latest.
+            gh release create "$TAG" --latest=false \
+              ${{ needs.check.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+              --title "HyperEnv plugins $version" \
+              --notes "Editor plugins for HyperEnv 2. Also published to the Visual Studio Marketplace, Open VSX and the JetBrains Marketplace (pre-release channel for pre-release versions)."
+          gh release upload "$TAG" dist/*.vsix dist/*.zip --clobber

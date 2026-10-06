@@ -1,62 +1,85 @@
-// The client for the `hyperenv` command. No `vscode` import on purpose: this
-// file is unit-tested with plain Node, and the extension wires it up.
+// The client for HyperEnv 2's `hyperenv` command. No `vscode` import on
+// purpose: this file is unit-tested with plain Node, and the extension wires it
+// up.
 //
-// The command opens the same store and drives the same engine as the HyperEnv
-// app, so this extension never carries an engine of its own. Shapes mirror
-// docs/CLI.md in the repository root.
+// The command drives the same engine and store as the desktop apps, so this
+// extension never carries an engine of its own. Shapes mirror
+// crates/cli/README.md in the repository.
 
 import { execFile } from "node:child_process";
 import { accessSync, constants } from "node:fs";
-import { delimiter, join } from "node:path";
+import { posix, win32 } from "node:path";
 
-export interface EnvProfile {
+// ------------------------------------------------------------------- model
+
+export interface Profile {
   id: string;
   name: string;
-  kind: string;
-  isDefault: boolean;
-  canBeApplied: boolean;
-  isApplied: boolean;
   variableCount: number;
   enabledCount: number;
+  isApplied: boolean;
+  updatedAt: string;
 }
 
-export interface EnvProject {
-  id: string;
-  name: string;
-  isDefault: boolean;
-  profiles: EnvProfile[];
-}
-
-export interface EnvVariable {
-  id: string;
+export interface Variable {
   key: string;
   value: string;
-  isEnabled: boolean;
   isSecret: boolean;
-  note?: string;
-  isValid: boolean;
+  isEnabled: boolean;
 }
 
 export interface Applied {
-  projectId: string;
-  projectName: string;
   profileId: string;
   profileName: string;
+  appliedAt: string;
+  exportedKeys: string[];
+  exports: Record<string, string>;
+}
+
+export interface Drift {
+  kind: string;
+  key?: string;
+  expected?: string;
+  actual?: string;
 }
 
 export interface Status {
   version: string;
-  applied?: Applied;
-  hook: "installed" | "notInstalled" | "malformed";
+  shell: string;
+  hook: string;
   hookDetail?: string;
-  drift: string[];
+  applied?: Applied;
+  drift: Drift[];
+  pendingRecoveries: number;
   reloadCommand: string;
-  dotfile: string;
+  undoCommand: string;
+  sessionScript: string;
+  startupFile?: string;
+  store: string;
+}
+
+export interface Restored {
+  key: string;
+  to: string | null;
 }
 
 export interface ApplyResult {
-  exported: number;
+  applied: string;
+  exported: string[];
+  captured: string[];
+  restored: Restored[];
   reloadCommand: string;
+  undoCommand: string;
+}
+
+export interface UnapplyResult {
+  restored: Restored[];
+  undoCommand: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  diagnostics: { line: number; message: string; severity: string }[];
 }
 
 export class CliError extends Error {}
@@ -77,49 +100,225 @@ export function parseEnvelope(text: string): unknown {
   return envelope.data ?? {};
 }
 
+// Light shape checks: if the command and the extension ever disagree (an old
+// 1.x command, say), the user gets a clear message instead of `undefined` deep
+// inside the tree.
+function obj(value: unknown, what: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new CliError(`unexpected ${what} from the hyperenv command`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function str(o: Record<string, unknown>, key: string, what: string): string {
+  if (typeof o[key] !== "string") throw new CliError(`unexpected ${what} from the hyperenv command (no ${key})`);
+  return o[key] as string;
+}
+
+function arr(value: unknown, what: string): unknown[] {
+  if (!Array.isArray(value)) throw new CliError(`unexpected ${what} from the hyperenv command`);
+  return value;
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String) : [];
+}
+
+function restored(value: unknown): Restored[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((r) => {
+    const o = obj(r, "restored variable");
+    return { key: String(o.key), to: typeof o.to === "string" ? o.to : null };
+  });
+}
+
+export function parseProfiles(data: unknown): Profile[] {
+  return arr(data, "profile list").map((item) => {
+    const o = obj(item, "profile");
+    return {
+      id: str(o, "id", "profile"),
+      name: str(o, "name", "profile"),
+      variableCount: Number(o.variableCount ?? 0),
+      enabledCount: Number(o.enabledCount ?? 0),
+      isApplied: o.isApplied === true,
+      updatedAt: String(o.updatedAt ?? ""),
+    };
+  });
+}
+
+export function parseVariables(data: unknown): Variable[] {
+  return arr(data, "variable list").map((item) => {
+    const o = obj(item, "variable");
+    return {
+      key: str(o, "key", "variable"),
+      value: str(o, "value", "variable"),
+      isSecret: o.isSecret === true,
+      isEnabled: o.isEnabled !== false,
+    };
+  });
+}
+
+export function parseStatus(data: unknown): Status {
+  const o = obj(data, "status");
+  let applied: Applied | undefined;
+  // Absent, not null, means nothing is applied.
+  if (o.applied !== undefined) {
+    const a = obj(o.applied, "applied profile");
+    const exports: Record<string, string> = {};
+    if (a.exports && typeof a.exports === "object") {
+      for (const [k, v] of Object.entries(a.exports as Record<string, unknown>)) exports[k] = String(v);
+    }
+    applied = {
+      profileId: str(a, "profileId", "applied profile"),
+      profileName: str(a, "profileName", "applied profile"),
+      appliedAt: String(a.appliedAt ?? ""),
+      exportedKeys: strings(a.exportedKeys),
+      exports,
+    };
+  }
+  const drift = Array.isArray(o.drift)
+    ? o.drift.map((d) => {
+        const x = obj(d, "drift item");
+        return {
+          kind: String(x.kind),
+          key: typeof x.key === "string" ? x.key : undefined,
+          expected: typeof x.expected === "string" ? x.expected : undefined,
+          actual: typeof x.actual === "string" ? x.actual : undefined,
+        };
+      })
+    : [];
+  return {
+    version: str(o, "version", "status"),
+    shell: String(o.shell ?? ""),
+    hook: String(o.hook ?? ""),
+    hookDetail: typeof o.hookDetail === "string" ? o.hookDetail : undefined,
+    applied,
+    drift,
+    pendingRecoveries: Number(o.pendingRecoveries ?? 0),
+    reloadCommand: str(o, "reloadCommand", "status"),
+    undoCommand: str(o, "undoCommand", "status"),
+    sessionScript: String(o.sessionScript ?? ""),
+    startupFile: typeof o.startupFile === "string" ? o.startupFile : undefined,
+    store: String(o.store ?? ""),
+  };
+}
+
+export function parseApply(data: unknown): ApplyResult {
+  const o = obj(data, "apply result");
+  return {
+    applied: str(o, "applied", "apply result"),
+    exported: strings(o.exported),
+    captured: strings(o.captured),
+    restored: restored(o.restored),
+    reloadCommand: str(o, "reloadCommand", "apply result"),
+    undoCommand: str(o, "undoCommand", "apply result"),
+  };
+}
+
+export function parseUnapply(data: unknown): UnapplyResult {
+  const o = obj(data, "undo result");
+  return { restored: restored(o.restored), undoCommand: String(o.undoCommand ?? "") };
+}
+
+export function parseImport(data: unknown): ImportResult {
+  const o = obj(data, "import result");
+  const diagnostics = Array.isArray(o.diagnostics)
+    ? o.diagnostics.map((d) => {
+        const x = obj(d, "import diagnostic");
+        return { line: Number(x.line ?? 0), message: String(x.message ?? ""), severity: String(x.severity ?? "") };
+      })
+    : [];
+  return { imported: Number(o.imported ?? 0), diagnostics };
+}
+
+// ----------------------------------------------------------------- version
+
+/** The extension speaks the 2.x grammar only; 1.x had projects and kinds. */
+export const MIN_MAJOR = 2;
+
+/** "2.0.0-alpha.3" -> 2; anything unreadable -> undefined. */
+export function majorVersion(version: string): number | undefined {
+  const match = /^v?(\d+)(\.|$)/.exec(version.trim());
+  return match ? Number(match[1]) : undefined;
+}
+
+export function isSupportedVersion(version: string): boolean {
+  const major = majorVersion(version);
+  return major !== undefined && major >= MIN_MAJOR;
+}
+
 // ------------------------------------------------------------------ locate
 
-/** Where the command may be, after the setting and PATH: inside the app. */
-export function bundledCandidates(home: string): string[] {
+export const INSTALL_UNIX = "curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh";
+export const INSTALL_WINDOWS = "irm https://hyperenv.falcaosl.com/install.ps1 | iex";
+
+export interface LocateEnv {
+  platform: NodeJS.Platform;
+  home: string;
+  path?: string;
+  localAppData?: string;
+}
+
+/** The copy inside the macOS app, looked at before PATH: it is the one the app itself uses. */
+export function appCandidates(env: LocateEnv): string[] {
+  if (env.platform !== "darwin") return [];
   return [
     "/Applications/HyperEnv.app/Contents/Helpers/hyperenv",
-    join(home, "Applications", "HyperEnv.app", "Contents", "Helpers", "hyperenv"),
+    posix.join(env.home, "Applications", "HyperEnv.app", "Contents", "Helpers", "hyperenv"),
   ];
 }
 
-export function isExecutable(path: string): boolean {
+/** Where the install scripts put the command; a fresh install may not be on PATH yet. */
+export function installerCandidates(env: LocateEnv): string[] {
+  if (env.platform === "win32") {
+    return env.localAppData ? [win32.join(env.localAppData, "Programs", "hyperenv", "hyperenv.exe")] : [];
+  }
+  return [posix.join(env.home, ".local", "bin", "hyperenv")];
+}
+
+export function pathCandidates(env: LocateEnv): string[] {
+  const windows = env.platform === "win32";
+  const path = windows ? win32 : posix;
+  const name = windows ? "hyperenv.exe" : "hyperenv";
+  return (env.path ?? "")
+    .split(windows ? ";" : ":")
+    .filter(Boolean)
+    .map((dir) => path.join(dir, name));
+}
+
+export function isExecutable(file: string): boolean {
   try {
-    accessSync(path, constants.X_OK);
+    // Windows has no execute bit; existing is enough there.
+    accessSync(file, process.platform === "win32" ? constants.F_OK : constants.X_OK);
     return true;
   } catch {
     return false;
   }
 }
 
-/** Settings first, then PATH, then the bundled copy. Pure, for the tests. */
+/** Setting, then the macOS app, then PATH, then the installers' places. Pure, for the tests. */
 export function locate(
   override: string | undefined,
-  pathEnv: string | undefined,
-  candidates: string[],
-  exists: (path: string) => boolean = isExecutable,
+  env: LocateEnv,
+  exists: (file: string) => boolean = isExecutable,
 ): string | undefined {
   const explicit = override?.trim();
   if (explicit && exists(explicit)) return explicit;
-  for (const dir of (pathEnv ?? "").split(delimiter).filter(Boolean)) {
-    const candidate = join(dir, "hyperenv");
-    if (exists(candidate)) return candidate;
-  }
-  return candidates.find(exists);
+  return [...appCandidates(env), ...pathCandidates(env), ...installerCandidates(env)].find(exists);
 }
 
 // ------------------------------------------------------------------- client
 
 export type Runner = (executable: string, args: string[]) => Promise<string>;
 
-/** Runs the real binary. stdout carries the envelope even on failure. */
+/**
+ * Runs the real binary, always asynchronously: apply, unapply and status start
+ * the user's shell, and the editor must never wait on that. stdout carries the
+ * envelope even on failure (exit 1).
+ */
 export const execRunner: Runner = (executable, args) =>
   new Promise((resolve, reject) => {
-    execFile(executable, args, { timeout: 30_000, maxBuffer: 8 * 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(executable, args, { timeout: 60_000, maxBuffer: 16 * 1024 * 1024, windowsHide: true }, (error, stdout, stderr) => {
       const out = String(stdout).trim();
       if (out) return resolve(out);
       if (error) return reject(new CliError(String(stderr).trim() || error.message));
@@ -128,85 +327,110 @@ export const execRunner: Runner = (executable, args) =>
   });
 
 export class HyperEnvCli {
+  /** `prefix` goes before `--json`; the tests pass `--home <dir>` to stay off the real home. */
   constructor(
-    private readonly executable: string,
+    readonly executable: string,
     private readonly runner: Runner = execRunner,
+    private readonly prefix: string[] = [],
   ) {}
 
   private async run(...args: string[]): Promise<unknown> {
-    return parseEnvelope(await this.runner(this.executable, ["--json", ...args]));
+    return parseEnvelope(await this.runner(this.executable, [...this.prefix, "--json", ...args]));
   }
 
-  status(): Promise<Status> {
-    return this.run("status") as Promise<Status>;
+  private async message(...args: string[]): Promise<string> {
+    const data = (await this.run(...args)) as { message?: unknown };
+    return typeof data?.message === "string" ? data.message : "";
   }
 
-  projects(): Promise<EnvProject[]> {
-    return this.run("projects") as Promise<EnvProject[]>;
+  async version(): Promise<string> {
+    return str(obj(await this.run("version"), "version"), "version", "version");
   }
 
-  variables(project: string, profile: string): Promise<EnvVariable[]> {
-    return this.run("vars", "--project", project, "--profile", profile) as Promise<EnvVariable[]>;
+  async status(options: { drift?: boolean } = {}): Promise<Status> {
+    return parseStatus(await this.run("status", ...(options.drift === false ? ["--no-drift"] : [])));
   }
 
-  createProject(name: string): Promise<EnvProject> {
-    return this.run("project", "create", name) as Promise<EnvProject>;
+  async profiles(): Promise<Profile[]> {
+    return parseProfiles(await this.run("profiles"));
   }
 
-  async deleteProject(project: string): Promise<void> {
-    await this.run("project", "delete", "--project", project);
+  async variables(profile: string): Promise<Variable[]> {
+    // JSON values go out in full anyway; the tree decides what to mask.
+    return parseVariables(await this.run("vars", profile));
   }
 
-  createProfile(project: string, name: string, kind: string): Promise<EnvProfile> {
-    return this.run("profile", "create", "--project", project, "--name", name, "--kind", kind) as Promise<EnvProfile>;
+  createProfile(name: string): Promise<string> {
+    return this.message("profile", "create", name);
   }
 
-  duplicateProfile(project: string, profile: string): Promise<EnvProfile> {
-    return this.run("profile", "duplicate", "--project", project, "--profile", profile) as Promise<EnvProfile>;
+  renameProfile(name: string, newName: string): Promise<string> {
+    return this.message("profile", "rename", name, newName);
   }
 
-  async deleteProfile(project: string, profile: string): Promise<void> {
-    await this.run("profile", "delete", "--project", project, "--profile", profile);
+  duplicateProfile(name: string, newName: string): Promise<string> {
+    return this.message("profile", "duplicate", name, newName);
   }
 
-  setVariable(
-    project: string,
-    profile: string,
-    key: string,
-    value: string,
-    options: { secret?: boolean; enabled?: boolean; note?: string } = {},
-  ): Promise<EnvVariable> {
-    const args = ["var", "set", "--project", project, "--profile", profile];
-    if (options.secret) args.push("--secret");
-    if (options.enabled === false) args.push("--disabled");
-    if (options.enabled === true) args.push("--enabled");
-    if (options.note) args.push("--note", options.note);
-    args.push(`${key}=${value}`);
-    return this.run(...args) as Promise<EnvVariable>;
+  deleteProfile(name: string): Promise<string> {
+    return this.message("profile", "delete", name);
   }
 
-  async toggleVariable(project: string, profile: string, key: string, enabled: boolean): Promise<void> {
-    await this.run("var", enabled ? "enable" : "disable", "--project", project, "--profile", profile, key);
+  /** Omitting `secret` keeps an existing variable's flag (for a new one the engine guesses). */
+  setVariable(profile: string, key: string, value: string, secret?: boolean): Promise<string> {
+    const args = ["var", "set", profile, `${key}=${value}`];
+    if (secret === true) args.push("--secret");
+    if (secret === false) args.push("--no-secret");
+    return this.message(...args);
   }
 
-  async deleteVariable(project: string, profile: string, key: string): Promise<void> {
-    await this.run("var", "delete", "--project", project, "--profile", profile, key);
+  setEnabled(profile: string, key: string, enabled: boolean): Promise<string> {
+    return this.message("var", enabled ? "enable" : "disable", profile, key);
   }
 
-  apply(project: string, profile: string): Promise<ApplyResult> {
-    return this.run("apply", "--project", project, "--profile", profile) as Promise<ApplyResult>;
+  deleteVariable(profile: string, key: string): Promise<string> {
+    return this.message("var", "delete", profile, key);
   }
 
-  async unapply(): Promise<void> {
-    await this.run("unapply");
+  async importFile(profile: string, file: string): Promise<ImportResult> {
+    return parseImport(await this.run("import", profile, file));
   }
 
-  async installHook(): Promise<void> {
-    await this.run("hook", "install");
+  async exportDotenv(profile: string): Promise<string> {
+    return str(obj(await this.run("export", profile, "--dialect", "dotenv"), "export"), "text", "export");
+  }
+
+  async apply(profile: string): Promise<ApplyResult> {
+    return parseApply(await this.run("apply", profile));
+  }
+
+  async unapply(): Promise<UnapplyResult> {
+    return parseUnapply(await this.run("unapply"));
   }
 }
 
-/** The same rule as the app's EnvKey, so a bad name is caught before the round trip. */
+// ------------------------------------------------------------------ helpers
+
+/** The same rule as the engine's EnvKey, so a bad name is caught before the round trip. */
 export function isValidKey(key: string): boolean {
   return /^[A-Za-z_][A-Za-z0-9_]*$/.test(key);
+}
+
+/** "NAME=value": the first `=` splits, as in the command, so the value may contain `=`. */
+export function parseAssignment(text: string): { key: string; value: string } | undefined {
+  const at = text.indexOf("=");
+  if (at <= 0) return undefined;
+  const key = text.slice(0, at).trim();
+  return isValidKey(key) ? { key, value: text.slice(at + 1) } : undefined;
+}
+
+/**
+ * True when the profile's enabled variables no longer match what was exported
+ * at apply time: new terminals keep getting the old values until it is applied
+ * again.
+ */
+export function changedSinceApplied(variables: Variable[], exports: Record<string, string>): boolean {
+  const enabled = variables.filter((v) => v.isEnabled);
+  if (enabled.length !== Object.keys(exports).length) return true;
+  return enabled.some((v) => !Object.prototype.hasOwnProperty.call(exports, v.key) || exports[v.key] !== v.value);
 }

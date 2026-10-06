@@ -1,36 +1,79 @@
 # HyperEnv for VS Code
 
-Switch the environment variables your terminals inherit — per project, per
-environment — from inside VS Code.
+Apply a profile of environment variables to every new terminal, and undo it,
+from inside VS Code.
 
-An **Environments** view lists your HyperEnv projects, their profiles (dev,
-hml, prd, custom) and every variable. Create a project, add a profile, add or
-edit variables, and press **Apply**: new terminals, including VS Code's own,
-inherit that environment. **Revert** puts your original values back. The
-status bar shows what is applied; clicking it copies the reload command for a
-terminal that is already open.
+A **HyperEnv** view in the activity bar lists your profiles. Each one expands to
+its variables; secrets are masked until you reveal them, and switched-off
+variables say so. From the view you can:
 
-The extension does not carry an engine of its own. It drives the `hyperenv`
-command that ships inside the HyperEnv app, so the app, the IntelliJ plugin
-and this extension share one store, one journal and one writer to
-`~/.zprofile`. **Requires macOS and the HyperEnv app.**
+- **Profiles** — create, rename, duplicate and delete (the applied profile
+  cannot be deleted; Undo it first). Deleting asks first.
+- **Variables** — add (`NAME=value`), edit the value (click the variable),
+  delete, switch on/off, mark or unmark as secret, copy the value.
+- **Apply** a profile and **Undo**. HyperEnv changes only *new* terminals, so
+  after either one the extension offers to run the reload command in the active
+  terminal, or to copy it.
+- **Import** a `.env` file into a profile and **export** a profile as `.env`.
+
+The status bar shows what is applied (or that nothing is) and how many drift
+items `hyperenv status` reports. When you edit the applied profile after
+applying it, the tree marks it **changed since applied**: apply it again to
+update new terminals. The view refreshes when the window regains focus, so
+changes made in the desktop app or a terminal show up.
+
+The extension carries no engine of its own. It drives HyperEnv 2's `hyperenv`
+command, which uses the same store, journal and startup file as the desktop
+apps — whichever one you click, it is the same state. Works on macOS, Linux and
+Windows.
+
+## Installing the command
+
+The extension needs `hyperenv` **2.0 or later** (it checks `hyperenv --json
+version` and says so if the one it finds is older). The desktop app ships it; on
+its own:
+
+```sh
+curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh   # macOS / Linux
+irm https://hyperenv.falcaosl.com/install.ps1 | iex            # Windows (PowerShell)
+```
 
 ## Finding the command
 
-In order: `hyperenv.cliPath` in your settings, then `hyperenv` on your `PATH`,
-then `/Applications/HyperEnv.app/Contents/Helpers/hyperenv` and the same under
-`~/Applications`. The command's grammar and JSON shapes are in `docs/CLI.md`
-at the repository root.
+In order:
+
+1. the `hyperenv.cliPath` setting;
+2. macOS: `/Applications/HyperEnv.app/Contents/Helpers/hyperenv`, then the same
+   under `~/Applications`;
+3. `hyperenv` on your `PATH`;
+4. where the install scripts put it: `~/.local/bin/hyperenv` (macOS/Linux),
+   `%LOCALAPPDATA%\Programs\hyperenv\hyperenv.exe` (Windows).
+
+The command's grammar and JSON shapes are in `crates/cli/README.md` at the
+repository root.
 
 ## Building
 
 ```sh
-npm install
-npm test          # compiles, then runs the unit tests with plain Node
+npm ci
+npm test          # compiles, then runs the tests with plain Node
 npm run package   # -> hyperenv-<version>.vsix
 ```
 
-The unit tests cover the command's JSON envelope, the lookup order, how the
-client builds each call, and the variable-name rule — everything that can be
-proven without an editor. The view and its commands are exercised by pressing
-F5 in VS Code (Run Extension).
+The unit tests parse real output of the command (`src/test/fixtures`, captured
+from `hyperenv --home <temp dir> --json …`), and cover the lookup order on each
+platform, the version check, how each call is built, `NAME=value` parsing and
+the "changed since applied" rule. An integration test runs the real command
+against a throwaway home (never yours) — create, set, list, apply, status,
+undo, import, export — when `HYPERENV_CLI` points at a binary:
+
+```sh
+cargo build --release -p hyperenv-cli
+HYPERENV_CLI=../../target/release/hyperenv npm test
+```
+
+Without it, that test is skipped. The view itself is exercised by pressing F5
+in VS Code (Run Extension).
+
+The icons in `media/` are HyperEnv 2's own (`design/icons`), in a light and a
+dark copy because VS Code tree icons do not follow `currentColor`.

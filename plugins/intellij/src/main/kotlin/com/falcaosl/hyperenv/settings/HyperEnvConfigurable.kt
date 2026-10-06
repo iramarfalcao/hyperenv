@@ -1,7 +1,7 @@
 package com.falcaosl.hyperenv.settings
 
 import com.falcaosl.hyperenv.HyperEnvBundle
-import com.falcaosl.hyperenv.cli.HyperEnvCli
+import com.falcaosl.hyperenv.cli.CliLocator
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -20,7 +20,7 @@ class HyperEnvConfigurable : Configurable {
     override fun createComponent(): JComponent {
         val field = TextFieldWithBrowseButton().also { pathField = it }
         field.addBrowseFolderListener(null, FileChooserDescriptorFactory.singleFile())
-        val label = JBLabel().also { foundLabel = it }
+        val label = JBLabel().also { foundLabel = it; it.setCopyable(true) }
         val panel: JPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(HyperEnvBundle.message("settings.cliPath"), field)
             .addComponentToRightColumn(JBLabel(HyperEnvBundle.message("settings.cliPath.hint")))
@@ -44,8 +44,8 @@ class HyperEnvConfigurable : Configurable {
     }
 
     private fun refreshFound() {
-        val found = HyperEnvCli.locate()
+        val found = HyperEnvSettings.getInstance().locateCli()
         foundLabel?.text = found?.let { HyperEnvBundle.message("settings.found", it.path) }
-            ?: HyperEnvBundle.message("settings.notFound")
+            ?: HyperEnvBundle.message("settings.notFound", CliLocator.INSTALL_UNIX, CliLocator.INSTALL_WINDOWS)
     }
 }
