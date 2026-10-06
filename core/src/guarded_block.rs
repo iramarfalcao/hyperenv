@@ -1,16 +1,18 @@
-//! Inserir e remover, de forma idempotente, um bloco delimitado por
-//! marcadores dentro de um arquivo que o usuário também edita à mão
-//! (`~/.zprofile`, `~/.bash_profile`).
+//! Idempotent insertion and removal of a marker-delimited block inside a file
+//! the user also edits by hand (`~/.zprofile`, `~/.bash_profile`,
+//! `config.fish`).
 //!
-//! É de propósito uma transformação pura `&str -> String`: é a operação mais
-//! perigosa do app — reescreve um arquivo que pode quebrar o login do shell —
-//! então não faz I/O nenhum e todo caso de borda é alcançável por um teste.
+//! Deliberately a pure `&str -> String` transform. It is the most dangerous
+//! operation in the app — it rewrites a file that can break the user's login
+//! shell — so it does no I/O at all and every edge case is reachable from a
+//! test.
 
 use crate::types::Error;
 use std::ops::RangeInclusive;
 
-/// A detecção casa pelo prefixo, e não pelo texto inteiro, para que uma versão
-/// futura que mude o final do marcador ainda ache — e migre — um bloco da v1.
+/// Detection matches on these prefixes rather than the full marker text, so a
+/// future version that changes the trailing note can still find — and
+/// migrate — a block written by v1.
 pub const BEGIN_PREFIX: &str = "# >>> hyperenv managed block";
 pub const END_PREFIX: &str = "# <<< hyperenv managed block";
 
@@ -21,8 +23,8 @@ pub struct Markers {
 }
 
 impl Markers {
-    /// Os mesmos marcadores do app Swift: um `~/.zprofile` escrito pela v1
-    /// continua sendo reconhecido.
+    /// The same markers as the Swift app, so a `~/.zprofile` written by 1.x is
+    /// still recognised.
     pub fn v1() -> Self {
         Self {
             begin: format!("{BEGIN_PREFIX} v1 >>> (do not edit)"),
@@ -31,11 +33,11 @@ impl Markers {
     }
 }
 
-// ── Modelo de linhas ─────────────────────────────────────────────────────────
+// ── Line model ───────────────────────────────────────────────────────────────
 
-/// O arquivo em linhas, mais as duas propriedades que precisam sobreviver à
-/// ida e volta: o terminador usado e se ele terminava com um. Perder qualquer
-/// uma apareceria como diff do arquivo inteiro no repositório de dotfiles.
+/// A file decomposed into lines plus the two properties that must survive a
+/// round trip: which terminator it uses, and whether it ended with one. Losing
+/// either would show up as a whole-file diff in the user's dotfiles repo.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LineModel {
     lines: Vec<String>,
@@ -54,7 +56,7 @@ impl LineModel {
                     chars.next();
                     saw_crlf = true;
                 }
-                // CR sozinho também conta como quebra de linha.
+                // A lone CR counts as a line break too.
                 normalized.push('\n');
             } else {
                 normalized.push(c);
@@ -90,13 +92,13 @@ fn is_blank(line: &str) -> bool {
     line.trim_matches([' ', '\t']).is_empty()
 }
 
-// ── Localização ──────────────────────────────────────────────────────────────
+// ── Span location ────────────────────────────────────────────────────────────
 
-/// Acha o bloco gerenciado, ou falha se o arquivo estiver num estado em que
-/// adivinhar poderia destruir conteúdo do usuário.
+/// Locates the managed block, or fails if the file is in a state where
+/// guessing could destroy user content.
 ///
-/// Casa prefixo exato numa linha aparada, então um marcador citado dentro de
-/// um comentário do usuário (`# veja o "# >>> hyperenv"`) não conta.
+/// Matching is exact-prefix on a trimmed line, so a marker quoted inside a
+/// user's own comment (`# see the "# >>> hyperenv" block`) does not count.
 fn find_span(lines: &[String], path: &str) -> Result<Option<RangeInclusive<usize>>, Error> {
     let trimmed = |l: &String| l.trim_matches([' ', '\t']).to_owned();
     let begins: Vec<usize> = (0..lines.len())
@@ -115,34 +117,34 @@ fn find_span(lines: &[String], path: &str) -> Result<Option<RangeInclusive<usize
         (0, 0) => Ok(None),
         (1, 1) if ends[0] > begins[0] => Ok(Some(begins[0]..=ends[0])),
         (1, 1) => Err(fail(format!(
-            "o marcador de fim na linha {} vem antes do de início na linha {}",
+            "the end marker on line {} comes before the begin marker on line {}",
             ends[0] + 1,
             begins[0] + 1
         ))),
         (0, _) => Err(fail(format!(
-            "um marcador de fim na linha {} sem marcador de início",
+            "an end marker on line {} with no begin marker",
             ends[0] + 1
         ))),
         (_, 0) => Err(fail(format!(
-            "um marcador de início na linha {} sem marcador de fim",
+            "a begin marker on line {} with no end marker",
             begins[0] + 1
         ))),
         (b, e) => Err(fail(format!(
-            "{b} marcadores de início e {e} de fim; esperado exatamente um de cada"
+            "{b} begin and {e} end markers; expected exactly one of each"
         ))),
     }
 }
 
-// ── Instalar ─────────────────────────────────────────────────────────────────
+// ── Install ──────────────────────────────────────────────────────────────────
 
-/// Insere ou atualiza o bloco.
+/// Inserts or refreshes the block.
 ///
-/// - Sem bloco, ele vai para o fim: no `.zprofile` a última atribuição vence, e
-///   precisamos ficar depois de coisas como `brew shellenv`.
-/// - Com bloco, ele é trocado **no lugar**, preservando a posição — quem o
-///   moveu de propósito mantém a ordem.
+/// - With no block, it is appended: in `.zprofile` the last assignment wins,
+///   and we need to land after things like `brew shellenv`.
+/// - With a block, it is replaced **in place**, preserving its position, so a
+///   user who deliberately moved it keeps their ordering.
 ///
-/// Entrada igual à saída significa que quem chamou deve pular a escrita.
+/// Identical input and output means the caller should skip the write.
 pub fn install(content: &str, body: &[String], markers: &Markers, path: &str) -> Result<String, Error> {
     let mut model = LineModel::parse(content);
     let mut block = Vec::with_capacity(body.len() + 2);
@@ -154,15 +156,15 @@ pub fn install(content: &str, body: &[String], markers: &Markers, path: &str) ->
         model.lines.splice(span, block);
     } else {
         let file_was_empty = model.lines.is_empty();
-        // Separa do conteúdo existente com exatamente uma linha em branco, e só
-        // quando há conteúdo para separar.
+        // Separate from existing content with exactly one blank line, and only
+        // when there is content to separate from.
         if model.lines.last().is_some_and(|l| !is_blank(l)) {
             model.lines.push(String::new());
         }
         model.lines.extend(block);
-        // Só arquivo novo ganha quebra de linha final imposta. Pôr uma num
-        // arquivo que não tinha quebraria a garantia de que instalar e remover
-        // devolve os mesmos bytes.
+        // Only a brand-new file gets a trailing newline imposed on it. Adding
+        // one to a file that lacked it would break the guarantee that
+        // install-then-remove is byte-identical.
         if file_was_empty {
             model.has_trailing_newline = true;
         }
@@ -170,10 +172,10 @@ pub fn install(content: &str, body: &[String], markers: &Markers, path: &str) ->
     Ok(model.render())
 }
 
-// ── Remover ──────────────────────────────────────────────────────────────────
+// ── Remove ───────────────────────────────────────────────────────────────────
 
-/// Apaga o bloco e a única linha em branco separadora que `install` põe.
-/// Arquivo sem bloco volta intacto.
+/// Deletes the block, plus the single blank separator line `install` adds. A
+/// file with no block is returned untouched.
 pub fn remove(content: &str, path: &str) -> Result<String, Error> {
     let mut model = LineModel::parse(content);
     let Some(span) = find_span(&model.lines, path)? else {
@@ -190,9 +192,9 @@ pub fn remove(content: &str, path: &str) -> Result<String, Error> {
     Ok(model.render())
 }
 
-// ── Inspeção ─────────────────────────────────────────────────────────────────
+// ── Inspection ───────────────────────────────────────────────────────────────
 
-/// As linhas internas do bloco, sem os marcadores.
+/// The block's inner lines, excluding the markers.
 pub fn extract_body(content: &str, path: &str) -> Result<Option<Vec<String>>, Error> {
     let model = LineModel::parse(content);
     let Some(span) = find_span(&model.lines, path)? else {

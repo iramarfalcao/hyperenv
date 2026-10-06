@@ -1,13 +1,14 @@
-//! Aspas para cada destino. Cada shell tem a sua regra, e errar aqui é
-//! injeção de comando no login do usuário.
+//! Quoting for each destination. Every shell has its own rules, and getting
+//! one wrong is command injection into the user's login.
 
-/// Aspas simples POSIX (zsh, bash, sh): o único construto que desliga *toda*
-/// interpretação — `$`, crase, `\`, `#`, `!`, espaço e quebra de linha passam
-/// literais.
+/// POSIX single quotes (zsh, bash, sh): the only construct that suppresses
+/// *all* interpretation — `$`, backticks, `\`, `#`, `!`, spaces and newlines
+/// all pass through literally.
 ///
-/// Aspa simples não escapa dentro de aspas simples, então fecha, insere e
-/// reabre: `it's` vira `'it'\''s'`. Sempre com aspas, mesmo valor trivial:
-/// consistência vale mais que saída bonita.
+/// A single quote cannot be escaped inside single quotes, so the standard
+/// close/insert/reopen dance is used: `it's` becomes `'it'\''s'`. Values are
+/// quoted unconditionally, even trivially safe ones: consistency is worth more
+/// than prettier output.
 pub fn posix_single(value: &str) -> String {
     let mut out = String::with_capacity(value.len() + 2);
     out.push('\'');
@@ -22,8 +23,8 @@ pub fn posix_single(value: &str) -> String {
     out
 }
 
-/// Aspas simples do fish: lá dentro só `\'` e `\\` são escapes, todo o resto
-/// (inclusive `$` e quebra de linha) é literal.
+/// fish single quotes: inside them only `\'` and `\\` are escapes; everything
+/// else, `$` and newlines included, is literal.
 pub fn fish_single(value: &str) -> String {
     let mut out = String::with_capacity(value.len() + 2);
     out.push('\'');
@@ -38,9 +39,9 @@ pub fn fish_single(value: &str) -> String {
     out
 }
 
-/// Aspas simples do PowerShell: literais, e a aspa simples se dobra (`''`).
-/// O PowerShell também trata as aspas tipográficas ‘ ’ ‚ ‛ como aspa simples,
-/// então elas se dobram do mesmo jeito.
+/// PowerShell single quotes: literal, and a single quote is doubled (`''`).
+/// PowerShell also treats the typographic quotes ‘ ’ ‚ ‛ as single quotes, so
+/// those are doubled the same way.
 pub fn powershell_single(value: &str) -> String {
     let mut out = String::with_capacity(value.len() + 2);
     out.push('\'');
@@ -54,9 +55,9 @@ pub fn powershell_single(value: &str) -> String {
     out
 }
 
-/// Aspas duplas para parsers de dotenv, que em geral não implementam aspas
-/// simples POSIX. Quebra de linha vira `\n`, porque a maioria não aceita uma
-/// quebra literal dentro do valor.
+/// Double-quoted form for dotenv parsers, which generally do not implement
+/// POSIX single-quote semantics. Newlines become `\n` because most of those
+/// parsers cannot handle a literal newline inside a value.
 pub fn dotenv_double(value: &str) -> String {
     let mut out = String::with_capacity(value.len() + 2);
     out.push('"');

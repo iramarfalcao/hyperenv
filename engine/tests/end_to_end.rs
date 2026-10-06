@@ -1,8 +1,11 @@
-//! Ponta a ponta num shell de verdade, com uma home descartável: o usuário
-//! já tem `API_URL` no próprio arquivo de inicialização; o perfil troca o
-//! valor; um terminal novo vê o do perfil; desfazer volta ao original.
+//! End to end in a real shell, with a throwaway home: the user already has
+//! `API_URL` in their own startup file; the profile changes the value; a new
+//! terminal sees the profile's; undo goes back to the original.
 //!
-//! Shell não instalado é pulado com aviso.
+//! A shell that is not installed is skipped with a warning.
+
+// POSIX login shells only; Windows has no startup file to test.
+#![cfg(unix)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,11 +24,11 @@ fn which(name: &str) -> Option<PathBuf> {
     (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
-/// O que um terminal novo enxerga, abrindo o shell de login com a home de teste.
+/// What a new terminal sees, opening the login shell with the test home.
 fn new_terminal(layout: &Layout, var: &str) -> String {
     let script = match layout.shell {
         Shell::Fish => format!("printf '%s' \"${var}\""),
-        _ => format!("printf '%s' \"${{{var}-<ausente>}}\""),
+        _ => format!("printf '%s' \"${{{var}-<absent>}}\""),
     };
     let mut cmd = Command::new(&layout.shell_path);
     match layout.shell {
@@ -42,7 +45,7 @@ fn new_terminal(layout: &Layout, var: &str) -> String {
         .unwrap();
     let text = String::from_utf8_lossy(&out.stdout).into_owned();
     if layout.shell == Shell::Fish && text.is_empty() {
-        "<ausente>".into()
+        "<absent>".into()
     } else {
         text
     }
@@ -50,7 +53,7 @@ fn new_terminal(layout: &Layout, var: &str) -> String {
 
 fn scenario(shell: Shell, exe: &str, user_file: &str, user_line: &str) {
     let Some(path) = which(exe) else {
-        eprintln!("aviso: {exe} não está instalado — pulei");
+        eprintln!("warning: {exe} is not installed — skipped");
         return;
     };
     let home = tempfile::tempdir().unwrap();
@@ -66,11 +69,11 @@ fn scenario(shell: Shell, exe: &str, user_file: &str, user_line: &str) {
     store
         .set_var("dev", "API_URL", "https://dev.example/#it's", None)
         .unwrap();
-    store.set_var("dev", "HV_NOVA", "x y", None).unwrap();
+    store.set_var("dev", "HV_NEW", "x y", None).unwrap();
     let dev = store.get("dev").unwrap().clone();
 
     let probe = ShellProbe::default();
-    let original = probe.observe(&layout, true).expect("sondagem do shell");
+    let original = probe.observe(&layout, true).expect("shell probe");
     assert_eq!(
         original.get(&"API_URL".parse_key()).map(|v| v.as_str()),
         Some("https://prod"),
@@ -82,10 +85,10 @@ fn scenario(shell: Shell, exe: &str, user_file: &str, user_line: &str) {
     assert_eq!(
         new_terminal(&layout, "API_URL"),
         "https://dev.example/#it's",
-        "{exe}: perfil aplicado"
+        "{exe}: profile applied"
     );
-    assert_eq!(new_terminal(&layout, "HV_NOVA"), "x y", "{exe}");
-    // Com o bypass a sondagem continua vendo o original do usuário.
+    assert_eq!(new_terminal(&layout, "HV_NEW"), "x y", "{exe}");
+    // With the bypass, the probe still sees the user's original.
     let still = probe.observe(&layout, true).unwrap();
     assert_eq!(
         still.get(&"API_URL".parse_key()).map(|v| v.as_str()),
@@ -94,16 +97,16 @@ fn scenario(shell: Shell, exe: &str, user_file: &str, user_line: &str) {
     );
     assert!(
         engine.drift().unwrap().is_empty(),
-        "{exe}: sem divergência logo após aplicar"
+        "{exe}: no drift right after applying"
     );
 
     engine.unapply().unwrap();
     assert_eq!(
         new_terminal(&layout, "API_URL"),
         "https://prod",
-        "{exe}: original de volta"
+        "{exe}: original is back"
     );
-    assert_eq!(new_terminal(&layout, "HV_NOVA"), "<ausente>", "{exe}");
+    assert_eq!(new_terminal(&layout, "HV_NEW"), "<absent>", "{exe}");
 }
 
 trait ParseKey {

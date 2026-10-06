@@ -1,8 +1,9 @@
-//! Os perfis: uma lista plana, num JSON legível.
+//! The profiles: a flat list, in readable JSON.
 //!
-//! Sem projeto por cima — cada perfil é um lote de variáveis com nome
-//! (`api-producao`, `web-local`). Arquivo simples de propósito: o app, o CLI e
-//! os plugins leem o mesmo, e ele sobrevive a reinstalação e cabe num diff.
+//! No project on top — each profile is a named batch of variables
+//! (`api-production`, `web-local`). A plain file on purpose: the app, the CLI
+//! and the plugins all read the same one, and it survives a reinstall and
+//! fits in a diff.
 
 use std::path::Path;
 
@@ -18,8 +19,9 @@ pub const FORMAT_VERSION: u32 = 2;
 pub struct Variable {
     pub key: EnvKey,
     pub value: EnvValue,
-    /// Só muda a exibição (valor mascarado). Não é cofre: o valor fica no
-    /// arquivo como os outros, e é escrito no script de sessão igual.
+    /// Only changes how it is displayed (masked value). It is not a vault: the
+    /// value sits in the file like the others, and is written to the session
+    /// script the same way.
     #[serde(default)]
     pub secret: bool,
     #[serde(default = "yes")]
@@ -40,7 +42,7 @@ pub struct Profile {
 }
 
 impl Profile {
-    /// O que aplicar exporta: as variáveis ligadas.
+    /// What applying exports: the enabled variables.
     pub fn env_set(&self) -> EnvSet {
         self.variables
             .iter()
@@ -77,7 +79,7 @@ impl Store {
                 if store.version > FORMAT_VERSION {
                     return Err(Error::Corrupt {
                         path: path.into(),
-                        detail: format!("formato {} é de uma versão mais nova do HyperEnv", store.version),
+                        detail: format!("format {} is from a newer version of HyperEnv", store.version),
                     });
                 }
                 Ok(store)
@@ -86,7 +88,7 @@ impl Store {
     }
 
     pub fn save(&self, path: &Path) -> Result<(), Error> {
-        let mut text = serde_json::to_string_pretty(self).expect("store sempre serializa");
+        let mut text = serde_json::to_string_pretty(self).expect("a store always serializes");
         text.push('\n');
         fsx::write_atomic(path, text.as_bytes(), Some(0o600))
     }
@@ -104,7 +106,7 @@ impl Store {
             .ok_or_else(|| Error::NoSuchProfile(name.to_owned()))
     }
 
-    /// Nome livre, sem repetir (ignorando maiúsculas) e sem espaço nas pontas.
+    /// A free-form name, unique (ignoring case) and without surrounding whitespace.
     fn check_name(&self, name: &str, except: Option<Uuid>) -> Result<String, Error> {
         let name = name.trim();
         if name.is_empty() || name.contains(['\n', '\r', '/', '\\']) {
@@ -171,7 +173,7 @@ impl Store {
         Ok(self.profiles.remove(idx))
     }
 
-    /// Cria ou troca o valor de uma variável, mantendo a posição se já existir.
+    /// Creates a variable or changes its value, keeping its position if it already exists.
     pub fn set_var(
         &mut self,
         profile: &str,
@@ -225,8 +227,8 @@ impl Store {
         Ok(())
     }
 
-    /// Junta um lote (de um `.env`, por exemplo) ao perfil. O lote vence nas
-    /// chaves repetidas; nomes com cara de segredo já entram mascarados.
+    /// Merges a batch (from a `.env`, for example) into the profile. The batch
+    /// wins on repeated keys; secret-looking names come in already masked.
     pub fn merge(&mut self, profile: &str, incoming: &EnvSet) -> Result<usize, Error> {
         let p = self.get_mut(profile)?;
         for (key, value) in incoming.iter() {
@@ -245,7 +247,7 @@ impl Store {
     }
 }
 
-/// Nome com cara de credencial começa mascarado na interface.
+/// A credential-looking name starts out masked in the interface.
 pub fn looks_secret(key: &str) -> bool {
     let k = key.to_ascii_uppercase();
     [

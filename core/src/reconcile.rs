@@ -1,7 +1,7 @@
-//! O que aplicar ou desfazer precisa de fato fazer.
+//! Computes what an apply or un-apply must actually do.
 //!
-//! Puro, porque é aqui que se decide se desfazer está certo, e isso tem de ser
-//! testado à exaustão sem sistema de arquivos.
+//! Pure, because this is where the correctness of un-apply is decided, and it
+//! needs to be exhaustively testable without a filesystem.
 
 use std::collections::BTreeMap;
 
@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::{EnvKey, EnvSet, EnvValue, PriorState};
 
-/// As variáveis que o HyperEnv controla agora, cada uma com o valor que tinha
-/// *antes* de o HyperEnv mexer nela pela primeira vez.
+/// The keys HyperEnv currently owns, each paired with the value it had
+/// *before* HyperEnv first touched it.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ManagedState {
     baselines: BTreeMap<EnvKey, PriorState>,
@@ -34,8 +34,8 @@ impl ManagedState {
     }
 
     fn capture(&mut self, key: EnvKey, state: PriorState) {
-        // Só se ainda não houver: recapturar é exatamente o bug que este tipo
-        // existe para impedir.
+        // Only if absent: re-capturing is the bug this whole type exists to
+        // prevent.
         self.baselines.entry(key).or_insert(state);
     }
 
@@ -46,13 +46,13 @@ impl ManagedState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Plan {
-    /// Exatamente o que o script de sessão exporta.
+    /// Exactly what the session script should export.
     pub exports: EnvSet,
-    /// Variáveis que passam a ser controladas agora, com o valor a lembrar.
+    /// Keys becoming managed now, with the prior value to remember.
     pub captures: BTreeMap<EnvKey, PriorState>,
-    /// Variáveis que deixaram de ser pedidas, com o valor a devolver.
+    /// Keys no longer wanted, with the value to put back.
     pub restores: BTreeMap<EnvKey, PriorState>,
-    /// O estado controlado depois que o plano for gravado.
+    /// The managed state after this plan is committed.
     pub resulting_state: ManagedState,
 }
 
@@ -61,8 +61,8 @@ impl Plan {
         self.captures.is_empty() && self.restores.is_empty()
     }
 
-    /// Entradas do script inverso: o que estamos assumindo e o que estamos
-    /// devolvendo.
+    /// Entries for the inverse script, covering both what we are taking over and
+    /// what we are handing back.
     pub fn inverse_entries(&self) -> Vec<(EnvKey, PriorState)> {
         let mut merged = self.captures.clone();
         for (k, v) in &self.restores {
@@ -72,18 +72,18 @@ impl Plan {
     }
 }
 
-/// Planeja uma aplicação.
+/// Plans an apply.
 ///
-/// - `desired`: o que o perfil quer exportado.
-/// - `managed`: o que o HyperEnv já controla.
-/// - `observed`: o ambiente do usuário medido *com o HyperEnv desligado*, para
-///   refletir a configuração dele e não a nossa própria saída.
+/// - `desired`: the variables the profile wants exported.
+/// - `managed`: what HyperEnv already owns.
+/// - `observed`: the user's environment measured *with HyperEnv bypassed*, so
+///   it reflects their real configuration rather than our own output.
 ///
-/// A invariante: o valor original de uma variável é capturado **uma vez**, na
-/// passagem de não controlada para controlada, e só é descartado na volta.
-/// Uma variável que já controlamos nunca é medida de novo — isso gravaria o
-/// nosso valor aplicado como se fosse o original do usuário, e desfazer
-/// "restauraria" um valor que ele nunca teve.
+/// The invariant: a key's baseline is captured **once**, on the
+/// unmanaged-to-managed transition, and discarded only on the way back. A key
+/// we already own is never re-measured — doing so would record our own applied
+/// value as though it were the user's original, so a later un-apply would
+/// "restore" a value the user never had.
 pub fn plan(desired: &EnvSet, managed: &ManagedState, observed: &EnvSet) -> Plan {
     let mut state = managed.clone();
     let mut captures = BTreeMap::new();
@@ -121,7 +121,7 @@ pub fn plan(desired: &EnvSet, managed: &ManagedState, observed: &EnvSet) -> Plan
     }
 }
 
-/// Planeja desfazer tudo: cada variável controlada volta ao original.
+/// Plans a full un-apply: every managed key goes back to its baseline.
 pub fn unapply_plan(managed: &ManagedState) -> Plan {
     let restores = managed.baselines.clone();
     Plan {
@@ -132,21 +132,21 @@ pub fn unapply_plan(managed: &ManagedState) -> Plan {
     }
 }
 
-// ── Divergência ──────────────────────────────────────────────────────────────
+// ── Drift ────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DriftDetail {
-    /// Exportamos, e o shell não tem.
+    /// Exported by us, absent from the shell.
     Missing { expected: EnvValue },
-    /// Exportamos, mas algo depois atribuiu outro valor.
+    /// Exported by us, but something later assigned a different value.
     Shadowed { expected: EnvValue, actual: EnvValue },
 }
 
-/// Compara o que o shell de fato mostra com o que exportamos.
+/// Compares what the shell actually reports against what we exported.
 ///
-/// Pega a falha que um checksum nunca pega: o usuário pôr
-/// `export API_URL=…` no dotfile *depois* do nosso bloco, o que nos
-/// sobrescreve em silêncio enquanto todo arquivo continua com o hash certo.
+/// Catches the failure a checksum never will: the user adding
+/// `export API_URL=…` to their dotfile *after* our block, which silently
+/// overrides us while every file still hashes correctly.
 pub fn semantic_drift(expected: &EnvSet, observed: &EnvSet) -> BTreeMap<EnvKey, DriftDetail> {
     let mut drift = BTreeMap::new();
     for (key, want) in expected.iter() {

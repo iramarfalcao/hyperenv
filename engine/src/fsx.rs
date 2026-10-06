@@ -1,4 +1,4 @@
-//! Escrita no disco com as garantias de que o resto depende.
+//! Disk writes with the guarantees the rest of the engine depends on.
 
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -6,9 +6,9 @@ use std::path::{Path, PathBuf};
 
 use crate::Error;
 
-/// Lê como UTF-8 ou recusa. Decodificar com perda trocaria bytes inválidos por
-/// U+FFFD, e gravar isso de volta destruiria conteúdo num arquivo que o
-/// usuário não esperava que reescrevêssemos.
+/// Reads as UTF-8 or refuses. Lossy decoding would replace invalid bytes with
+/// U+FFFD, and writing that back would destroy content in a file the user
+/// never expected us to rewrite.
 pub fn read_text_if_exists(path: &Path) -> Result<Option<String>, Error> {
     match fs::read(path) {
         Ok(bytes) => String::from_utf8(bytes).map(Some).map_err(|e| Error::NotUtf8 {
@@ -20,15 +20,16 @@ pub fn read_text_if_exists(path: &Path) -> Result<Option<String>, Error> {
     }
 }
 
-/// Grava num temporário na mesma pasta e renomeia por cima: uma queda no meio
-/// nunca deixa um `session.zsh` pela metade que quebraria todo shell novo.
+/// Writes to a temporary file in the same folder and renames it over the
+/// target: a crash midway never leaves a half-written `session.zsh` that would
+/// break every new shell.
 ///
-/// `mode`: `Some` impõe as permissões (0600 nos nossos arquivos); `None`
-/// mantém as do arquivo do usuário.
+/// `mode`: `Some` enforces the permissions (0600 for our own files); `None`
+/// keeps those of the user's file.
 pub fn write_atomic(path: &Path, contents: &[u8], mode: Option<u32>) -> Result<(), Error> {
     let dir = path
         .parent()
-        .ok_or_else(|| Error::io(path, io::Error::other("sem pasta-mãe")))?;
+        .ok_or_else(|| Error::io(path, io::Error::other("no parent folder")))?;
     fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
     let tmp = dir.join(format!(".hyperenv-{}.tmp", uuid::Uuid::new_v4()));
 
@@ -76,12 +77,12 @@ pub fn remove_if_exists(path: &Path) -> Result<(), Error> {
     }
 }
 
-/// Segue o link antes de escrever.
+/// Follows the symlink before writing.
 ///
-/// Um `~/.zprofile` gerenciado por chezmoi, stow ou yadm é um link para dentro
-/// de um repositório de dotfiles. Renomear por cima do link o trocaria por um
-/// arquivo comum e desligaria o repositório em silêncio — então escrevemos no
-/// destino real. Se o destino sair da home, recusamos.
+/// A `~/.zprofile` managed by chezmoi, stow or yadm is a symlink into a
+/// dotfiles repository. Renaming over the link would replace it with a plain
+/// file and silently detach the repository — so we write to the real target.
+/// If the target is outside home, we refuse.
 pub fn resolve_symlink(path: &Path, home: &Path) -> Result<PathBuf, Error> {
     let Ok(meta) = fs::symlink_metadata(path) else {
         return Ok(path.to_path_buf());
@@ -108,7 +109,7 @@ pub fn sha256(text: &str) -> String {
         .collect()
 }
 
-/// Trava entre processos (app, CLI e plugins aplicando ao mesmo tempo).
+/// Cross-process lock (app, CLI and plugins applying at the same time).
 pub struct Lock(#[allow(dead_code)] File);
 
 impl Lock {

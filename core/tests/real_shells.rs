@@ -1,9 +1,9 @@
-//! O script de sessão carregado num shell de verdade tem de devolver cada
-//! valor byte a byte. É a prova de que as aspas de cada dialeto estão certas —
-//! um erro aqui é injeção de comando no login do usuário.
+//! The session script, loaded in a real shell, has to give back every value
+//! byte for byte. This is the proof that each dialect's quoting is right — a
+//! mistake here is command injection into the user's login.
 //!
-//! Shell que não estiver instalado é pulado (com aviso), para a suíte rodar
-//! em qualquer máquina; na CI cada sistema instala os seus.
+//! A shell that is not installed is skipped (with a warning), so the suite
+//! runs on any machine; in CI each system installs its own.
 
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -39,7 +39,7 @@ fn vars() -> EnvSet {
         .collect()
 }
 
-/// Carrega o script e imprime cada variável separada por NUL.
+/// Loads the script and prints each variable, separated by NUL.
 fn run(shell: &str, args: &[&str], script: &str, dump: &str) -> Option<Vec<u8>> {
     let mut child = Command::new(shell)
         .args(args)
@@ -58,16 +58,16 @@ fn run(shell: &str, args: &[&str], script: &str, dump: &str) -> Option<Vec<u8>> 
 
 fn check(shell: Shell, exe: &str, args: &[&str], dump_one: impl Fn(&str) -> String) {
     let env = vars();
-    // O `return` do guarda POSIX só vale em arquivo carregado, então o teste
-    // carrega o script como função, igual ao `. arquivo` do hook.
-    let script = render::session(shell, &env, "teste", "agora");
+    // The POSIX guard's `return` only works in a sourced file, so the test
+    // loads the script as a function, just like the hook's `. file`.
+    let script = render::session(shell, &env, "test", "now");
     let wrapped = match shell {
         Shell::Zsh | Shell::Bash => format!("__hv() {{\n{script}\n}}\n__hv\n"),
         _ => script,
     };
     let dump: String = env.keys().map(|k| dump_one(k.as_str())).collect();
-    // Lendo do stdin o pwsh se comporta como terminal interativo e emite
-    // códigos de controle; de um arquivo .ps1 a saída é limpa.
+    // Reading from stdin, pwsh behaves like an interactive terminal and emits
+    // control codes; from a .ps1 file the output is clean.
     let out = if shell == Shell::PowerShell {
         let path = std::env::temp_dir().join(format!("hyperenv-test-{}.ps1", std::process::id()));
         std::fs::write(&path, format!("{wrapped}{dump}")).unwrap();
@@ -84,7 +84,7 @@ fn check(shell: Shell, exe: &str, args: &[&str], dump_one: impl Fn(&str) -> Stri
         run(exe, args, &wrapped, &dump)
     };
     let Some(out) = out else {
-        eprintln!("aviso: {exe} não está instalado — pulei");
+        eprintln!("warning: {exe} is not installed — skipped");
         return;
     };
     let got: Vec<&[u8]> = out.split(|&b| b == 0).collect();
@@ -92,12 +92,12 @@ fn check(shell: Shell, exe: &str, args: &[&str], dump_one: impl Fn(&str) -> Stri
         assert_eq!(
             String::from_utf8_lossy(got[i]),
             value.as_str(),
-            "{exe}: {key} voltou diferente"
+            "{exe}: {key} came back different"
         );
     }
     assert!(
         !std::path::Path::new("/tmp/hyperenv-pwned").exists(),
-        "{exe}: valor foi executado!"
+        "{exe}: a value was executed!"
     );
 }
 

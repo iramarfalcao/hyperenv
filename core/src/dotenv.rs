@@ -1,20 +1,20 @@
-//! Ler e escrever arquivos `.env`.
+//! Reading and writing `.env` files.
 //!
-//! Não existe um dialeto de `.env` certo. O `docker --env-file` não tira aspa
-//! nenhuma — pega os bytes crus depois do `=` —, então um valor com aspas para
-//! o shell chega no Docker com as aspas dentro. O dialeto é escolha explícita,
-//! nunca palpite.
+//! There is no single correct `.env` dialect. `docker --env-file` performs no
+//! quote removal at all — it takes the raw bytes after `=` — so a value quoted
+//! for shell compatibility arrives in Docker with literal quotes around it.
+//! The dialect is therefore an explicit choice, never a guess.
 
 use crate::quoting::{dotenv_double, posix_single};
 use crate::types::{EnvKey, EnvSet, EnvValue};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Dialect {
-    /// Aspas simples. Pode dar `source` num shell.
+    /// Single-quoted. Safe to `source` from a shell.
     PosixShell,
-    /// Aspas duplas com escapes. O que a maioria das bibliotecas de dotenv espera.
+    /// Double-quoted with escapes. What most dotenv libraries expect.
     Dotenv,
-    /// Bytes crus depois do `=`. Sem aspas, sem quebra de linha.
+    /// Raw bytes after `=`. No quoting, no newlines.
     Docker,
 }
 
@@ -27,7 +27,7 @@ pub enum Severity {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
     pub severity: Severity,
-    /// A partir de 1, para mostrar direto numa lista. 0 = o arquivo todo.
+    /// 1-based, so it can be shown directly in a list. 0 = the whole file.
     pub line: usize,
     pub message: String,
 }
@@ -67,7 +67,7 @@ impl DecodeResult {
         self.diagnostics.iter().any(|d| d.severity == Severity::Error)
     }
 
-    /// Duplicadas resolvidas (a última vence), pronto para importar.
+    /// Duplicates resolved (last wins), ready to import.
     pub fn env_set(&self) -> EnvSet {
         self.entries
             .iter()
@@ -93,9 +93,9 @@ impl Default for Limits {
     }
 }
 
-// ── Escrever ─────────────────────────────────────────────────────────────────
+// ── Encode ───────────────────────────────────────────────────────────────────
 
-/// Gera o texto do `.env`, em ordem de nome (o arquivo vai para o git).
+/// Renders `.env` text in sorted key order (the file gets committed to git).
 pub fn encode(
     variables: &EnvSet,
     dialect: Dialect,
@@ -117,7 +117,7 @@ pub fn encode(
                 if value.contains_newline() {
                     diagnostics.push(Diagnostic::error(
                         0,
-                        format!("{key} tem quebra de linha, que o docker --env-file não representa. Ficou de fora."),
+                        format!("{key} contains a newline, which docker --env-file cannot represent. It was skipped."),
                     ));
                     continue;
                 }
@@ -131,17 +131,18 @@ pub fn encode(
     (text, diagnostics)
 }
 
-// ── Ler ──────────────────────────────────────────────────────────────────────
+// ── Decode ───────────────────────────────────────────────────────────────────
 
-/// Lê o texto e devolve tudo o que conseguiu *mais* tudo o que recusou. Uma
-/// linha ruim é recusada sozinha; nunca derruba o resto do arquivo.
+/// Parses `.env` text, returning everything it could read *plus* everything it
+/// objected to. A malformed line is rejected on its own; it never aborts the
+/// rest of the file.
 pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
     let mut out = DecodeResult::default();
 
     if raw.len() > limits.max_bytes {
         out.diagnostics.push(Diagnostic::error(
             0,
-            format!("O arquivo passa de {} MB.", limits.max_bytes / 1_048_576),
+            format!("File is larger than {} MB.", limits.max_bytes / 1_048_576),
         ));
         return out;
     }
@@ -183,7 +184,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
         }
         let entry_line = line;
 
-        // Prefixo `export ` opcional — comum em .env estilo shell.
+        // Optional `export ` prefix — common in shell-style .env files.
         if i + 6 < n
             && c[i..i + 6].iter().copied().eq("export".chars())
             && (c[i + 6] == ' ' || c[i + 6] == '\t')
@@ -204,7 +205,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
         }
         if i >= n || c[i] != '=' {
             out.diagnostics
-                .push(Diagnostic::error(entry_line, "Sem '='. Linha ignorada."));
+                .push(Diagnostic::error(entry_line, "No '=' found. Line skipped."));
             skip_eol(&mut i);
             continue;
         }
@@ -214,9 +215,9 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
             out.diagnostics.push(Diagnostic::error(
                 entry_line,
                 if key.is_empty() {
-                    "Falta o nome da variável antes do '='. Linha ignorada.".to_owned()
+                    "Missing variable name before '='. Line skipped.".to_owned()
                 } else {
-                    format!("'{key}' não é um nome de variável válido. Linha ignorada.")
+                    format!("'{key}' is not a valid variable name. Line skipped.")
                 },
             ));
             skip_eol(&mut i);
@@ -231,15 +232,15 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
         if space_before || space_after {
             out.diagnostics.push(Diagnostic::warning(
                 entry_line,
-                "Espaço em volta do '='. Um shell leria isto como comando, não como atribuição.",
+                "Whitespace around '='. A shell would read this as a command, not an assignment.",
             ));
         }
 
         let mut value = String::new();
         let mut failed = false;
         if i < n && (c[i] == '\'' || c[i] == '"') {
-            // Semântica de palavra do shell: trechos com e sem aspas colados se
-            // juntam — é o que faz a própria saída do HyperEnv voltar inteira
+            // Shell word semantics: adjacent quoted and bare runs concatenate,
+            // which is what lets HyperEnv's own single-quoted output round-trip
             // ('it'\''s' -> it's).
             'runs: while i < n && c[i] != '\n' {
                 match c[i] {
@@ -261,7 +262,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
                         if !closed {
                             out.diagnostics.push(Diagnostic::error(
                                 entry_line,
-                                "Aspa simples sem fechar. Linha ignorada.",
+                                "Unterminated single quote. Line skipped.",
                             ));
                             failed = true;
                             break 'runs;
@@ -291,7 +292,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
                         if !closed {
                             out.diagnostics.push(Diagnostic::error(
                                 entry_line,
-                                "Aspa dupla sem fechar. Linha ignorada.",
+                                "Unterminated double quote. Line skipped.",
                             ));
                             failed = true;
                             break 'runs;
@@ -313,9 +314,9 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
             }
             skip_eol(&mut i);
         } else {
-            // Valor sem aspas: semântica de dotenv. O resto da linha, menos um
-            // ` # comentário` no fim. Um '#' *sem* espaço antes faz parte do
-            // valor (fragmento de URL, cor em hex).
+            // Bare value: dotenv semantics. Take the rest of the line, then
+            // strip a trailing ` # comment`. A '#' *not* preceded by whitespace
+            // is part of the value (URL fragments, colour hexes).
             let mut bare = String::new();
             while i < n && c[i] != '\n' {
                 bare.push(c[i]);
@@ -327,8 +328,8 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
             value = bare.trim_matches([' ', '\t']).to_owned();
         }
 
-        // Aspa sem fechar: a mensagem diz "linha ignorada", então ignora de
-        // fato. (A versão Swift ainda gravava o valor parcial.)
+        // Unterminated quote: the message says "line skipped", so skip it for
+        // real. (The Swift version still stored the partial value.)
         if failed {
             continue;
         }
@@ -336,7 +337,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
             out.diagnostics.push(Diagnostic::error(
                 entry_line,
                 format!(
-                    "O valor de {env_key} passa de {} KB. Ignorado.",
+                    "Value for {env_key} exceeds {} KB. Skipped.",
                     limits.max_value_bytes / 1024
                 ),
             ));
@@ -350,7 +351,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
         if out.entries.len() > limits.max_entries {
             out.diagnostics.push(Diagnostic::error(
                 entry_line,
-                format!("Mais de {} entradas. Parei aqui.", limits.max_entries),
+                format!("More than {} entries. Stopped.", limits.max_entries),
             ));
             break;
         }
@@ -363,7 +364,7 @@ pub fn decode(raw: &str, limits: Limits) -> DecodeResult {
             warnings.push(Diagnostic::warning(
                 e.line,
                 format!(
-                    "{} já foi definida na linha {first}. Vale o valor de baixo.",
+                    "{} was already defined on line {first}. The later value wins.",
                     e.key
                 ),
             ));
@@ -382,7 +383,7 @@ fn unescape(c: char, into: &mut String) {
         '\\' => into.push('\\'),
         '"' => into.push('"'),
         '$' => into.push('$'),
-        // Escape desconhecido mantém a barra, como o shell faz em aspas duplas.
+        // Unknown escapes keep the backslash, as a shell does inside double quotes.
         other => {
             into.push('\\');
             into.push(other);

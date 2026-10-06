@@ -1,9 +1,9 @@
-//! `hyperenv` — o mesmo motor do app, pelo terminal.
+//! `hyperenv` — the app's engine, from the terminal.
 //!
-//! É a porta única dos plugins (VS Code, IntelliJ): um motor, um journal e um
-//! escritor do arquivo de inicialização, não importa de onde veio o clique.
-//! Com `--json` toda resposta é um envelope `{ "ok": true, "data": … }` ou
-//! `{ "ok": false, "error": "…" }`, e o código de saída é 0 ou 1.
+//! It is the plugins' single door (VS Code, IntelliJ): one engine, one journal
+//! and one writer of the startup file, no matter where the click came from.
+//! With `--json` every response is an envelope `{ "ok": true, "data": … }` or
+//! `{ "ok": false, "error": "…" }`, and the exit code is 0 or 1.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -20,31 +20,31 @@ use serde_json::{Value, json};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const USAGE: &str = "\
-hyperenv — aplica e desfaz lotes de variáveis de ambiente
+hyperenv — apply and undo batches of environment variables
 
-uso: hyperenv [--json] <comando>
+usage: hyperenv [--json] <command>
 
-  status                          o que está aplicado, hook, divergência
-  profiles                        lista os perfis
-  profile create <nome>
-  profile rename <nome> <novo>
-  profile duplicate <nome> <novo>
-  profile delete <nome>
-  vars <perfil> [--show]          variáveis (segredos mascarados sem --show)
-  var set <perfil> CHAVE=VALOR [--secret | --no-secret]
-  var enable|disable|delete <perfil> CHAVE
-  import <perfil> <arquivo.env>   junta um .env ao perfil
-  export <perfil> [--dialect posix|dotenv|docker]
-  plan <perfil>                   o que aplicar mudaria, sem mudar nada
-  apply <perfil>                  todo terminal novo nasce com o perfil
-  unapply                         devolve cada variável ao valor de antes
-  drift                           o terminal novo bate com o aplicado?
+  status                          what is applied, hook, drift
+  profiles                        list the profiles
+  profile create <name>
+  profile rename <name> <new>
+  profile duplicate <name> <new>
+  profile delete <name>
+  vars <profile> [--show]         variables (secrets masked without --show)
+  var set <profile> KEY=VALUE [--secret | --no-secret]
+  var enable|disable|delete <profile> KEY
+  import <profile> <file.env>     merge a .env file into the profile
+  export <profile> [--dialect posix|dotenv|docker]
+  plan <profile>                  what applying would change, changing nothing
+  apply <profile>                 every new terminal starts with the profile
+  unapply                         return every variable to its previous value
+  drift                           does a new terminal match what is applied?
   hook install|remove
-  migrate                         traz os perfis do HyperEnv 1.x (macOS)
+  migrate                         bring in profiles from HyperEnv 1.x (macOS)
   version
 ";
 
-/// Erro de uso (código 2) separado de erro de execução (código 1).
+/// A usage error (exit code 2), kept apart from a runtime error (exit code 1).
 enum Fail {
     Usage(String),
     Run(String),
@@ -75,10 +75,10 @@ impl Ctx {
         store
             .get(name)
             .cloned()
-            .ok_or_else(|| Fail::Run(format!("Não existe perfil \"{name}\".")))
+            .ok_or_else(|| Fail::Run(format!("No profile named \"{name}\".")))
     }
 
-    /// O motor certo para a plataforma: registro no Windows, shell no resto.
+    /// The right engine for the platform: the registry on Windows, the shell elsewhere.
     fn with_engine<T>(&self, f: impl FnOnce(&Engine) -> Result<T, Fail>) -> Result<T, Fail> {
         #[cfg(windows)]
         {
@@ -97,7 +97,7 @@ impl Ctx {
 fn main() -> ExitCode {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
     let json = take_flag(&mut args, "--json");
-    // Só para testes e diagnóstico: uma home descartável e o shell dela.
+    // Only for tests and diagnostics: a throwaway home and its shell.
     let home = take_value(&mut args, "--home");
     let shell = take_value(&mut args, "--shell");
 
@@ -115,12 +115,10 @@ fn layout(home: Option<String>, shell: Option<String>) -> Result<Layout, Fail> {
             let path = PathBuf::from(h);
             Layout::in_home(&path, Platform::current(), Shell::Zsh, "/bin/zsh")
         }
-        None => {
-            Layout::detect().ok_or_else(|| Fail::Run("Não consegui descobrir a pasta pessoal.".into()))?
-        }
+        None => Layout::detect().ok_or_else(|| Fail::Run("Could not determine the home folder.".into()))?,
     };
     if let Some(s) = shell {
-        layout.shell = Shell::from_path(&s).ok_or_else(|| Fail::Usage(format!("Shell desconhecido: {s}")))?;
+        layout.shell = Shell::from_path(&s).ok_or_else(|| Fail::Usage(format!("Unknown shell: {s}.")))?;
         layout.shell_path = PathBuf::from(&s);
     }
     Ok(layout)
@@ -169,7 +167,7 @@ fn take_value(args: &mut Vec<String>, flag: &str) -> Option<String> {
 fn arg<'a>(args: &'a [String], i: usize, what: &str) -> Result<&'a str, Fail> {
     args.get(i)
         .map(String::as_str)
-        .ok_or_else(|| Fail::Usage(format!("falta {what}")))
+        .ok_or_else(|| Fail::Usage(format!("missing {what}")))
 }
 
 fn run(ctx: &Ctx, args: &[String]) -> Out {
@@ -180,33 +178,33 @@ fn run(ctx: &Ctx, args: &[String]) -> Out {
         ["status"] => status(ctx),
         ["profiles"] => profiles(ctx),
         ["profile", "create", ..] => edit(ctx, |s| {
-            s.create(arg(args, 2, "o nome")?)?;
-            Ok(format!("Perfil \"{}\" criado.", args[2].trim()))
+            s.create(arg(args, 2, "the name")?)?;
+            Ok(format!("Profile \"{}\" created.", args[2].trim()))
         }),
         ["profile", "rename", ..] => edit(ctx, |s| {
-            s.rename(arg(args, 2, "o nome")?, arg(args, 3, "o novo nome")?)?;
-            Ok(format!("\"{}\" agora se chama \"{}\".", args[2], args[3].trim()))
+            s.rename(arg(args, 2, "the name")?, arg(args, 3, "the new name")?)?;
+            Ok(format!("\"{}\" renamed to \"{}\".", args[2], args[3].trim()))
         }),
         ["profile", "duplicate", ..] => edit(ctx, |s| {
-            s.duplicate(arg(args, 2, "o nome")?, arg(args, 3, "o novo nome")?)?;
-            Ok(format!("\"{}\" duplicado como \"{}\".", args[2], args[3].trim()))
+            s.duplicate(arg(args, 2, "the name")?, arg(args, 3, "the new name")?)?;
+            Ok(format!("\"{}\" duplicated as \"{}\".", args[2], args[3].trim()))
         }),
         ["profile", "delete", name] => {
             if applied_name(ctx)?.as_deref() == Some(*name) {
                 return Err(Fail::Run(format!(
-                    "\"{name}\" está aplicado. Desfaça antes de apagar."
+                    "\"{name}\" is applied. Undo it before deleting."
                 )));
             }
             edit(ctx, |s| {
                 s.delete(name)?;
-                Ok(format!("Perfil \"{name}\" apagado."))
+                Ok(format!("Profile \"{name}\" deleted."))
             })
         }
         ["vars", name, rest @ ..] => vars(ctx, name, rest.contains(&"--show")),
         ["var", "set", name, assignment, rest @ ..] => {
             let (key, value) = assignment
                 .split_once('=')
-                .ok_or_else(|| Fail::Usage("use CHAVE=VALOR".into()))?;
+                .ok_or_else(|| Fail::Usage("use KEY=VALUE".into()))?;
             let secret = if rest.contains(&"--secret") {
                 Some(true)
             } else if rest.contains(&"--no-secret") {
@@ -216,21 +214,21 @@ fn run(ctx: &Ctx, args: &[String]) -> Out {
             };
             edit(ctx, |s| {
                 s.set_var(name, key, value, secret)?;
-                Ok(format!("{key} definida em \"{name}\"."))
+                Ok(format!("{key} set in \"{name}\"."))
             })
         }
         ["var", verb @ ("enable" | "disable"), name, key] => edit(ctx, |s| {
             s.set_enabled(name, key, *verb == "enable")?;
             Ok(format!(
-                "{key} {} em \"{name}\".",
-                if *verb == "enable" { "ligada" } else { "desligada" }
+                "{key} {} in \"{name}\".",
+                if *verb == "enable" { "enabled" } else { "disabled" }
             ))
         }),
         ["var", "delete", name, key] => edit(ctx, |s| {
             if !s.remove_var(name, key)? {
-                return Err(Fail::Run(format!("\"{name}\" não tem {key}.")));
+                return Err(Fail::Run(format!("\"{name}\" has no {key}.")));
             }
-            Ok(format!("{key} removida de \"{name}\"."))
+            Ok(format!("{key} removed from \"{name}\"."))
         }),
         ["import", name, file] => import(ctx, name, file),
         ["export", name, rest @ ..] => export(ctx, name, rest),
@@ -240,21 +238,18 @@ fn run(ctx: &Ctx, args: &[String]) -> Out {
         ["drift"] => drift(ctx),
         ["hook", "install"] => ctx.with_engine(|e| {
             e.install_hook()?;
-            Ok((json!({ "hook": "installed" }), "Hook instalado.".into()))
+            Ok((json!({ "hook": "installed" }), "Hook installed.".into()))
         }),
         ["hook", "remove"] => ctx.with_engine(|e| {
             e.remove_hook()?;
-            Ok((json!({ "hook": "notInstalled" }), "Hook removido.".into()))
+            Ok((json!({ "hook": "notInstalled" }), "Hook removed.".into()))
         }),
         ["migrate"] => migrate(ctx),
-        _ => Err(Fail::Usage(format!(
-            "comando não reconhecido: {}",
-            args.join(" ")
-        ))),
+        _ => Err(Fail::Usage(format!("unrecognized command: {}", args.join(" ")))),
     }
 }
 
-/// Carrega, muda e grava os perfis.
+/// Loads, changes and saves the profiles.
 fn edit(ctx: &Ctx, f: impl FnOnce(&mut Store) -> Result<String, Fail>) -> Out {
     let mut store = ctx.store()?;
     let text = f(&mut store)?;
@@ -287,7 +282,7 @@ fn profiles(ctx: &Ctx) -> Out {
         .collect();
     let mut text = String::new();
     if store.profiles.is_empty() {
-        text.push_str("Nenhum perfil. Crie um com: hyperenv profile create <nome>\n");
+        text.push_str("No profiles. Create one with: hyperenv profile create <name>\n");
     }
     for p in &store.profiles {
         let mark = if applied.as_deref() == Some(p.name.as_str()) {
@@ -295,7 +290,7 @@ fn profiles(ctx: &Ctx) -> Out {
         } else {
             "○"
         };
-        text.push_str(&format!("{mark} {}  ({} variáveis)\n", p.name, p.variables.len()));
+        text.push_str(&format!("{mark} {}  ({} variables)\n", p.name, p.variables.len()));
     }
     Ok((json!(data), text))
 }
@@ -303,7 +298,7 @@ fn profiles(ctx: &Ctx) -> Out {
 fn vars(ctx: &Ctx, name: &str, show: bool) -> Out {
     let store = ctx.store()?;
     let p = ctx.profile(&store, name)?;
-    // No JSON os valores vão sempre inteiros: o plugin decide como mostrar.
+    // In JSON the values always go out in full: the plugin decides how to show them.
     let data: Vec<Value> = p
         .variables
         .iter()
@@ -322,7 +317,7 @@ fn vars(ctx: &Ctx, name: &str, show: bool) -> Out {
         } else {
             v.value.to_string()
         };
-        let off = if v.enabled { "" } else { "   (desligada)" };
+        let off = if v.enabled { "" } else { "   (disabled)" };
         text.push_str(&format!("{:width$}  {value}{off}\n", v.key.as_str()));
     }
     Ok((json!(data), text))
@@ -339,9 +334,9 @@ fn import(ctx: &Ctx, name: &str, file: &str) -> Out {
         .iter()
         .map(|d| json!({ "line": d.line, "severity": if d.severity == Severity::Error { "error" } else { "warning" }, "message": d.message }))
         .collect();
-    let mut text = format!("{count} variáveis importadas para \"{name}\".\n");
+    let mut text = format!("{count} variables imported into \"{name}\".\n");
     for d in &decoded.diagnostics {
-        text.push_str(&format!("  linha {}: {}\n", d.line, d.message));
+        text.push_str(&format!("  line {}: {}\n", d.line, d.message));
     }
     Ok((json!({ "imported": count, "diagnostics": notes }), text))
 }
@@ -359,7 +354,7 @@ fn export(ctx: &Ctx, name: &str, rest: &[&str]) -> Out {
     let (text, diags) = dotenv::encode(
         &p.env_set(),
         dialect,
-        &[format!("HyperEnv — perfil {}", p.name)],
+        &[format!("HyperEnv — profile {}", p.name)],
         false,
     );
     for d in &diags {
@@ -390,14 +385,14 @@ fn plan(ctx: &Ctx, name: &str) -> Out {
     ctx.with_engine(|e| {
         let plan = e.plan(&p)?;
         let mut text = format!(
-            "Aplicar \"{name}\" exportaria {} variáveis.\n",
+            "Applying \"{name}\" would export {} variables.\n",
             plan.exports.len()
         );
         for k in plan.captures.keys() {
-            text.push_str(&format!("  + {k} (o valor atual fica guardado para desfazer)\n"));
+            text.push_str(&format!("  + {k} (the current value is kept for undo)\n"));
         }
         for k in plan.restores.keys() {
-            text.push_str(&format!("  − {k} (volta ao valor de antes)\n"));
+            text.push_str(&format!("  − {k} (goes back to its previous value)\n"));
         }
         Ok((plan_json(&plan), text))
     })
@@ -414,12 +409,12 @@ fn apply(ctx: &Ctx, name: &str) -> Out {
         data["undoCommand"] = json!(out.undo_command);
         let text = if ctx.layout.platform == Platform::Windows {
             format!(
-                "\"{name}\" aplicado: {} variáveis. Todo terminal novo já nasce com elas.\n",
+                "\"{name}\" applied: {} variables. Every new terminal starts with them.\n",
                 out.plan.exports.len()
             )
         } else {
             format!(
-                "\"{name}\" aplicado: {} variáveis. Todo terminal novo já nasce com elas.\nNeste terminal: {}\n",
+                "\"{name}\" applied: {} variables. Every new terminal starts with them.\nIn this terminal: {}\n",
                 out.plan.exports.len(),
                 out.reload_command
             )
@@ -435,9 +430,9 @@ fn unapply(ctx: &Ctx) -> Out {
         let mut data = plan_json(&plan);
         data["undoCommand"] = json!(e.undo_command());
         let text = match had {
-            None => "Nada aplicado.".to_owned(),
+            None => "Nothing applied.".to_owned(),
             Some(n) => format!(
-                "\"{n}\" desfeito: {} variáveis de volta ao que eram.\nNeste terminal: {}\n",
+                "\"{n}\" undone: {} variables back to what they were.\nIn this terminal: {}\n",
                 plan.restores.len(),
                 e.undo_command()
             ),
@@ -453,11 +448,11 @@ fn drift_json(drift: &[Drift]) -> (Value, String) {
         match d {
             Drift::SessionEdited => {
                 items.push(json!({ "kind": "sessionEdited" }));
-                text.push_str("O script de sessão foi editado à mão.\n");
+                text.push_str("The session script was edited by hand.\n");
             }
             Drift::HookMissing => {
                 items.push(json!({ "kind": "hookMissing" }));
-                text.push_str("O bloco do HyperEnv sumiu do arquivo de inicialização.\n");
+                text.push_str("The HyperEnv block is missing from the startup file.\n");
             }
             Drift::Semantic(map) => {
                 for (k, detail) in map {
@@ -465,11 +460,11 @@ fn drift_json(drift: &[Drift]) -> (Value, String) {
                     match detail {
                         Missing { expected } => {
                             items.push(json!({ "kind": "missing", "key": k, "expected": expected }));
-                            text.push_str(&format!("{k}: aplicado, mas um terminal novo não tem.\n"));
+                            text.push_str(&format!("{k}: applied, but a new terminal does not have it.\n"));
                         }
                         Shadowed { expected, actual } => {
                             items.push(json!({ "kind": "shadowed", "key": k, "expected": expected, "actual": actual }));
-                            text.push_str(&format!("{k}: algo depois do HyperEnv troca o valor.\n"));
+                            text.push_str(&format!("{k}: something after HyperEnv changes the value.\n"));
                         }
                     }
                 }
@@ -482,14 +477,7 @@ fn drift_json(drift: &[Drift]) -> (Value, String) {
 fn drift(ctx: &Ctx) -> Out {
     ctx.with_engine(|e| {
         let (data, text) = drift_json(&e.drift()?);
-        Ok((
-            data,
-            if text.is_empty() {
-                "Sem divergência.".into()
-            } else {
-                text
-            },
-        ))
+        Ok((data, if text.is_empty() { "No drift.".into() } else { text }))
     })
 }
 
@@ -536,13 +524,13 @@ fn status(ctx: &Ctx) -> Out {
                     "exportedKeys": t.exports.keys().collect::<Vec<_>>(),
                 });
                 text.push_str(&format!(
-                    "● {} aplicado em {} ({} variáveis)\n",
+                    "● {} applied at {} ({} variables)\n",
                     t.profile_name,
                     t.timestamp,
                     t.exports.len()
                 ));
             }
-            None => text.push_str("○ Nada aplicado — ambiente original.\n"),
+            None => text.push_str("○ Nothing applied — original environment.\n"),
         }
         text.push_str(&format!("  shell: {}", data["shell"].as_str().unwrap_or("")));
         if let Some(f) = l.startup_file() {
@@ -551,7 +539,10 @@ fn status(ctx: &Ctx) -> Out {
         text.push('\n');
         text.push_str(&drift_text);
         if pending > 0 {
-            text.push_str(&format!("  {pending} aplicação(ões) interrompida(s) no meio.\n"));
+            text.push_str(&format!(
+                "  {pending} interrupted apply in the journal.
+"
+            ));
         }
         Ok((data, text))
     })
@@ -559,10 +550,10 @@ fn status(ctx: &Ctx) -> Out {
 
 fn hook_text(h: &HookStatus) -> String {
     match h {
-        HookStatus::Installed => "hook instalado".into(),
-        HookStatus::NotInstalled => "sem hook".into(),
-        HookStatus::NotNeeded => "registro".into(),
-        HookStatus::Malformed(d) => format!("bloco malformado: {d}"),
+        HookStatus::Installed => "hook installed".into(),
+        HookStatus::NotInstalled => "no hook".into(),
+        HookStatus::NotNeeded => "registry".into(),
+        HookStatus::Malformed(d) => format!("malformed block: {d}"),
     }
 }
 
@@ -570,22 +561,19 @@ fn hook_text(h: &HookStatus) -> String {
 fn migrate(ctx: &Ctx) -> Out {
     use hyperenv_engine::migrate;
     let Some(db) = migrate::find_store(&ctx.layout.home) else {
-        return Ok((
-            json!({ "profiles": 0 }),
-            "Nenhum dado do HyperEnv 1.x encontrado.".into(),
-        ));
+        return Ok((json!({ "profiles": 0 }), "No HyperEnv 1.x data found.".into()));
     };
     let mut store = ctx.store()?;
     let report = migrate::import_swiftdata(&db, &mut store)?;
     ctx.save(&store)?;
     let mut text = format!(
-        "{} perfis e {} variáveis trazidos de {}.\nO banco antigo não foi alterado.\n",
+        "{} profiles and {} variables brought in from {}.\nThe old database was not modified.\n",
         report.profiles,
         report.variables,
         ctx.layout.display(&db)
     );
     for s in &report.skipped {
-        text.push_str(&format!("  ignorada (nome inválido): {s}\n"));
+        text.push_str(&format!("  skipped (invalid name): {s}\n"));
     }
     Ok((
         json!({ "profiles": report.profiles, "variables": report.variables, "skipped": report.skipped }),
@@ -595,5 +583,8 @@ fn migrate(ctx: &Ctx) -> Out {
 
 #[cfg(not(target_os = "macos"))]
 fn migrate(_: &Ctx) -> Out {
-    Ok((json!({ "profiles": 0 }), "Só há o que migrar no macOS.".into()))
+    Ok((
+        json!({ "profiles": 0 }),
+        "Migration is only available on macOS.".into(),
+    ))
 }

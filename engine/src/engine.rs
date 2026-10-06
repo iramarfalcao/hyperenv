@@ -1,4 +1,4 @@
-//! Aplicar e desfazer: a única porta pela qual o ambiente da máquina muda.
+//! Apply and undo: the only door through which the machine's environment changes.
 
 use std::collections::BTreeMap;
 
@@ -19,19 +19,19 @@ use crate::{Error, fsx, now_rfc3339};
 pub enum HookStatus {
     NotInstalled,
     Installed,
-    /// O bloco existe mas está malformado — recusar adivinhar, oferecer reparo.
+    /// The block exists but is malformed — refuse to guess, offer a repair.
     Malformed(String),
-    /// Windows: não há arquivo; o registro é o destino.
+    /// Windows: there is no file; the registry is the target.
     NotNeeded,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Drift {
-    /// O script gerado foi editado à mão.
+    /// The generated script was edited by hand.
     SessionEdited,
-    /// O bloco sumiu do arquivo de inicialização enquanto o journal diz aplicado.
+    /// The block vanished from the startup file while the journal says applied.
     HookMissing,
-    /// O shell (ou o registro) mostra valores diferentes dos que escrevemos.
+    /// The shell (or the registry) shows values different from the ones we wrote.
     Semantic(BTreeMap<EnvKey, DriftDetail>),
 }
 
@@ -39,15 +39,15 @@ pub enum Drift {
 pub struct Outcome {
     pub transaction: Transaction,
     pub plan: Plan,
-    /// Para um terminal já aberto receber o perfil agora.
+    /// For an already-open terminal to pick up the profile now.
     pub reload_command: String,
-    /// Para um terminal já aberto voltar ao original.
+    /// For an already-open terminal to go back to the original.
     pub undo_command: String,
 }
 
-/// Para onde o ambiente vai.
+/// Where the environment goes.
 enum Target<'a> {
-    /// macOS e Linux: script de sessão carregado pelo arquivo de inicialização.
+    /// macOS and Linux: a session script loaded by the startup file.
     Shell,
     /// Windows: `HKCU\Environment`.
     Registry(&'a dyn Registry),
@@ -60,7 +60,7 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    /// Motor de shell (macOS e Linux).
+    /// Shell engine (macOS and Linux).
     pub fn new(layout: Layout, probe: &'a dyn Probe) -> Self {
         Self {
             layout,
@@ -69,7 +69,7 @@ impl<'a> Engine<'a> {
         }
     }
 
-    /// Motor de registro (Windows).
+    /// Registry engine (Windows).
     pub fn with_registry(layout: Layout, probe: &'a dyn Probe, registry: &'a dyn Registry) -> Self {
         Self {
             layout,
@@ -125,9 +125,9 @@ impl<'a> Engine<'a> {
         }
     }
 
-    /// Põe o bloco que carrega a sessão. Roda uma vez: as aplicações seguintes
-    /// só reescrevem o script de sessão, e o arquivo do usuário não é mais
-    /// tocado — é o que mantém a operação recorrente segura.
+    /// Installs the block that loads the session. Runs once: later applies only
+    /// rewrite the session script, and the user's file is not touched again —
+    /// that is what keeps the recurring operation safe.
     pub fn install_hook(&self) -> Result<(), Error> {
         let _lock = fsx::Lock::acquire(&self.layout.lock_file())?;
         self.install_hook_locked()
@@ -160,10 +160,10 @@ impl<'a> Engine<'a> {
         self.write_hook(change)
     }
 
-    /// Lê e calcula a mudança no arquivo de inicialização sem escrever nada.
-    /// Roda *antes* de qualquer escrita da aplicação: um arquivo ilegível ou
-    /// com o bloco malformado tem de barrar tudo, e não deixar a sessão já
-    /// trocada para trás.
+    /// Reads and computes the change to the startup file without writing
+    /// anything. Runs *before* any of the apply's writes: an unreadable file
+    /// or a malformed block has to stop everything, not leave an already
+    /// swapped session behind.
     fn prepare_hook(&self) -> Result<Option<HookChange>, Error> {
         let Some(file) = self.layout.startup_file() else {
             return Ok(None);
@@ -205,8 +205,8 @@ impl<'a> Engine<'a> {
         Ok(fsx::sha256(&body.join("\n")))
     }
 
-    /// Guarda uma cópia intacta de antes de o HyperEnv mexer no arquivo pela
-    /// primeira vez. Backups nunca são apagados.
+    /// Keeps an intact copy from before HyperEnv first touched the file.
+    /// Backups are never deleted.
     fn backup_once(&self, file: &std::path::Path, content: &str) -> Result<(), Error> {
         if content.is_empty() {
             return Ok(());
@@ -233,9 +233,9 @@ impl<'a> Engine<'a> {
         )
     }
 
-    // ── Planejar ─────────────────────────────────────────────────────────────
+    // ── Plan ─────────────────────────────────────────────────────────────────
 
-    /// O que o ambiente "original" do usuário tem, medido sem o HyperEnv.
+    /// What the user's "original" environment contains, measured without HyperEnv.
     fn observe_original(&self) -> Result<(EnvSet, BTreeMap<EnvKey, RegKind>), Error> {
         match self.target() {
             Target::Shell => Ok((self.probe.observe(&self.layout, true)?, BTreeMap::new())),
@@ -247,18 +247,18 @@ impl<'a> Engine<'a> {
         }
     }
 
-    /// O que uma aplicação mudaria, sem tocar em nada.
+    /// What an apply would change, without touching anything.
     pub fn plan(&self, profile: &Profile) -> Result<Plan, Error> {
         let (observed, _) = self.observe_original()?;
         let managed = self.current()?.map(|t| t.managed).unwrap_or_default();
         Ok(reconcile::plan(&profile.env_set(), &managed, &observed))
     }
 
-    // ── Aplicar ──────────────────────────────────────────────────────────────
+    // ── Apply ────────────────────────────────────────────────────────────────
 
     pub fn apply(&self, profile: &Profile) -> Result<Outcome, Error> {
-        // Medido com o HyperEnv desligado, para ler a configuração real do
-        // usuário e não a nossa saída anterior.
+        // Measured with HyperEnv switched off, to read the user's real
+        // configuration and not our own previous output.
         let (observed, kinds) = self.observe_original()?;
         let _lock = fsx::Lock::acquire(&self.layout.lock_file())?;
         let hook = match self.target() {
@@ -280,7 +280,7 @@ impl<'a> Engine<'a> {
             &self.layout.display(&self.layout.unsession_script()),
         );
 
-        // O tipo original no registro, preso junto com o valor original.
+        // The original registry type, pinned together with the original value.
         let mut registry_kinds = existing
             .as_ref()
             .map(|t| t.registry_kinds.clone())
@@ -310,16 +310,16 @@ impl<'a> Engine<'a> {
             registry_kinds,
         };
 
-        // 1. Intenção primeiro, com os originais. Se morrermos depois daqui,
-        //    a próxima abertura ainda consegue reverter tudo.
+        // 1. Intent first, with the originals. If we die after this point,
+        //    the next startup can still revert everything.
         self.journal().write_pending(&tx)?;
 
-        // 2. Os scripts. O inverso é escrito *agora*, não na hora de desfazer,
-        //    para continuar valendo mesmo se o HyperEnv for apagado.
+        // 2. The scripts. The inverse is written *now*, not at undo time, so
+        //    it keeps working even if HyperEnv is deleted.
         fsx::write_atomic(&self.layout.session_script(), session.as_bytes(), Some(0o600))?;
         fsx::write_atomic(&self.layout.unsession_script(), inverse.as_bytes(), Some(0o600))?;
 
-        // 3. O destino de fato.
+        // 3. The actual target.
         match self.target() {
             Target::Shell => {
                 self.write_hook(hook)?;
@@ -341,7 +341,7 @@ impl<'a> Engine<'a> {
             }
         }
 
-        // 4. Confirma.
+        // 4. Commit.
         tx.state = TxState::Applied;
         self.journal().commit(&tx)?;
 
@@ -353,9 +353,9 @@ impl<'a> Engine<'a> {
         })
     }
 
-    // ── Desfazer ─────────────────────────────────────────────────────────────
+    // ── Undo ─────────────────────────────────────────────────────────────────
 
-    /// Devolve cada variável controlada ao valor de antes.
+    /// Returns every controlled variable to its previous value.
     pub fn unapply(&self) -> Result<Plan, Error> {
         let _lock = fsx::Lock::acquire(&self.layout.lock_file())?;
         let Some(existing) = self.current()? else {
@@ -371,9 +371,9 @@ impl<'a> Engine<'a> {
             &stamp,
             &self.layout.display(&self.layout.unsession_script()),
         );
-        // Sessão vazia, e não apagada: o hook confere se dá para ler, e manter
-        // o arquivo deixa a próxima aplicação instantânea.
-        let empty = render::session(shell, &EnvSet::new(), "nenhum", &stamp);
+        // An empty session rather than a deleted one: the hook checks that it
+        // is readable, and keeping the file makes the next apply instant.
+        let empty = render::session(shell, &EnvSet::new(), "none", &stamp);
         fsx::write_atomic(&self.layout.unsession_script(), inverse.as_bytes(), Some(0o600))?;
         fsx::write_atomic(&self.layout.session_script(), empty.as_bytes(), Some(0o600))?;
 
@@ -394,9 +394,9 @@ impl<'a> Engine<'a> {
         Ok(plan)
     }
 
-    // ── Recuperação e divergência ────────────────────────────────────────────
+    // ── Recovery and drift ───────────────────────────────────────────────────
 
-    /// Aplicações gravadas e nunca confirmadas: sinal de queda no meio.
+    /// Applies written but never committed: a sign of a crash midway.
     pub fn pending(&self) -> Result<Vec<Transaction>, Error> {
         self.journal().pending()
     }
@@ -420,8 +420,8 @@ impl<'a> Engine<'a> {
                 if self.hook_status() != HookStatus::Installed {
                     out.push(Drift::HookMissing);
                 }
-                // O que um checksum não pega: o usuário pôr o próprio
-                // `export API_URL=…` depois do nosso bloco.
+                // What a checksum does not catch: the user adding their own
+                // `export API_URL=…` after our block.
                 self.probe.observe(&self.layout, false)?
             }
             Target::Registry(reg) => reg.read_all()?.into_iter().map(|(k, (v, _))| (k, v)).collect(),

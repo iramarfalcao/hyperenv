@@ -1,5 +1,5 @@
-//! Todos os caminhos que o HyperEnv conhece, num valor só — injetável, para
-//! que os testes rodem num HOME descartável sem tocar no do usuário.
+//! Every path HyperEnv knows about, in a single value — injectable, so tests
+//! run in a throwaway HOME without touching the user's.
 
 use std::path::{Path, PathBuf};
 
@@ -28,20 +28,20 @@ impl Platform {
 pub struct Layout {
     pub platform: Platform,
     pub home: PathBuf,
-    /// `~/.config/hyperenv` no macOS e no Linux (o mesmo do app 1.x);
-    /// `%APPDATA%\hyperenv` no Windows.
+    /// `~/.config/hyperenv` on macOS and Linux (the same as the 1.x app);
+    /// `%APPDATA%\hyperenv` on Windows.
     pub config_dir: PathBuf,
-    /// O shell de login, que decide o dialeto e o arquivo de inicialização.
+    /// The login shell, which decides the dialect and the startup file.
     pub shell: Shell,
-    /// O executável desse shell, para a sondagem.
+    /// That shell's executable, for the probe.
     pub shell_path: PathBuf,
-    /// zsh com `ZDOTDIR` apontando para outra pasta lê o `.zprofile` de lá,
-    /// não o da home.
+    /// zsh with `ZDOTDIR` pointing elsewhere reads the `.zprofile` there, not
+    /// the one in home.
     pub zdotdir: Option<PathBuf>,
 }
 
 impl Layout {
-    /// O layout real desta conta.
+    /// The real layout for this account.
     pub fn detect() -> Option<Self> {
         let platform = Platform::current();
         let home = home_dir()?;
@@ -66,7 +66,7 @@ impl Layout {
         })
     }
 
-    /// Layout de teste: tudo dentro de `home`.
+    /// Test layout: everything inside `home`.
     pub fn in_home(home: &Path, platform: Platform, shell: Shell, shell_path: impl Into<PathBuf>) -> Self {
         Self {
             platform,
@@ -105,18 +105,20 @@ impl Layout {
         self.config_dir.join("lock")
     }
 
-    /// O arquivo do usuário onde vai o bloco que carrega a sessão.
+    /// The user's file that holds the block loading the session.
     ///
-    /// - zsh: `~/.zprofile`, não `~/.zshenv` — o `/etc/zprofile` roda o
-    ///   `path_helper`, que reordena o PATH, e o `.zshenv` roda em *todo* shell
-    ///   não interativo, vazando credenciais de perfil para scripts alheios.
-    /// - bash no macOS: `~/.bash_profile` (o Terminal abre shell de login).
-    /// - bash no Linux: `~/.bashrc` — os emuladores de terminal abrem shell
-    ///   interativo *sem* login, que não lê o `.bash_profile`.
-    /// - fish: `config.fish`, com o mesmo bloco gerenciado. *Não* `conf.d`: o
-    ///   fish carrega o `conf.d` antes do `config.fish`, e um `set -gx` do
-    ///   usuário lá passaria por cima do perfil (achado no teste ponta a ponta).
-    /// - PowerShell (Windows): não há arquivo; o ambiente vai pelo registro.
+    /// - zsh: `~/.zprofile`, not `~/.zshenv` — `/etc/zprofile` runs
+    ///   `path_helper`, which reorders PATH, and `.zshenv` runs in *every*
+    ///   non-interactive shell, leaking profile credentials into unrelated
+    ///   scripts.
+    /// - bash on macOS: `~/.bash_profile` (Terminal opens a login shell).
+    /// - bash on Linux: `~/.bashrc` — terminal emulators open an interactive
+    ///   shell *without* login, which does not read `.bash_profile`.
+    /// - fish: `config.fish`, with the same managed block. *Not* `conf.d`:
+    ///   fish loads `conf.d` before `config.fish`, and a user's `set -gx` there
+    ///   would override the profile (found in the end-to-end test).
+    /// - PowerShell (Windows): there is no file; the environment goes through
+    ///   the registry.
     pub fn startup_file(&self) -> Option<PathBuf> {
         match (self.shell, self.platform) {
             (Shell::Zsh, _) => Some(self.zdotdir.as_ref().unwrap_or(&self.home).join(".zprofile")),
@@ -135,8 +137,8 @@ impl Layout {
             .join("fish")
     }
 
-    /// Forma relativa a `$HOME` para gravar dentro de scripts, para o bloco
-    /// continuar válido se a home for montada em outro lugar.
+    /// `$HOME`-relative form for writing inside scripts, so the block stays
+    /// valid if home is mounted somewhere else.
     pub fn shell_relative(&self, path: &Path) -> String {
         match path.strip_prefix(&self.home) {
             Ok(rest) => {
@@ -151,7 +153,7 @@ impl Layout {
         }
     }
 
-    /// Forma com `~` para a interface.
+    /// `~` form for the interface.
     pub fn display(&self, path: &Path) -> String {
         match path.strip_prefix(&self.home) {
             Ok(rest) => format!("~/{}", rest.to_string_lossy()),
@@ -160,9 +162,9 @@ impl Layout {
     }
 }
 
-/// A home real da conta. No Unix vem do banco de senhas, não do `$HOME`: um
-/// app empacotado pode receber um `$HOME` de contêiner e mandar toda escrita
-/// para o lugar errado.
+/// The account's real home. On Unix it comes from the password database, not
+/// from `$HOME`: a packaged app may receive a container `$HOME` and send every
+/// write to the wrong place.
 pub fn home_dir() -> Option<PathBuf> {
     #[cfg(unix)]
     {
@@ -181,7 +183,7 @@ fn login_shell(platform: Platform) -> (Shell, PathBuf) {
     let from_passwd = passwd_field(|pw| pw.pw_shell);
     #[cfg(not(unix))]
     let from_passwd: Option<String> = None;
-    // O `$SHELL` é herdado e mente com frequência sobre o shell de login real.
+    // `$SHELL` is inherited and often lies about the real login shell.
     let path = from_passwd
         .or_else(|| std::env::var("SHELL").ok())
         .unwrap_or_else(|| "/bin/zsh".into());
@@ -191,8 +193,8 @@ fn login_shell(platform: Platform) -> (Shell, PathBuf) {
 
 #[cfg(unix)]
 fn passwd_field(pick: impl Fn(&libc::passwd) -> *mut libc::c_char) -> Option<String> {
-    // SAFETY: getpwuid devolve um ponteiro para memória estática válida até a
-    // próxima chamada; copiamos o texto antes de sair.
+    // SAFETY: getpwuid returns a pointer to static memory that stays valid
+    // until the next call; we copy the text before returning.
     unsafe {
         let pw = libc::getpwuid(libc::getuid());
         if pw.is_null() {

@@ -1,6 +1,6 @@
-//! Motor do HyperEnv: a camada que toca a máquina — perfis em disco, scripts
-//! de sessão, o arquivo de inicialização do shell (macOS e Linux) e o registro
-//! (Windows). Toda decisão de *o que* fazer vem do `hyperenv-core`.
+//! HyperEnv's engine: the layer that touches the machine — profiles on disk,
+//! session scripts, the shell startup file (macOS and Linux) and the registry
+//! (Windows). Every decision about *what* to do comes from `hyperenv-core`.
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -50,27 +50,27 @@ impl fmt::Display for Error {
             Error::Io { path, source } => write!(f, "{}: {source}", path.display()),
             Error::NotUtf8 { path, offset } => write!(
                 f,
-                "{} não é UTF-8 válido (primeiro byte ruim na posição {offset}). O HyperEnv não vai reescrevê-lo, porque decodificar com perda destruiria conteúdo.",
+                "{} is not valid UTF-8 (first bad byte at offset {offset}). HyperEnv will not rewrite it, because decoding it lossily would destroy content.",
                 path.display()
             ),
             Error::SymlinkOutsideHome { path, resolved } => write!(
                 f,
-                "{} é um link para {}, fora da sua pasta pessoal.",
+                "{} is a symlink to {}, which is outside your home folder.",
                 path.display(),
                 resolved.display()
             ),
             Error::Busy(path) => write!(
                 f,
-                "Outra operação do HyperEnv está em andamento (trava em {}).",
+                "Another HyperEnv operation is in progress (lock held at {}).",
                 path.display()
             ),
-            Error::Corrupt { path, detail } => write!(f, "{} não pôde ser lido: {detail}", path.display()),
-            Error::ProbeTimedOut(s) => write!(f, "Ler o ambiente do shell passou de {s}s."),
-            Error::Unsupported(what) => write!(f, "Ainda não é possível {what}."),
-            Error::NoSuchProfile(n) => write!(f, "Não existe perfil \"{n}\"."),
-            Error::DuplicateProfile(n) => write!(f, "Já existe um perfil \"{n}\"."),
-            Error::InvalidProfileName(n) => write!(f, "\"{n}\" não serve como nome de perfil."),
-            Error::InvalidKey(k) => write!(f, "'{k}' não é um nome de variável válido."),
+            Error::Corrupt { path, detail } => write!(f, "{} could not be read: {detail}", path.display()),
+            Error::ProbeTimedOut(s) => write!(f, "Reading your shell environment timed out after {s}s."),
+            Error::Unsupported(what) => write!(f, "It is not yet possible to {what}."),
+            Error::NoSuchProfile(n) => write!(f, "No profile named \"{n}\"."),
+            Error::DuplicateProfile(n) => write!(f, "A profile named \"{n}\" already exists."),
+            Error::InvalidProfileName(n) => write!(f, "\"{n}\" is not a valid profile name."),
+            Error::InvalidKey(k) => write!(f, "'{k}' is not a valid environment variable name."),
             Error::Core(e) => e.fmt(f),
         }
     }
@@ -84,7 +84,7 @@ impl From<hyperenv_core::Error> for Error {
     }
 }
 
-/// Data e hora em RFC 3339, UTC.
+/// The current date and time in RFC 3339, UTC.
 pub fn now_rfc3339() -> String {
     time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)

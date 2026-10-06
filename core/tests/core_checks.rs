@@ -1,5 +1,5 @@
-//! Port dos 121 checks de `Tests/CoreChecks/main.swift`, mais os casos novos
-//! de bash, fish e PowerShell. É a régua mínima do núcleo em Rust.
+//! A port of the 121 checks in `Tests/CoreChecks/main.swift`, plus the new
+//! bash, fish and PowerShell cases. This is the Rust core's minimum bar.
 
 use hyperenv_core::dotenv::{self, Dialect, Limits, Severity};
 use hyperenv_core::guarded_block::{self as gb, Markers};
@@ -31,15 +31,15 @@ fn decode_one(text: &str) -> Option<String> {
         .map(|v| v.as_str().to_owned())
 }
 
-// ── Bloco gerenciado ─────────────────────────────────────────────────────────
+// ── Managed block ────────────────────────────────────────────────────────────
 
 const ORIGINAL: &str = "eval \"$(/opt/homebrew/bin/brew shellenv zsh)\"";
 
 #[test]
 fn install_on_empty_file() {
     let out = gb::install("", &body(), &Markers::v1(), "f").unwrap();
-    assert!(!out.starts_with('\n'), "sem linha em branco no começo");
-    assert!(out.ends_with('\n'), "termina com quebra de linha");
+    assert!(!out.starts_with('\n'), "no blank line at the start");
+    assert!(out.ends_with('\n'), "ends with a newline");
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn malformed_markers_refuse_instead_of_guessing() {
     ] {
         assert!(
             gb::install(&bad, &body(), &m, "f").is_err(),
-            "deveria recusar: {bad:?}"
+            "should refuse: {bad:?}"
         );
     }
 }
@@ -126,7 +126,7 @@ fn extract_body_returns_inner_lines() {
     assert_eq!(gb::extract_body("nada", "f").unwrap(), None);
 }
 
-// ── Aspas e ida e volta pelo .env ────────────────────────────────────────────
+// ── Quoting and round trips through .env ─────────────────────────────────────
 
 const NASTY: &[&str] = &[
     "simple",
@@ -170,7 +170,7 @@ fn roundtrip_dotenv_dialect() {
     }
 }
 
-// ── Detalhes da leitura do .env ──────────────────────────────────────────────
+// ── .env parsing details ─────────────────────────────────────────────────────
 
 #[test]
 fn dotenv_parsing_specifics() {
@@ -244,7 +244,7 @@ fn encode_is_sorted() {
     assert!(pos("ALPHA") < pos("MIKE") && pos("MIKE") < pos("ZED"));
 }
 
-// ── Nomes ────────────────────────────────────────────────────────────────────
+// ── Names ────────────────────────────────────────────────────────────────────
 
 #[test]
 fn key_validation() {
@@ -254,7 +254,7 @@ fn key_validation() {
     assert!(EnvKey::new("_A1").is_some());
 }
 
-// ── Estado anterior: vazio não pode virar ausente ────────────────────────────
+// ── Prior state: empty must not become absent ────────────────────────────────
 
 #[test]
 fn prior_state_roundtrips_and_keeps_empty_distinct() {
@@ -282,7 +282,7 @@ fn prior_state_json_matches_the_swift_journal() {
     );
 }
 
-// ── Scripts gerados ──────────────────────────────────────────────────────────
+// ── Generated scripts ────────────────────────────────────────────────────────
 
 fn session_vars() -> EnvSet {
     set(&[("API_URL", "https://x.test/#frag"), ("TOKEN", "it's secret")])
@@ -349,7 +349,7 @@ fn shell_detection() {
     assert_eq!(Shell::from_path("/bin/tcsh"), None);
 }
 
-// ── Reconciliação: a invariante de capturar uma vez ──────────────────────────
+// ── Reconciliation: the capture-once invariant ───────────────────────────────
 
 #[test]
 fn capture_once_invariant() {
@@ -366,8 +366,8 @@ fn capture_once_invariant() {
     assert_eq!(plan_a.captures.get(&key("NEW_VAR")), Some(&PriorState::Absent));
     assert!(!plan_a.captures.contains_key(&key("KEEP")));
 
-    // O ambiente que a sondagem veria já foi alterado por A — recapturar aqui
-    // é o bug clássico.
+    // The environment the probe would see has already been changed by A —
+    // re-capturing here is the classic bug.
     let polluted = set(&[
         ("API_URL", "https://dev.example"),
         ("KEEP", "untouched"),
@@ -448,22 +448,22 @@ fn semantic_drift_detection() {
     );
 }
 
-// ── Sondagem ─────────────────────────────────────────────────────────────────
+// ── Probe ────────────────────────────────────────────────────────────────────
 
 #[test]
 fn probe_parses_after_sentinel_and_keeps_newlines() {
-    let mut data = b"banner do prompt\nlixo=1\0".to_vec();
+    let mut data = b"prompt banner\njunk=1\0".to_vec();
     data.extend_from_slice(probe::SENTINEL.as_bytes());
     data.extend_from_slice(b"\nA=1\0MULTI=x\ny\0bad-name=z\0\0");
     let env = probe::parse_nul_separated(&data).unwrap();
     assert_eq!(env.get(&key("A")).map(|v| v.as_str()), Some("1"));
     assert_eq!(env.get(&key("MULTI")).map(|v| v.as_str()), Some("x\ny"));
-    assert!(env.get(&key("lixo")).is_none());
+    assert!(env.get(&key("junk")).is_none());
     assert_eq!(env.len(), 2);
-    assert!(probe::parse_nul_separated(b"sem marcador").is_err());
+    assert!(probe::parse_nul_separated(b"no marker").is_err());
 }
 
-// ── Classificação do ambiente existente ──────────────────────────────────────
+// ── Classifying the existing environment ─────────────────────────────────────
 
 #[test]
 fn seed_classification() {
@@ -477,7 +477,7 @@ fn seed_classification() {
     assert_eq!(c("__CFBundleIdentifier", "x"), Bucket::Cosmetic);
     assert_eq!(c("HOME", "/Users/x"), Bucket::Session);
     assert_eq!(c("MY_API_TOKEN", "abc"), Bucket::User);
-    // Linux e Windows
+    // Linux and Windows
     assert_eq!(c("XDG_RUNTIME_DIR", "/run/user/1000"), Bucket::Session);
     assert_eq!(c("LD_PRELOAD", "/x.so"), Bucket::Rejected);
     assert_eq!(c("USERPROFILE", "C:\\Users\\x"), Bucket::Session);

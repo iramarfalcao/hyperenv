@@ -1,4 +1,4 @@
-//! Mede o ambiente que o shell do usuário de fato produz.
+//! Measures the environment the user's shell actually produces.
 
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -11,13 +11,13 @@ use hyperenv_core::render::{BYPASS_VARIABLE, Shell};
 use crate::{Error, layout::Layout};
 
 pub trait Probe {
-    /// `bypass = true`: o ambiente como se o HyperEnv não estivesse instalado
-    /// — é a medida do "original" do usuário. `false`: o que um terminal novo
-    /// recebe de fato, para detectar divergência.
+    /// `bypass = true`: the environment as if HyperEnv were not installed —
+    /// the measure of the user's "original". `false`: what a new terminal
+    /// actually receives, for detecting drift.
     fn observe(&self, layout: &Layout, bypass: bool) -> Result<EnvSet, Error>;
 }
 
-/// Roda o shell de login e lê o `env -0`.
+/// Runs the login shell and reads `env -0`.
 pub struct ShellProbe {
     pub timeout: Duration,
 }
@@ -31,9 +31,9 @@ impl Default for ShellProbe {
 }
 
 impl ShellProbe {
-    /// Base mínima e explícita. Herdar o ambiente do próprio app importaria
-    /// ruído (Xcode, XPC) para o perfil do usuário; um `env -i` puro perderia
-    /// as poucas que só o sistema fornece — essas passam por nome.
+    /// A minimal, explicit base. Inheriting the app's own environment would
+    /// import noise (Xcode, XPC) into the user's profile; a bare `env -i` would
+    /// lose the few variables only the system provides — those pass by name.
     fn base(layout: &Layout) -> Vec<(String, String)> {
         let mut base: Vec<(String, String)> = [
             "USER",
@@ -50,10 +50,10 @@ impl ShellProbe {
         base.push(("HOME".into(), layout.home.to_string_lossy().into_owned()));
         base.push(("SHELL".into(), layout.shell_path.to_string_lossy().into_owned()));
         base.push(("PATH".into(), "/usr/bin:/bin:/usr/sbin:/sbin".into()));
-        // Impede o framework de prompt de desenhar ou emitir sequências de escape.
+        // Stops prompt frameworks from drawing or emitting escape sequences.
         base.push(("TERM".into(), "dumb".into()));
-        // Só na home de verdade: numa home de teste o XDG do host apontaria o
-        // fish para a configuração real do usuário.
+        // Only in the real home: in a test home the host's XDG would point
+        // fish at the user's real configuration.
         if Some(&layout.home) == crate::layout::home_dir().as_ref()
             && let Ok(xdg) = std::env::var("XDG_CONFIG_HOME")
         {
@@ -65,12 +65,12 @@ impl ShellProbe {
 
 impl Probe for ShellProbe {
     fn observe(&self, layout: &Layout, bypass: bool) -> Result<EnvSet, Error> {
-        // `-l -i`: o que a pessoa vê num terminal novo, com `.zshrc`/`.bashrc`.
+        // `-l -i`: what the person sees in a new terminal, with `.zshrc`/`.bashrc`.
         let script = format!("printf '%s' '{SENTINEL}'; env -0");
         let args: Vec<&str> = match layout.shell {
             Shell::Zsh | Shell::Bash => vec!["-l", "-i", "-c", &script],
             Shell::Fish => vec!["--login", "--interactive", "--command", &script],
-            Shell::PowerShell => return Err(Error::Unsupported("sondar o PowerShell".into())),
+            Shell::PowerShell => return Err(Error::Unsupported("probe PowerShell".into())),
         };
         let mut cmd = Command::new(&layout.shell_path);
         cmd.args(&args)
@@ -92,8 +92,8 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Vec<u8>, Erro
         .stderr(Stdio::null())
         .spawn()
         .map_err(|e| Error::io(cmd.get_program(), e))?;
-    let mut stdout = child.stdout.take().expect("stdout encanado");
-    // Lê numa thread: um shell que imprime muito encheria o pipe e travaria.
+    let mut stdout = child.stdout.take().expect("stdout is piped");
+    // Read on a thread: a shell that prints a lot would fill the pipe and hang.
     let reader = std::thread::spawn(move || {
         let mut buf = Vec::new();
         let _ = stdout.read_to_end(&mut buf);
@@ -114,7 +114,7 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Vec<u8>, Erro
     Ok(reader.join().unwrap_or_default())
 }
 
-/// Sondagem fixa, para testes.
+/// A fixed probe, for tests.
 pub struct FixedProbe(pub EnvSet);
 
 impl Probe for FixedProbe {

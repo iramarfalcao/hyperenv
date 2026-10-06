@@ -1,8 +1,7 @@
-//! Windows: o ambiente persistente do usuário mora em `HKCU\Environment`.
+//! Windows: the user's persistent environment lives in `HKCU\Environment`.
 //!
-//! Atrás de um trait para a lógica de aplicar e desfazer ser testada em
-//! qualquer sistema com um registro em memória; só o `WinRegistry` fala com o
-//! Windows de verdade.
+//! Behind a trait so the apply and undo logic can be tested on any system
+//! with an in-memory registry; only `WinRegistry` talks to the real Windows.
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -16,12 +15,12 @@ pub trait Registry {
     fn read_all(&self) -> Result<BTreeMap<EnvKey, (EnvValue, RegKind)>, Error>;
     fn set(&self, key: &EnvKey, value: &EnvValue, kind: RegKind) -> Result<(), Error>;
     fn delete(&self, key: &EnvKey) -> Result<(), Error>;
-    /// Avisa os programas abertos (Explorer, terminais) que o ambiente mudou,
-    /// para que o *próximo* terminal aberto por eles já nasça com ele.
+    /// Tells running programs (Explorer, terminals) that the environment
+    /// changed, so the *next* terminal they open already starts with it.
     fn broadcast(&self) -> Result<(), Error>;
 }
 
-/// Registro em memória, para testes.
+/// In-memory registry, for tests.
 #[derive(Default)]
 pub struct MemRegistry {
     pub values: RefCell<BTreeMap<EnvKey, (EnvValue, RegKind)>>,
@@ -86,8 +85,10 @@ mod win {
                 let Some(key) = EnvKey::new(name) else { continue };
                 let units: Vec<u16> = raw
                     .bytes
-                    .chunks_exact(2)
-                    .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_le_bytes(*c))
                     .collect();
                 let text = String::from_utf16_lossy(&units).trim_end_matches('\0').to_owned();
                 out.insert(key, (EnvValue::new(text), kind));
@@ -124,7 +125,7 @@ mod win {
             };
             let param: Vec<u16> = "Environment".encode_utf16().chain(std::iter::once(0)).collect();
             let mut result = 0usize;
-            // SAFETY: mensagem de broadcast padrão; o texto vive até o fim da chamada.
+            // SAFETY: a standard broadcast message; the string lives until the call returns.
             unsafe {
                 SendMessageTimeoutW(
                     HWND_BROADCAST,

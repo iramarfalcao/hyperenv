@@ -1,9 +1,11 @@
-//! Migração do app 1.x (macOS): o banco SwiftData vira a lista plana de perfis.
+//! Migration from the 1.x app (macOS): the SwiftData database becomes the flat
+//! list of profiles.
 //!
-//! Só leitura: o banco antigo nunca é alterado nem apagado, para a volta ao
-//! 1.x continuar possível. Projeto e perfil viram um nome só
-//! (`api · producao`), e o perfil "Default" — a foto do ambiente da máquina —
-//! fica de fora: na 2.0 o original é o próprio ambiente, sem perfil.
+//! Read-only: the old database is never modified or deleted, so going back to
+//! 1.x stays possible. Project and profile merge into a single name
+//! (`api · production`), and the "Default" profile — the snapshot of the
+//! machine's environment — is left out: in 2.0 the original is the environment
+//! itself, with no profile.
 
 use std::path::{Path, PathBuf};
 
@@ -13,7 +15,7 @@ use rusqlite::{Connection, OpenFlags};
 use crate::Error;
 use crate::store::{Store, Variable};
 
-/// Onde o SwiftData do 1.x guarda o banco: com e sem sandbox.
+/// Where 1.x's SwiftData keeps the database: with and without the sandbox.
 pub fn candidate_stores(home: &Path) -> Vec<PathBuf> {
     vec![
         home.join("Library/Containers/com.falcaosl.hyperenv/Data/Library/Application Support/default.store"),
@@ -21,8 +23,8 @@ pub fn candidate_stores(home: &Path) -> Vec<PathBuf> {
     ]
 }
 
-/// Um `default.store` só é do HyperEnv se tiver as três tabelas dele — o
-/// nome do arquivo é o padrão do SwiftData e outros apps usam o mesmo.
+/// A `default.store` only belongs to HyperEnv if it has HyperEnv's three
+/// tables — the file name is SwiftData's default and other apps use it too.
 pub fn find_store(home: &Path) -> Option<PathBuf> {
     candidate_stores(home).into_iter().find(|p| is_hyperenv_store(p))
 }
@@ -50,12 +52,12 @@ fn open(path: &Path) -> rusqlite::Result<Connection> {
 pub struct Report {
     pub profiles: usize,
     pub variables: usize,
-    /// Variáveis com nome inválido, deixadas de fora.
+    /// Variables with an invalid name, left out.
     pub skipped: Vec<String>,
 }
 
-/// Junta os perfis do banco antigo ao `store`. Perfis cujo nome já existe
-/// ganham um sufixo, nunca sobrescrevem.
+/// Merges the old database's profiles into `store`. Profiles whose name
+/// already exists get a suffix; they never overwrite.
 pub fn import_swiftdata(db: &Path, store: &mut Store) -> Result<Report, Error> {
     let corrupt = |e: rusqlite::Error| Error::Corrupt {
         path: db.to_path_buf(),
@@ -87,13 +89,13 @@ pub fn import_swiftdata(db: &Path, store: &mut Store) -> Result<Report, Error> {
 
     let mut report = Report::default();
     for (pk, project, profile) in rows {
-        // Com um projeto só, o nome do projeto não acrescenta nada.
+        // With a single project, the project name adds nothing.
         let base = if projects <= 1 || project.is_empty() {
             profile.clone()
         } else {
             format!("{project} · {profile}")
         };
-        let name = unique_name(store, if base.trim().is_empty() { "perfil" } else { &base });
+        let name = unique_name(store, if base.trim().is_empty() { "profile" } else { &base });
 
         let mut vars_stmt = conn
             .prepare(
@@ -115,7 +117,7 @@ pub fn import_swiftdata(db: &Path, store: &mut Store) -> Result<Report, Error> {
             .map_err(corrupt)?;
 
         store.create(&name)?;
-        let target = store.profiles.last_mut().expect("acabou de ser criado");
+        let target = store.profiles.last_mut().expect("just created");
         for (key, value, secret, enabled) in vars {
             match EnvKey::new(key.clone()) {
                 Some(key) if !target.variables.iter().any(|v| v.key == key) => {
@@ -144,5 +146,5 @@ fn unique_name(store: &Store, base: &str) -> String {
     (2..)
         .map(|i| format!("{base} ({i})"))
         .find(|n| !taken(n))
-        .expect("sempre há um sufixo livre")
+        .expect("there is always a free suffix")
 }

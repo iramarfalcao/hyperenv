@@ -1,11 +1,11 @@
-//! Núcleo do HyperEnv: tudo o que decide *o que* fazer com as variáveis de
-//! ambiente, sem fazer I/O.
+//! HyperEnv's core: everything that decides *what* to do with environment
+//! variables, with no I/O.
 //!
-//! Um perfil é um lote de variáveis. Aplicar escreve o lote para que todo
-//! terminal novo nasça com ele; desfazer devolve cada variável ao valor que
-//! tinha antes — não só apaga. Este crate é a mesma lógica para macOS (via
-//! FFI), Linux e Windows; quem toca disco, shell e registro é a camada de
-//! motor, por cima dele.
+//! A profile is a batch of variables. Applying writes the batch so every new
+//! terminal starts with it; un-applying puts each variable back to the value it
+//! had before — not merely unsets it. This crate is the same logic for macOS
+//! (through FFI), Linux and Windows; the engine layer on top of it is what
+//! touches the disk, the shell and the registry.
 
 pub mod dotenv;
 pub mod guarded_block;

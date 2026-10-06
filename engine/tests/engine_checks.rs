@@ -1,6 +1,6 @@
-//! O motor contra uma home descartável: perfis, aplicar, desfazer, hook,
-//! journal, registro em memória e a migração do 1.x. Nada aqui toca a home
-//! de verdade.
+//! The engine against a throwaway home: profiles, apply, undo, hook, journal,
+//! in-memory registry and the 1.x migration. Nothing here touches the real
+//! home.
 
 use std::fs;
 use std::path::Path;
@@ -33,7 +33,7 @@ fn profile(store: &mut Store, name: &str, vars: &[(&str, &str)]) -> hyperenv_eng
     store.get(name).unwrap().clone()
 }
 
-// ── Perfis ───────────────────────────────────────────────────────────────────
+// ── Profiles ─────────────────────────────────────────────────────────────────
 
 #[test]
 fn store_crud_and_persistence() {
@@ -52,24 +52,24 @@ fn store_crud_and_persistence() {
         Err(Error::InvalidKey(_))
     ));
     s.duplicate("api-local", "api-prod").unwrap();
-    s.rename("api-prod", "api-producao").unwrap();
-    s.set_enabled("api-producao", "PORT", false).unwrap();
+    s.rename("api-prod", "api-production").unwrap();
+    s.set_enabled("api-production", "PORT", false).unwrap();
     s.save(&path).unwrap();
 
     let back = Store::load(&path).unwrap();
     assert_eq!(back, s);
     let local = back.get("api-local").unwrap();
     assert_eq!(local.variables.len(), 2);
-    assert!(local.variables[0].secret, "DATABASE_URL tem cara de segredo");
+    assert!(local.variables[0].secret, "DATABASE_URL looks like a secret");
     assert!(!local.variables[1].secret);
     assert_eq!(local.env_set().get(&key("PORT")).unwrap().as_str(), "9090");
     assert!(
-        back.get("api-producao")
+        back.get("api-production")
             .unwrap()
             .env_set()
             .get(&key("PORT"))
             .is_none(),
-        "desligada não exporta"
+        "a disabled variable is not exported"
     );
 
     #[cfg(unix)]
@@ -98,7 +98,7 @@ fn store_merge_from_dotenv() {
     );
 }
 
-// ── Aplicar e desfazer (shell) ───────────────────────────────────────────────
+// ── Apply and undo (shell) ───────────────────────────────────────────────────
 
 #[test]
 fn apply_writes_session_hook_and_journal_then_unapply_restores() {
@@ -121,7 +121,7 @@ fn apply_writes_session_hook_and_journal_then_unapply_restores() {
     assert_eq!(engine.hook_status(), HookStatus::Installed);
 
     let z = fs::read_to_string(&zprofile).unwrap();
-    assert!(z.starts_with(original), "conteúdo do usuário intacto");
+    assert!(z.starts_with(original), "the user's content is intact");
     assert!(z.contains("${HOME}/.config/hyperenv/session.zsh"));
 
     let session = fs::read_to_string(engine.layout.session_script()).unwrap();
@@ -139,7 +139,7 @@ fn apply_writes_session_hook_and_journal_then_unapply_restores() {
     );
     assert!(engine.pending().unwrap().is_empty());
 
-    // Um backup intacto de antes do primeiro toque.
+    // An intact backup from before the first touch.
     let backups: Vec<_> = fs::read_dir(engine.layout.backups_dir())
         .unwrap()
         .flatten()
@@ -160,7 +160,7 @@ fn apply_writes_session_hook_and_journal_then_unapply_restores() {
     assert_eq!(
         fs::read_to_string(&zprofile).unwrap(),
         original,
-        "remover o hook devolve os mesmos bytes"
+        "removing the hook gives back the same bytes"
     );
 }
 
@@ -175,7 +175,7 @@ fn second_apply_keeps_the_true_original() {
     Engine::new(layout(home.path(), Shell::Zsh), &original)
         .apply(&a)
         .unwrap();
-    // A sondagem agora veria o valor de A — não pode virar o "original".
+    // The probe would now see A's value — it must not become the "original".
     let polluted = FixedProbe(set(&[("API_URL", "https://dev")]));
     let engine = Engine::new(layout(home.path(), Shell::Zsh), &polluted);
     engine.apply(&b).unwrap();
@@ -221,7 +221,7 @@ fn bash_and_fish_targets() {
             .contains("set -gx X '1'")
     );
     fish.remove_hook().unwrap();
-    assert_eq!(fs::read_to_string(&conf).unwrap(), "", "bloco removido");
+    assert_eq!(fs::read_to_string(&conf).unwrap(), "", "block removed");
 }
 
 #[cfg(unix)]
@@ -230,7 +230,7 @@ fn symlinked_startup_file_is_written_through_and_outside_home_refused() {
     let home = tempfile::tempdir().unwrap();
     let dotfiles = home.path().join("dotfiles");
     fs::create_dir(&dotfiles).unwrap();
-    fs::write(dotfiles.join("zprofile"), "# meu\n").unwrap();
+    fs::write(dotfiles.join("zprofile"), "# mine\n").unwrap();
     std::os::unix::fs::symlink(dotfiles.join("zprofile"), home.path().join(".zprofile")).unwrap();
 
     let probe = FixedProbe(EnvSet::new());
@@ -261,7 +261,7 @@ fn malformed_block_is_refused() {
     let home = tempfile::tempdir().unwrap();
     fs::write(
         home.path().join(".zprofile"),
-        format!("{}\nsem fim\n", Markers::v1().begin),
+        format!("{}\nno end\n", Markers::v1().begin),
     )
     .unwrap();
     let probe = FixedProbe(EnvSet::new());
@@ -294,13 +294,13 @@ fn drift_detection() {
         .apply(&p)
         .unwrap();
 
-    // Um terminal novo mostra B sobrescrito pelo usuário.
-    let shell_now = FixedProbe(set(&[("A", "1"), ("B", "sobrescrito")]));
+    // A new terminal shows B overridden by the user.
+    let shell_now = FixedProbe(set(&[("A", "1"), ("B", "overridden")]));
     let engine = Engine::new(layout(home.path(), Shell::Zsh), &shell_now);
     let drift = engine.drift().unwrap();
     assert!(matches!(drift.as_slice(), [Drift::Semantic(m)] if m.contains_key(&key("B"))));
 
-    fs::write(engine.layout.session_script(), "# mexido\n").unwrap();
+    fs::write(engine.layout.session_script(), "# tampered\n").unwrap();
     assert!(engine.drift().unwrap().contains(&Drift::SessionEdited));
 }
 
@@ -313,7 +313,7 @@ fn unreadable_startup_file_stops_before_any_write() {
     let probe = FixedProbe(EnvSet::new());
     let engine = Engine::new(layout(home.path(), Shell::Zsh), &probe);
     assert!(matches!(engine.apply(&p), Err(Error::NotUtf8 { .. })));
-    assert!(!engine.layout.session_script().exists(), "nada escrito");
+    assert!(!engine.layout.session_script().exists(), "nothing written");
     assert!(engine.pending().unwrap().is_empty());
 }
 
@@ -325,7 +325,7 @@ fn pending_transaction_is_visible_after_a_crash() {
     let probe = FixedProbe(EnvSet::new());
     let engine = Engine::new(layout(home.path(), Shell::Zsh), &probe);
     let tx = engine.apply(&p).unwrap().transaction;
-    // Simula a queda entre gravar a intenção e confirmar.
+    // Simulates a crash between writing the intent and committing it.
     journal::Journal {
         layout: &engine.layout,
     }
@@ -338,7 +338,7 @@ fn pending_transaction_is_visible_after_a_crash() {
     assert!(engine.pending().unwrap().is_empty());
 }
 
-// ── Windows (registro em memória) ────────────────────────────────────────────
+// ── Windows (in-memory registry) ─────────────────────────────────────────────
 
 #[test]
 fn registry_apply_and_unapply_restore_value_and_kind() {
@@ -377,14 +377,14 @@ fn registry_apply_and_unapply_restore_value_and_kind() {
     assert_eq!(
         v[&key("JAVA_HOME")],
         ("%USERPROFILE%\\jdk".into(), RegKind::Expand),
-        "tipo original volta"
+        "the original type comes back"
     );
     assert!(!v.contains_key(&key("NEW_VAR")));
     assert_eq!(v[&key("KEEP")], ("x".into(), RegKind::String));
     assert_eq!(*reg.broadcasts.borrow(), 2);
 }
 
-// ── Journal do 1.x ───────────────────────────────────────────────────────────
+// ── 1.x journal ──────────────────────────────────────────────────────────────
 
 #[test]
 fn legacy_swift_journal_is_understood() {
@@ -402,7 +402,7 @@ fn legacy_swift_journal_is_understood() {
       "markerBlockHash": "def",
       "state": "applied"
     }"#;
-    let tx = journal::parse_any(legacy).expect("formato 1.x");
+    let tx = journal::parse_any(legacy).expect("1.x format");
     assert_eq!(tx.profile_name, "api/dev");
     assert_eq!(
         tx.managed.baseline(&key("API_URL")),
@@ -411,7 +411,7 @@ fn legacy_swift_journal_is_understood() {
     assert_eq!(tx.managed.baseline(&key("NEW_VAR")), Some(&PriorState::Absent));
     assert_eq!(tx.exports.get(&key("API_URL")).unwrap().as_str(), "https://dev");
 
-    // Desfazer a partir do journal antigo devolve o original.
+    // Undoing from the old journal restores the original.
     let home = tempfile::tempdir().unwrap();
     let lay = layout(home.path(), Shell::Zsh);
     fs::create_dir_all(lay.journal_dir()).unwrap();
@@ -424,7 +424,7 @@ fn legacy_swift_journal_is_understood() {
     );
 }
 
-// ── Migração do SwiftData ────────────────────────────────────────────────────
+// ── SwiftData migration ──────────────────────────────────────────────────────
 
 #[cfg(target_os = "macos")]
 #[test]
@@ -450,9 +450,9 @@ fn swiftdata_migration() {
 
     assert!(migrate::is_hyperenv_store(&db));
     let mut store = Store::default();
-    store.create("api · dev").unwrap(); // nome já ocupado
+    store.create("api · dev").unwrap(); // name already taken
     let report = migrate::import_swiftdata(&db, &mut store).unwrap();
-    assert_eq!(report.profiles, 3, "o Default fica de fora");
+    assert_eq!(report.profiles, 3, "Default is left out");
     assert_eq!(report.skipped, ["api · dev (2): bad-key"]);
     let names: Vec<&str> = store.profiles.iter().map(|p| p.name.as_str()).collect();
     assert_eq!(names, ["api · dev", "api · dev (2)", "api · prd", "web · dev"]);

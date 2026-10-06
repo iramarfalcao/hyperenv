@@ -1,9 +1,9 @@
-//! O registro do que está de fato aplicado na máquina.
+//! The record of what is actually applied on the machine.
 //!
-//! JSON simples no disco, separado dos perfis de propósito: ele descreve
-//! mudanças em arquivos (e no registro) que o app não possui sozinho. Se os
-//! perfis se corromperem, este arquivo e os scripts gerados continuam
-//! dizendo como desfazer tudo — legível num editor de texto às 2 da manhã.
+//! Plain JSON on disk, deliberately kept apart from the profiles: it describes
+//! changes to files (and to the registry) that the app does not own on its
+//! own. If the profiles get corrupted, this file and the generated scripts
+//! still say how to undo everything — readable in a text editor at 2 a.m.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -19,16 +19,16 @@ use crate::{Error, fsx, layout::Layout};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TxState {
-    /// Gravado antes de tocar em qualquer arquivo. Se aparecer na abertura,
-    /// a aplicação anterior morreu no meio.
+    /// Written before touching any file. If it is found at startup, the
+    /// previous apply died midway.
     Pending,
     Applied,
     Unapplied,
 }
 
-/// Como o Windows guarda o valor original: `REG_SZ` ou `REG_EXPAND_SZ`.
-/// Desfazer tem de devolver o mesmo tipo, senão `%USERPROFILE%\bin` deixa de
-/// expandir.
+/// How Windows stores the original value: `REG_SZ` or `REG_EXPAND_SZ`.
+/// Undoing has to restore the same type, otherwise `%USERPROFILE%\bin` stops
+/// expanding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RegKind {
@@ -44,12 +44,12 @@ pub struct Transaction {
     pub timestamp: String,
     pub profile_id: Option<Uuid>,
     pub profile_name: String,
-    /// `zsh`, `bash`, `fish` ou `registry`.
+    /// `zsh`, `bash`, `fish` or `registry`.
     pub target: String,
-    /// Cada variável que controlamos, com o valor de antes do primeiro toque.
-    /// É o que faz desfazer *restaurar*, e não só apagar.
+    /// Every variable we control, with its value from before the first touch.
+    /// This is what makes undo *restore*, not just delete.
     pub managed: ManagedState,
-    /// Exatamente o que foi escrito.
+    /// Exactly what was written.
     pub exports: EnvSet,
     pub session_hash: String,
     pub hook_hash: String,
@@ -77,12 +77,12 @@ impl Journal<'_> {
         };
         parse_any(&text).map(Some).ok_or(Error::Corrupt {
             path,
-            detail: "o journal não está num formato conhecido".into(),
+            detail: "the journal is not in a known format".into(),
         })
     }
 
-    /// Grava a intenção completa — com os valores originais — *antes* de mexer
-    /// em qualquer arquivo, para uma queda no meio ser recuperável.
+    /// Writes the full intent — with the original values — *before* touching
+    /// any file, so a crash midway is recoverable.
     pub fn write_pending(&self, tx: &Transaction) -> Result<(), Error> {
         let mut p = tx.clone();
         p.state = TxState::Pending;
@@ -103,8 +103,8 @@ impl Journal<'_> {
         fsx::remove_if_exists(&self.layout.current_journal())
     }
 
-    /// Órfãos aqui na abertura: uma execução anterior morreu entre gravar a
-    /// intenção e confirmar.
+    /// Orphans here at startup mean a previous run died between writing the
+    /// intent and committing it.
     pub fn pending(&self) -> Result<Vec<Transaction>, Error> {
         let dir = self.layout.history_dir();
         let Ok(entries) = std::fs::read_dir(&dir) else {
@@ -126,12 +126,12 @@ impl Journal<'_> {
 }
 
 fn write_json(path: &std::path::Path, tx: &Transaction) -> Result<(), Error> {
-    let mut text = serde_json::to_string_pretty(tx).expect("transação sempre serializa");
+    let mut text = serde_json::to_string_pretty(tx).expect("a transaction always serializes");
     text.push('\n');
     fsx::write_atomic(path, text.as_bytes(), Some(0o600))
 }
 
-/// Lê o formato 2 ou o do app 1.x (Swift), convertendo este.
+/// Reads format 2, or the 1.x (Swift) app's format, converting the latter.
 pub fn parse_any(text: &str) -> Option<Transaction> {
     if let Ok(tx) = serde_json::from_str::<Transaction>(text) {
         return Some(tx);
@@ -139,11 +139,11 @@ pub fn parse_any(text: &str) -> Option<Transaction> {
     parse_legacy(&serde_json::from_str(text).ok()?)
 }
 
-/// O journal do app 1.x.
+/// The 1.x app's journal.
 ///
-/// O `JSONEncoder` do Swift grava dicionário com chave que não é `String` como
-/// lista alternada `[chave, valor, chave, valor]` — é assim que `EnvSet` e
-/// `ManagedState` saíam. O nome vira `projeto/perfil`.
+/// Swift's `JSONEncoder` writes a dictionary whose key is not a `String` as an
+/// alternating list `[key, value, key, value]` — that is how `EnvSet` and
+/// `ManagedState` came out. The name becomes `project/profile`.
 fn parse_legacy(v: &Value) -> Option<Transaction> {
     let id = Uuid::parse_str(v.get("id")?.as_str()?).ok()?;
     let pairs = |field: &Value| -> Option<Vec<(EnvKey, Value)>> {
@@ -162,7 +162,7 @@ fn parse_legacy(v: &Value) -> Option<Transaction> {
 
     let mut managed = ManagedState::new();
     let baselines = pairs(v.get("managed")?.get("baselines")?)?;
-    // ManagedState só se monta pelo reconciliador; reconstruímos via plano.
+    // ManagedState can only be built by the reconciler; we rebuild it via a plan.
     let mut observed = EnvSet::new();
     let mut desired = EnvSet::new();
     for (k, state) in &baselines {

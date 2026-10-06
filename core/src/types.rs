@@ -1,7 +1,7 @@
-//! Os tipos de valor do núcleo: nome, valor, conjunto e estado anterior.
+//! Foundational value types: name, value, set and prior state.
 //!
-//! Puros e sem I/O, para atravessar threads e para serem testados sem tocar
-//! no sistema de arquivos.
+//! Pure and free of I/O, so they can cross threads and be exercised by tests
+//! without touching the filesystem.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -10,12 +10,12 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 // ── EnvKey ───────────────────────────────────────────────────────────────────
 
-/// Nome de variável validado.
+/// A validated environment variable name.
 ///
-/// POSIX permite `[A-Za-z_][A-Za-z0-9_]*`. O `env` pode *mostrar* nomes fora
-/// disso, mas o `export` não consegue *escrevê-los* — emitir um geraria um
-/// script que não carrega. Por isso o nome inválido é recusado no tipo, e não
-/// descoberto na hora de aplicar.
+/// POSIX allows `[A-Za-z_][A-Za-z0-9_]*`. `env` can *report* names outside that
+/// set, but `export` cannot *write* them — emitting one would produce a script
+/// that fails to load, so invalid names are rejected at the type level rather
+/// than discovered at apply time.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EnvKey(String);
 
@@ -25,8 +25,8 @@ impl EnvKey {
         Self::is_valid(&raw).then_some(Self(raw))
     }
 
-    /// Só ASCII, de propósito: classes de caractere sensíveis a locale
-    /// aceitariam nomes que o shell não exporta.
+    /// ASCII-only on purpose: locale-aware character classes would accept names
+    /// the shell cannot actually export.
     pub fn is_valid(candidate: &str) -> bool {
         let mut bytes = candidate.bytes();
         match bytes.next() {
@@ -56,15 +56,16 @@ impl Serialize for EnvKey {
 impl<'de> Deserialize<'de> for EnvKey {
     fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let raw = String::deserialize(d)?;
-        EnvKey::new(raw.clone())
-            .ok_or_else(|| serde::de::Error::custom(format!("'{raw}' não é um nome de variável válido")))
+        EnvKey::new(raw.clone()).ok_or_else(|| {
+            serde::de::Error::custom(format!("'{raw}' is not a valid environment variable name"))
+        })
     }
 }
 
 // ── EnvValue ─────────────────────────────────────────────────────────────────
 
-/// Valor de variável. Qualquer texto vale, menos NUL, que separa registros na
-/// saída do `env -0` e não sobrevive à ida e volta.
+/// An environment variable value. Any text is legal except NUL, which
+/// separates records in `env -0` output and cannot survive a round trip.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct EnvValue(String);
@@ -98,10 +99,10 @@ impl fmt::Display for EnvValue {
 
 // ── EnvSet ───────────────────────────────────────────────────────────────────
 
-/// Conjunto de variáveis que sempre itera em ordem de nome.
+/// A set of variables that always iterates in sorted name order.
 ///
-/// Determinismo não é cosmético: o `.env` exportado vai para o git, e uma
-/// ordem instável vira diff barulhento a cada exportação.
+/// Determinism is not cosmetic: exported `.env` files get committed to git, and
+/// an unstable order turns every export into a noisy diff.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct EnvSet(BTreeMap<EnvKey, EnvValue>);
@@ -135,7 +136,8 @@ impl EnvSet {
         self.0.is_empty()
     }
 
-    /// O da direita vence, como no shell: a última atribuição vale.
+    /// Right-hand side wins, matching shell semantics where the last assignment
+    /// takes effect.
     pub fn merging(&self, other: &EnvSet) -> EnvSet {
         let mut out = self.clone();
         for (k, v) in other.iter() {
@@ -153,14 +155,15 @@ impl FromIterator<(EnvKey, EnvValue)> for EnvSet {
 
 // ── PriorState ───────────────────────────────────────────────────────────────
 
-/// Como a variável estava *antes* do HyperEnv mexer nela.
+/// What a variable looked like *before* HyperEnv touched it.
 ///
-/// Não é `Option<EnvValue>` de propósito. String vazia e variável ausente são
-/// estados diferentes no shell, e desfazer tem de reproduzir a diferença —
-/// juntar os dois transformaria `export FOO=` em `unset FOO`.
+/// Deliberately not `Option<EnvValue>`. An empty string and an unset variable
+/// are different states in a shell, and un-apply has to reproduce the
+/// difference — collapsing them would silently turn `export FOO=` into
+/// `unset FOO`.
 ///
-/// No JSON vai com etiqueta explícita (`{"state":"present","value":""}`), o
-/// mesmo formato do journal do app Swift.
+/// Written to JSON with an explicit tag (`{"state":"present","value":""}`), the
+/// same shape the Swift app's journal uses.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "state", content = "value", rename_all = "lowercase")]
 pub enum PriorState {
@@ -177,7 +180,7 @@ impl PriorState {
     }
 }
 
-// ── Erros ────────────────────────────────────────────────────────────────────
+// ── Errors ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -189,13 +192,13 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::InvalidKey(k) => write!(f, "'{k}' não é um nome de variável válido."),
+            Error::InvalidKey(k) => write!(f, "'{k}' is not a valid environment variable name."),
             Error::UnbalancedMarkers { path, detail } => write!(
                 f,
-                "O bloco do HyperEnv em {path} está malformado ({detail}). O HyperEnv não vai adivinhar onde ele termina."
+                "The HyperEnv block in {path} is malformed ({detail}). HyperEnv will not guess where it ends."
             ),
             Error::ProbeSentinelMissing => {
-                f.write_str("Não achei o marcador de saída ao ler o ambiente do shell.")
+                f.write_str("Could not find the output marker while reading your shell environment.")
             }
         }
     }

@@ -1,8 +1,7 @@
-//! Decide quais variáveis já existentes na máquina entram no perfil padrão.
+//! Decides which of the machine's existing variables are safe to import.
 //!
-//! Tudo é separado em grupos, nada é jogado fora: a comparação de divergência
-//! depois precisa saber que uma variável foi *vista e excluída de propósito*,
-//! e não que simplesmente não existia.
+//! Everything is bucketed rather than discarded: drift comparison later needs
+//! to know a variable was *seen and deliberately excluded*, not merely absent.
 
 use std::collections::BTreeMap;
 
@@ -10,17 +9,17 @@ use crate::types::{EnvKey, EnvSet, EnvValue};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Bucket {
-    /// Configuração real do usuário. É o que o perfil padrão mostra.
+    /// Real user configuration. The only bucket that is importable.
     User,
-    /// Produzida por ferramenta, não escrita pelo usuário (`brew shellenv`…).
+    /// Produced by tooling rather than authored (`brew shellenv`, etc).
     Derived,
-    /// Vale agora e não depois. Reaplicar aponta para caminhos mortos.
+    /// Valid right now, meaningless later. Replaying these points at dead paths.
     Session,
-    /// Listas de busca separadas por `:`/`;`. Nunca fotografadas inteiras.
+    /// `:`/`;`-separated search paths. Never snapshot wholesale.
     PathLike,
-    /// Contabilidade de prompt e terminal.
+    /// Prompt and terminal bookkeeping.
     Cosmetic,
-    /// Recusadas de vez — regravar quebraria coisas.
+    /// Refused outright — writing these back would break things.
     Rejected,
 }
 
@@ -30,7 +29,7 @@ impl Bucket {
     }
 }
 
-/// Recriadas com outro nome a cada login: nunca reaplicar.
+/// Recreated under a different name on every login: never replay.
 const SESSION_SCOPED: &[&str] = &[
     // macOS
     "TMPDIR",
@@ -48,7 +47,7 @@ const SESSION_SCOPED: &[&str] = &[
     "SSH_CLIENT",
     "SSH_CONNECTION",
     "SSH_TTY",
-    // Linux (sessão gráfica e systemd)
+    // Linux (graphical session and systemd)
     "XDG_RUNTIME_DIR",
     "XDG_SESSION_ID",
     "XDG_SESSION_TYPE",
@@ -71,7 +70,7 @@ const SESSION_SCOPED: &[&str] = &[
     "TMP",
 ];
 
-/// A identidade da própria conta — nunca é do HyperEnv gerenciar.
+/// Identity of the account itself — never HyperEnv's to manage.
 const IDENTITY: &[&str] = &[
     "HOME",
     "USER",
@@ -149,9 +148,9 @@ const COSMETIC: &[&str] = &[
 const COSMETIC_PREFIXES: &[&str] = &["__CF", "__", "LC_TERMINAL"];
 const DERIVED_PREFIXES: &[&str] = &["HOMEBREW_"];
 
-/// `DYLD_*` é removido pelo SIP em processos protegidos e definir pode quebrar
-/// binários assinados; `LD_PRELOAD` injeta código em todo processo. Aparecem,
-/// mas nunca são gravados.
+/// `DYLD_*` is stripped by SIP for protected processes and setting it can
+/// break signed binaries; `LD_PRELOAD` injects code into every process. They
+/// are shown but never written.
 const REJECTED_PREFIXES: &[&str] = &["DYLD_", "LD_PRELOAD", "LD_AUDIT"];
 
 pub fn classify(key: &EnvKey, value: &EnvValue) -> Bucket {
@@ -173,8 +172,8 @@ pub fn classify(key: &EnvKey, value: &EnvValue) -> Bucket {
     if starts(DERIVED_PREFIXES) {
         return Bucket::Derived;
     }
-    // Um valor que é uma lista de diretórios unida por `:` (ou `;` no Windows)
-    // é quase certamente um caminho de busca com um nome que ainda não conhecemos.
+    // A value that is a `:`-joined (`;` on Windows) list of directories is
+    // almost certainly a search path under a name we do not know yet.
     if name.ends_with("PATH") && (value.as_str().contains(':') || value.as_str().contains(';')) {
         return Bucket::PathLike;
     }
@@ -195,12 +194,12 @@ impl Classification {
     }
 }
 
-/// Subtração da base.
+/// Base subtraction.
 ///
-/// O shell da sondagem herda o ambiente com que o app foi aberto, então a
-/// saída crua mistura a configuração do shell do usuário com a herança do
-/// próprio app. Subtrair a base isola o que o *shell* contribuiu, mantendo
-/// qualquer variável à qual o shell deu outro valor.
+/// The probe shell inherits whatever environment the app was launched with,
+/// so the raw output mixes the user's shell configuration with the app's own
+/// inheritance. Subtracting the base isolates what the *shell* contributed,
+/// while still keeping any variable the shell assigned a different value to.
 pub fn classify_observed(observed: &EnvSet, base: &EnvSet) -> Classification {
     let mut out = Classification::default();
     for (key, value) in observed.iter() {
