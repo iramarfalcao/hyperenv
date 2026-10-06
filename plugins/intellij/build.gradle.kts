@@ -104,10 +104,14 @@ intellijPlatform {
 
     publishing {
         token = providers.environmentVariable("PUBLISH_TOKEN")
-        // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
-        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
+        // Plain X.Y.Z everywhere (the Visual Studio Marketplace takes nothing
+        // else): an odd minor (2.1.x) is a pre-release and goes to the "alpha"
+        // channel, an even one (2.2.0) to the default channel. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
-        channels = providers.gradleProperty("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
+        channels = providers.gradleProperty("pluginVersion").map {
+            val minor = it.split('.').getOrNull(1)?.toIntOrNull() ?: 0
+            listOf(if (minor % 2 == 1) "alpha" else "default")
+        }
     }
 
     pluginVerification {

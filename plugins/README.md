@@ -71,9 +71,10 @@ and the rest still runs. They only ever use a throwaway `--home`.
   checks the tag against both manifests, builds and tests against the real
   command, publishes to the Visual Studio Marketplace, Open VSX and the
   JetBrains Marketplace (signed), and attaches the `.vsix` and `.zip` to a
-  GitHub release that never becomes "latest". A pre-release version
-  (`2.0.0-alpha.1`) goes to each store's pre-release channel. A store whose
-  secret is missing is skipped.
+  GitHub release that never becomes "latest". Versions are plain X.Y.Z (the
+  Visual Studio Marketplace takes nothing else): an odd minor (`2.1.x`) is a
+  pre-release and goes to each store's pre-release channel, an even one
+  (`2.2.0`) is stable. A store whose secret is missing is skipped.
 
 To release: bump `plugins/vscode/package.json` and
 `plugins/intellij/gradle.properties` to the same version, then

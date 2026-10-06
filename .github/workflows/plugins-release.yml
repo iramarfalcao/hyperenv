@@ -8,9 +8,10 @@
 # app release. The tag must match both manifests (plugins/vscode/package.json
 # and plugins/intellij/gradle.properties), and the job refuses otherwise.
 #
-# A version with a pre-release suffix (2.0.0-alpha.1) goes to each store's
-# pre-release channel — VS Code's "pre-release", JetBrains' channel named
-# after the suffix — so only people who opted in get it.
+# Versions are plain X.Y.Z (the Visual Studio Marketplace accepts nothing
+# else). An odd minor (2.1.x) is a pre-release: VS Code's "pre-release" and
+# JetBrains' "alpha" channel, so only people who opted in get it. An even
+# minor (2.2.0) is stable.
 #
 # Each store is published only when its secret exists; without it the step is
 # skipped, and the artifacts still land on the GitHub release. Secrets:
@@ -28,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to build and publish (e.g. plugins-v2.0.0-alpha.1)"
+        description: "Tag to build and publish (e.g. plugins-v2.1.0)"
         required: true
         type: string
       skip_jetbrains:
@@ -61,7 +62,11 @@ jobs:
           [ "$vscode" = "$version" ] || { echo "::error::package.json says $vscode, tag says $version"; exit 1; }
           [ "$intellij" = "$version" ] || { echo "::error::gradle.properties says $intellij, tag says $version"; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          case "$version" in *-*) echo "prerelease=true" ;; *) echo "prerelease=false" ;; esac >> "$GITHUB_OUTPUT"
+          # Plain X.Y.Z only — the Visual Studio Marketplace rejects suffixes.
+          # Microsoft's convention, used in every store: odd minor = pre-release.
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::'$version' must be X.Y.Z (odd minor = pre-release)"; exit 1; }
+          minor="$(echo "$version" | cut -d. -f2)"
+          if (( minor % 2 == 1 )); then echo "prerelease=true"; else echo "prerelease=false"; fi >> "$GITHUB_OUTPUT"
 
   # The command, for every platform the plugins ship to. Each plugin carries
   # it as a last-resort fallback, so it works with nothing else installed;
