@@ -1,5 +1,6 @@
-# Builds the `hyperenv` command for macOS, Linux and Windows and publishes the
-# binaries on a GitHub Release.
+# Builds HyperEnv 2 — the desktop app's installers for Windows and Linux and
+# the `hyperenv` command for macOS, Linux and Windows — and publishes them on
+# a GitHub Release.
 #
 # Its own tag (`cli-v2.0.0-alpha.1`), separate from the app's `v*`: the 1.x
 # installer downloads `releases/latest/download/HyperEnv.dmg`, so a CLI
@@ -76,8 +77,64 @@ jobs:
             target/${{ matrix.target }}/release/hyperenv.exe
           if-no-files-found: error
 
+  # The desktop app's installers, each built on its own system:
+  # NSIS (.exe, per-user) on Windows, .deb and AppImage on Linux.
+  desktop:
+    name: desktop ${{ matrix.arch }}-${{ matrix.system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { system: windows, arch: x64, os: windows-2025, formats: nsis }
+          - { system: windows, arch: arm64, os: windows-11-arm, formats: nsis }
+          - { system: linux, arch: x64, os: ubuntu-24.04, formats: "deb,appimage" }
+          - { system: linux, arch: arm64, os: ubuntu-24.04-arm, formats: "deb,appimage" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Linux build dependencies
+        if: matrix.system == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev libxkbcommon-dev libwayland-dev libfuse2
+
+      - name: cargo-packager
+        shell: bash
+        run: cargo install cargo-packager --locked --version 0.11.8
+
+      - name: Package
+        shell: bash
+        run: cargo packager -p hyperenv-desktop --release -f ${{ matrix.formats }}
+
+      - name: Rename
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${TAG#cli-v}"
+          mkdir -p dist
+          for f in target/packages/*; do
+            case "$f" in
+              *.exe)      cp "$f" "dist/HyperEnv-$version-windows-${{ matrix.arch }}-setup.exe" ;;
+              *.deb)      cp "$f" "dist/hyperenv-desktop_${version}_${{ matrix.arch == 'x64' && 'amd64' || 'arm64' }}.deb" ;;
+              *.AppImage) cp "$f" "dist/HyperEnv-$version-linux-${{ matrix.arch }}.AppImage" ;;
+            esac
+          done
+          ls -la dist
+          [ -n "$(ls dist)" ] || { echo "no package was produced"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.system }}-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+
   publish:
-    needs: build
+    needs: [build, desktop]
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -111,6 +168,8 @@ jobs:
           lipo -create -output bins/universal/hyperenv \
             bins/bin-aarch64-apple-darwin/hyperenv bins/bin-x86_64-apple-darwin/hyperenv
           pack universal-apple-darwin bins/universal
+          # The desktop installers are already named; they join the same sums.
+          cp bins/desktop-*/* dist/
           (cd dist && shasum -a 256 -- * > SHA256SUMS)
           cat dist/SHA256SUMS
 
@@ -119,8 +178,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --prerelease --title "hyperenv command ${TAG#cli-v}" \
-              --notes "The \`hyperenv\` command for macOS, Linux and Windows. Pre-release of HyperEnv 2.
+            gh release create "$TAG" --prerelease --title "HyperEnv 2 preview ${TAG#cli-v}" \
+              --notes "HyperEnv 2 preview: the desktop app for Windows (installer) and Linux (.deb, AppImage), and the \`hyperenv\` command for macOS, Linux and Windows.
 
           Install: \`curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh\` (macOS, Linux) or \`irm https://hyperenv.falcaosl.com/install.ps1 | iex\` (Windows PowerShell)."
           gh release upload "$TAG" dist/* --clobber

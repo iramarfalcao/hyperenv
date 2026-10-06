@@ -19,3 +19,29 @@ arboard = { version = "3", default-features = false }
 [build-dependencies]
 slint-build = "1.18"
 serde_json = "1"
+
+# Installers, built by cargo-packager on each system in the release workflow:
+# NSIS on Windows (per-user, no administrator), .deb and AppImage on Linux.
+[package.metadata.packager]
+product-name = "HyperEnv"
+identifier = "com.falcaosl.hyperenv"
+publisher = "Falcao SL"
+homepage = "https://hyperenv.falcaosl.com"
+description = "Apply and undo batches of environment variables. Every new terminal starts with the profile; undo puts each variable back."
+category = "DeveloperTool"
+license-file = "../../LICENSE"
+# Sizes cut from apps/macos/assets/icon-1024.png — the same app icon everywhere.
+icons = ["icons/icon-32.png", "icons/icon-64.png", "icons/icon-128.png", "icons/icon-256.png", "icons/icon-512.png"]
+before-packaging-command = "cargo build --release -p hyperenv-desktop"
+out-dir = "../../target/packages"
+binaries-dir = "../../target/release"
+binaries = [{ path = "hyperenv-desktop", main = true }]
+
+[package.metadata.packager.nsis]
+# Installs under %LOCALAPPDATA%: no UAC prompt, and it can only change the
+# user's own environment anyway.
+installer-mode = "currentUser"
+
+[package.metadata.packager.deb]
+depends = ["libfontconfig1", "libxkbcommon0", "libxkbcommon-x11-0", "libgl1"]
+section = "devel"
