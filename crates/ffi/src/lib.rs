@@ -89,17 +89,16 @@ mod tests {
     fn runs_the_commands_grammar_and_returns_the_envelope() {
         let home = std::env::temp_dir().join(format!("hyperenv-ffi-{}", std::process::id()));
         let h = home.to_str().unwrap();
-        assert_eq!(
-            call(&format!(r#"["--home","{h}","profile","create","dev"]"#))["ok"],
-            true
-        );
-        assert_eq!(
-            call(&format!(r#"["--home","{h}","var","set","dev","PORT=8080"]"#))["ok"],
-            true
-        );
-        let vars = call(&format!(r#"["--home","{h}","vars","dev"]"#));
-        assert_eq!(vars["data"][0]["value"], "8080");
-        assert_eq!(call(&format!(r#"["--home","{h}","vars","nope"]"#))["ok"], false);
+        // Built with serde_json: a Windows path's backslashes must be escaped.
+        let args = |rest: &[&str]| {
+            let mut v = vec!["--home", h];
+            v.extend_from_slice(rest);
+            serde_json::to_string(&v).unwrap()
+        };
+        assert_eq!(call(&args(&["profile", "create", "dev"]))["ok"], true);
+        assert_eq!(call(&args(&["var", "set", "dev", "PORT=8080"]))["ok"], true);
+        assert_eq!(call(&args(&["vars", "dev"]))["data"][0]["value"], "8080");
+        assert_eq!(call(&args(&["vars", "nope"]))["ok"], false);
         let _ = std::fs::remove_dir_all(home);
     }
 
