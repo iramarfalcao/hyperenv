@@ -22,6 +22,10 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "vscode"
+    ignore:
+      # Os tipos seguem engines.vscode (^1.85.0); subir os tipos obrigaria subir
+      # o engines e deixaria Cursor e Windsurf, que andam atrás, sem o plugin.
+      - dependency-name: "@types/vscode"
     groups:
       minor-patch:
         update-types: [minor, patch]
