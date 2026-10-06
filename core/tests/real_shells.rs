@@ -101,6 +101,7 @@ fn check(shell: Shell, exe: &str, args: &[&str], dump_one: impl Fn(&str) -> Stri
     );
 }
 
+#[cfg(unix)] // on Windows, `bash` is the WSL launcher, not a shell
 #[test]
 fn zsh_roundtrip() {
     check(Shell::Zsh, "zsh", &["-f"], |k| {
@@ -108,6 +109,7 @@ fn zsh_roundtrip() {
     });
 }
 
+#[cfg(unix)] // on Windows, `bash` is the WSL launcher, not a shell
 #[test]
 fn bash_roundtrip() {
     check(Shell::Bash, "bash", &["--norc", "--noprofile"], |k| {
@@ -115,6 +117,7 @@ fn bash_roundtrip() {
     });
 }
 
+#[cfg(unix)] // on Windows, `bash` is the WSL launcher, not a shell
 #[test]
 fn fish_roundtrip() {
     check(Shell::Fish, "fish", &["--no-config"], |k| {
@@ -129,6 +132,7 @@ fn powershell_roundtrip() {
     });
 }
 
+#[cfg(unix)] // on Windows, `bash` is the WSL launcher, not a shell
 #[test]
 fn bypass_variable_disables_the_session() {
     let env: EnvSet = [(EnvKey::new("HV_BYPASS").unwrap(), EnvValue::from("set"))]

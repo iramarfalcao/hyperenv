@@ -33,6 +33,8 @@ fn new_terminal(layout: &Layout, var: &str) -> String {
     let mut cmd = Command::new(&layout.shell_path);
     match layout.shell {
         Shell::Fish => cmd.args(["--login", "--interactive", "--command", &script]),
+        // A Linux terminal opens bash interactive but not as a login shell.
+        Shell::Bash if layout.platform == Platform::Linux => cmd.args(["-i", "-c", &script]),
         _ => cmd.args(["-l", "-i", "-c", &script]),
     };
     let out = cmd

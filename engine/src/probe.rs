@@ -8,7 +8,10 @@ use hyperenv_core::EnvSet;
 use hyperenv_core::probe::{SENTINEL, parse_nul_separated};
 use hyperenv_core::render::{BYPASS_VARIABLE, Shell};
 
-use crate::{Error, layout::Layout};
+use crate::{
+    Error,
+    layout::{Layout, Platform},
+};
 
 pub trait Probe {
     /// `bypass = true`: the environment as if HyperEnv were not installed —
@@ -68,6 +71,12 @@ impl Probe for ShellProbe {
         // `-l -i`: what the person sees in a new terminal, with `.zshrc`/`.bashrc`.
         let script = format!("printf '%s' '{SENTINEL}'; env -0");
         let args: Vec<&str> = match layout.shell {
+            // bash on Linux is the exception: terminal emulators start it
+            // interactive but *not* as a login shell, so it reads ~/.bashrc
+            // (where the hook goes) and not ~/.bash_profile. Probing it as a
+            // login shell measured a different environment from the one the
+            // user's terminals actually get.
+            Shell::Bash if layout.platform == Platform::Linux => vec!["-i", "-c", &script],
             Shell::Zsh | Shell::Bash => vec!["-l", "-i", "-c", &script],
             Shell::Fish => vec!["--login", "--interactive", "--command", &script],
             Shell::PowerShell => return Err(Error::Unsupported("probe PowerShell".into())),
