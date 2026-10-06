@@ -2,9 +2,10 @@ name: Site cache purge
 
 # Coolify deploys the site on every push to main (auto_deploy, homelab
 # playbook-apps.yml), but nothing tells GitHub when the new container is live.
-# So this waits until the origin serves the committed bytes of every changed
-# file — fetched with a unique query string, which Cloudflare treats as a cache
-# miss — and only then purges exactly those URLs. Purging earlier would let the
+# So this waits until the live /build.txt — a hash the image computes over every
+# file it serves (site/deploy/Dockerfile) — equals the same hash computed from
+# this checkout, fetched with a unique query string so Cloudflare cannot answer
+# from cache, and only then purges exactly the changed URLs. Purging earlier would let the
 # CDN re-cache the old version from the container that is being replaced.
 
 on:
@@ -34,6 +35,12 @@ jobs:
       - name: Changed pages and assets
         id: changed
         run: |
+          # A manual run purges every served file: a way to force a clean CDN.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            git ls-files site | grep -vE '^site/(deploy/|README\.md$|_headers$)' > changed.txt
+            echo "count=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           base="${{ github.event.before }}"
           if [ -z "$base" ] || ! git cat-file -e "$base" 2>/dev/null; then base="HEAD~1"; fi
           # Deleted files have nothing to wait for; deploy/, README and _headers
@@ -46,19 +53,16 @@ jobs:
       - name: Wait for the new deploy
         if: steps.changed.outputs.count != '0'
         run: |
+          # Same recipe as the stamp stage in site/deploy/Dockerfile.
+          want="$(cd site && find . -type f ! -path './deploy/*' ! -name _headers ! -name README.md \
+            | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)"
+          echo "expecting build $want"
           deadline=$(( $(date +%s) + 20 * 60 ))
-          while :; do
-            pending=0
-            while read -r f; do
-              want="$(sha256sum "$f" | cut -d' ' -f1)"
-              path="${f#site/}"
-              got="$(curl -fsS "$SITE/$path?deploy=$GITHUB_SHA-$RANDOM" | sha256sum | cut -d' ' -f1)" || got=""
-              [ "$want" = "$got" ] || { pending=1; echo "waiting for $path"; break; }
-            done < changed.txt
-            [ "$pending" = 0 ] && { echo "origin serves this commit"; break; }
+          until [ "$(curl -fsS "$SITE/build.txt?deploy=$GITHUB_SHA-$RANDOM" 2>/dev/null)" = "$want" ]; do
             [ "$(date +%s)" -ge "$deadline" ] && { echo "::error::the deploy did not go live within 20 minutes"; exit 1; }
             sleep 20
           done
+          echo "origin serves this commit"
 
       - name: Purge from Cloudflare
         if: steps.changed.outputs.count != '0'
