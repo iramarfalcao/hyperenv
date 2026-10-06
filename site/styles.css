@@ -296,3 +296,11 @@ h3 { font-size: 1.2rem; letter-spacing: -.02em; }
 @media (max-width: 900px) { .platforms { grid-template-columns: minmax(0, 1fr); } }
 .platform .command { overflow: visible; padding-right: 76px; }
 .platform .command code { white-space: pre-wrap; word-break: break-all; }
+
+/* Em progresso: selo acima do título e botões de download desligados. */
+.status-pill {
+  display: inline-block; margin: 0 0 14px; padding: 5px 14px; border-radius: 999px;
+  font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent);
+}
+.btn--disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
