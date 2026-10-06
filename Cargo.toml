@@ -2,13 +2,13 @@
 # o CLI e o app Windows/Linux (Slint) entram aqui como membros.
 [workspace]
 resolver = "3"
-members = ["core"]
+members = ["core", "engine"]
 
 [workspace.package]
 version = "2.0.0-dev"
 edition = "2024"
 license = "MIT"
-rust-version = "1.85"
+rust-version = "1.89"
 
 [profile.release]
 lto = "fat"

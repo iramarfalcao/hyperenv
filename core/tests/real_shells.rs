@@ -66,7 +66,24 @@ fn check(shell: Shell, exe: &str, args: &[&str], dump_one: impl Fn(&str) -> Stri
         _ => script,
     };
     let dump: String = env.keys().map(|k| dump_one(k.as_str())).collect();
-    let Some(out) = run(exe, args, &wrapped, &dump) else {
+    // Lendo do stdin o pwsh se comporta como terminal interativo e emite
+    // códigos de controle; de um arquivo .ps1 a saída é limpa.
+    let out = if shell == Shell::PowerShell {
+        let path = std::env::temp_dir().join(format!("hyperenv-test-{}.ps1", std::process::id()));
+        std::fs::write(&path, format!("{wrapped}{dump}")).unwrap();
+        let out = Command::new(exe)
+            .args(["-NoProfile", "-NonInteractive", "-File"])
+            .arg(&path)
+            .stderr(Stdio::inherit())
+            .output()
+            .ok()
+            .map(|o| o.stdout);
+        let _ = std::fs::remove_file(&path);
+        out
+    } else {
+        run(exe, args, &wrapped, &dump)
+    };
+    let Some(out) = out else {
         eprintln!("aviso: {exe} não está instalado — pulei");
         return;
     };
@@ -107,7 +124,7 @@ fn fish_roundtrip() {
 
 #[test]
 fn powershell_roundtrip() {
-    check(Shell::PowerShell, "pwsh", &["-NoProfile", "-Command", "-"], |k| {
+    check(Shell::PowerShell, "pwsh", &[], |k| {
         format!("[Console]::Out.Write($env:{k} + [char]0)\n")
     });
 }
