@@ -1,6 +1,8 @@
 # Reposto ao unificar o hyperenv-idea-plugin aqui: aquele repositório tinha dez
 # PRs de dependabot abertas e foi apagado. As de GitHub Actions eram dos
 # workflows do template, hoje inertes; as de Gradle são reais e voltam por aqui.
+# Minor e patch vêm num PR só por pasta; major continua em PR próprio, porque
+# é o que pode quebrar a build.
 version: 2
 updates:
   - package-ecosystem: gradle
@@ -10,6 +12,9 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "plugin"
+    groups:
+      minor-patch:
+        update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /plugins/vscode
     schedule:
@@ -17,3 +22,6 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "vscode"
+    groups:
+      minor-patch:
+        update-types: [minor, patch]
