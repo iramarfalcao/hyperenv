@@ -1,6 +1,6 @@
 cask "hyperenv" do
-  version "1.0.1"
-  sha256 "62aa111550c36f35d6afaf07ab606f0053f5a4596276ae9c03f02f3bfd235fc8"
+  version "2.0.0"
+  sha256 "7f01286b797da13d557d398046cda373fca46522720d727b45bd7d62054f5262"
 
   url "https://github.com/iramarfalcao/hyperenv/releases/download/v#{version}/HyperEnv-#{version}.dmg"
   name "HyperEnv"
