@@ -2,9 +2,8 @@
 //  HyperEnvApp.swift
 //  hyperenv
 //
-//  HyperEnv 2 for macOS: the window, the Environment menu and the menu bar
-//  switcher, all over the same Rust core as the Windows and Linux app and the
-//  `hyperenv` command.
+//  HyperEnv 2 for macOS: the window and the Environment menu, over the same
+//  Rust core as the Windows and Linux app and the `hyperenv` command.
 //
 
 import SwiftUI
@@ -42,45 +41,5 @@ struct HyperEnvApp: App {
                     .disabled(model.selected == nil)
             }
         }
-
-        MenuBarExtra {
-            MenuBarContent(model: model)
-        } label: {
-            Image("Icons/terminal")
-                .renderingMode(.template)
-                .accessibilityLabel("HyperEnv")
-        }
-    }
-}
-
-/// Switch profiles without opening the window.
-private struct MenuBarContent: View {
-    let model: AppModel
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some View {
-        if let applied = model.appliedName {
-            Text("Active: \(applied)")
-            Button("Undo") { model.undo() }.disabled(model.isBusy)
-            Button("Copy Reload Command") { model.copyReloadCommand() }
-        } else {
-            Text("Nothing applied")
-        }
-        Divider()
-        if model.profiles.isEmpty {
-            Text("No profiles yet")
-        } else {
-            ForEach(model.profiles) { profile in
-                Button(profile.isApplied ? "✓ \(profile.name)" : profile.name) { model.apply(profile.name) }
-                    .disabled(model.isBusy || profile.isApplied)
-            }
-        }
-        Divider()
-        Button("Open HyperEnv") {
-            NSApp.activate()
-            openWindow(id: "main")
-        }
-        Button("Quit HyperEnv") { NSApplication.shared.terminate(nil) }
-            .keyboardShortcut("q")
     }
 }
