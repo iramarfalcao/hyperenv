@@ -31,6 +31,10 @@ on:
         description: "Tag to build and publish (e.g. plugins-v2.0.0-alpha.1)"
         required: true
         type: string
+      skip_jetbrains:
+        description: "Skip the JetBrains upload (the version is already there)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -75,10 +79,12 @@ jobs:
           cache: npm
           cache-dependency-path: plugins/vscode/package-lock.json
 
-      # The integration test drives the real command against a throwaway home.
+      # The integration test drives the real command against a throwaway home,
+      # in a real zsh — which Ubuntu runners do not ship.
       - name: Build the hyperenv command
         working-directory: .
         run: |
+          sudo apt-get update && sudo apt-get install -y zsh
           rustup toolchain install stable --profile minimal && rustup default stable
           cargo build --release --locked -p hyperenv-cli
 
@@ -150,7 +156,7 @@ jobs:
           CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
           PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
           PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
-        if: env.PUBLISH_TOKEN != '' && env.PRIVATE_KEY != ''
+        if: env.PUBLISH_TOKEN != '' && env.PRIVATE_KEY != '' && !inputs.skip_jetbrains
         run: ./gradlew publishPlugin --console=plain
 
       - uses: actions/upload-artifact@v4
