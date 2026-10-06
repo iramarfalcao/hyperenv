@@ -281,3 +281,16 @@ h3 { font-size: 1.2rem; letter-spacing: -.02em; }
   .command code { white-space: pre-wrap; overflow-wrap: anywhere; }
   .copy-button { position: static; transform: none; margin-top: 14px; width: 100%; }
 }
+
+/* Download: one card per platform */
+.platforms { display: grid; gap: clamp(14px, 2vw, 20px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.platform { padding: clamp(18px, 2.4vw, 26px); border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.platform h3 { margin: 0; }
+.platform-meta { margin: 0; font-size: .86rem; color: var(--muted); }
+.platform .command { margin: 0; overflow-x: auto; }
+.platform .actions, .shots figure .actions { margin-top: 0; flex-wrap: wrap; }
+.platform .install-note { margin: 0; }
+.shots figure .actions { margin-top: 14px; }
+@media (max-width: 900px) { .platforms { grid-template-columns: minmax(0, 1fr); } }
+.platform .command { overflow: visible; padding-right: 76px; }
+.platform .command code { white-space: pre-wrap; word-break: break-all; }

@@ -23,10 +23,10 @@ site/
     ├── icon-512.png            referenced by the manifest
     ├── apple-touch-icon.png    180px
     ├── favicon-32.png
-    ├── screenshot-light.png    the app window, light appearance
-    ├── screenshot-dark.png     the app window, dark appearance
-    ├── step-new-project.png    the New Project sheet
-    ├── step-new-profile.png    the New Profile sheet
+    ├── app-macos.webp          the macOS app, light
+    ├── app-desktop.webp        the Windows/Linux app, dark
+    ├── plugin-vscode.webp      the VS Code extension
+    ├── plugin-intellij.webp    the JetBrains plugin
     └── og-image.jpg            1200×630 social card
 ```
 
