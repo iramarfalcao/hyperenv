@@ -13,7 +13,7 @@ cargo build --release -p hyperenv-cli   # -> target/release/hyperenv
 ```
 hyperenv [--json] <command>
 
-status                          what is applied, hook, drift
+status [--no-drift]             what is applied, hook, drift (skip the shell probe)
 profiles                        list the profiles
 profile create|delete <name>
 profile rename|duplicate <name> <new>
@@ -52,7 +52,7 @@ how to show secrets).
 Profile  { id, name, variableCount, enabledCount, isApplied, updatedAt }
 Variable { key, value, isSecret, isEnabled }
 Status   { version, shell, hook: installed|notInstalled|notNeeded|malformed, hookDetail?,
-           applied?: { profileId, profileName, appliedAt, exportedKeys },
+           applied?: { profileId, profileName, appliedAt, exportedKeys, exports },
            drift: [{ kind, key?, expected?, actual? }], pendingRecoveries,
            reloadCommand, undoCommand, sessionScript, startupFile?, store }
 Plan     { exported, captured, restored: [{ key, to }] }   — `to: null` = goes back to not existing

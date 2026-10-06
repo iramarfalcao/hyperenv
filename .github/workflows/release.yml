@@ -50,21 +50,10 @@ jobs:
           esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # A release nobody can trust is not a release: the same two suites CI runs
-      # gate the tag as well, so a broken shell contract cannot ship.
-      - name: Core checks
-        run: apps/macos/Tests/run-core-checks.sh
-
-      - name: Shell integration
-        run: apps/macos/Tests/run-shell-integration.sh
-
-      - name: Layout checks
-        run: apps/macos/Tests/run-layout-checks.sh
-
-      # An export that writes a header and no variables looks like success until
-      # the file is opened.
-      - name: Export checks
-        run: apps/macos/Tests/run-export-checks.sh
+      # A release nobody can trust is not a release: the core's suites gate the
+      # tag as well, so a broken shell contract cannot ship.
+      - name: Core, engine and command checks
+        run: cargo test -p hyperenv-core -p hyperenv-engine -p hyperenv-cli -p hyperenv-ffi --locked -- --test-threads=1
 
       # Signing is optional and entirely secret-driven. With no secrets set the
       # build is ad-hoc signed, which is what a public repository can honestly

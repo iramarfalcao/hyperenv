@@ -1795,6 +1795,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyperenv-ffi"
+version = "2.0.0-alpha.3"
+dependencies = [
+ "hyperenv-cli",
+ "serde_json",
+]
+
+[[package]]
 name = "i-slint-backend-linuxkms"
 version = "1.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

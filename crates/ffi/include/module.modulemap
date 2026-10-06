@@ -1,0 +1,5 @@
+module HyperEnvCore {
+    header "hyperenv.h"
+    link "hyperenv_ffi"
+    export *
+}

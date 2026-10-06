@@ -15,30 +15,30 @@ You need Xcode 26.5 or later. There are no package dependencies.
 ## Before you open a pull request
 
 ```sh
-apps/macos/Tests/run-core-checks.sh
-apps/macos/Tests/run-shell-integration.sh
+cargo fmt --all
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace -- --test-threads=1
 ```
 
-Both must pass. CI runs exactly these two scripts, plus a full universal build
-and a disk-image packaging step, so a packaging break shows up on the pull
-request rather than at tag time.
+All three must pass. CI runs them on macOS, Linux and Windows, plus a full
+universal macOS build and disk image, and the release packages for Windows and
+Linux, so a packaging break shows up on the pull request rather than at tag
+time.
 
 ## Where code goes
 
-The layer boundary is the important convention in this codebase:
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The boundary that matters:
 
-- **`apps/macos/hyperenv/Core/`** performs **no I/O**. If your change can be expressed as a
-  transform over values, it belongs here, and it needs an assertion in
-  `apps/macos/Tests/CoreChecks/main.swift`. This is what keeps the code that rewrites
-  `~/.zprofile` fully testable.
-- **`apps/macos/hyperenv/Engine/`** is where the filesystem and subprocesses are touched, and
-  it is actor-isolated. `@Model` types must never cross into it — copy what you
-  need into a plain `Sendable` value first.
-- **`apps/macos/hyperenv/Views/`** is SwiftUI. Liquid Glass belongs to the navigation layer;
-  do not stack it on itself, and do not use it for the variables table, which is
-  content.
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the reasoning.
+- **`crates/core`** performs **no I/O**. If your change can be expressed as a
+  transform over values, it belongs here, with a test. This is what keeps the
+  code that rewrites a shell startup file fully testable.
+- **`crates/engine`** touches the disk, the shell and the registry. Read and
+  validate before you write, and keep the journal ahead of the change.
+- **The apps** (`apps/macos`, `apps/desktop`) hold no environment logic. A
+  feature the window needs is a command first (`crates/cli`), so the plugins
+  get it too.
+- **Design** changes go in `design/`; regenerate rather than edit
+  `Tokens.swift` or the Slint tokens by hand.
 
 ## Changes that touch the user's dotfiles
 

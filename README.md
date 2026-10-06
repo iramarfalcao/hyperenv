@@ -314,13 +314,15 @@ commit.
 
 ```
 apps/                one folder per platform
-  macos/             the macOS app (1.x) — SwiftUI; Xcode project, Tests/, Scripts/,
-                     the Swift `hyperenv` command (cli/) and the app icon (assets/)
-  desktop/           HyperEnv 2 for Windows and Linux — Slint (coming)
+  macos/             the macOS app — SwiftUI over the Rust core (crates/ffi);
+                     Xcode project, Scripts/ and the app icon (assets/)
+  desktop/           the Windows and Linux app — Slint over the same core
 crates/              HyperEnv 2's shared Rust, the same on every platform
   core/              pure logic: profiles, .env, apply/undo plans, generated scripts
   engine/            what touches the machine: startup files, journal, Windows registry
   cli/               the `hyperenv` command for macOS, Linux and Windows
+  ffi/               the C interface the macOS app links
+  ffi/               the C interface the macOS app links
 plugins/             editor and IDE integrations — see plugins/README.md
   intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
   vscode/            VS Code — TypeScript
@@ -347,13 +349,8 @@ release, and the reverse holds.
 git clone https://github.com/iramarfalcao/hyperenv.git
 cd hyperenv
 
-apps/macos/Tests/run-core-checks.sh          # pure-logic checks, no app bundle needed
-apps/macos/Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
-apps/macos/Tests/run-layout-checks.sh        # no view may outgrow the window
-apps/macos/Tests/run-export-checks.sh        # an export carries the variables it claims to
-apps/macos/Tests/run-model-checks.sh         # create / duplicate / import rules, and what a profile turns into
-apps/macos/Tests/run-engine-checks.sh        # the engine's whole life against an in-memory filesystem
-apps/macos/Tests/run-cli-checks.sh           # the hyperenv command, against a throwaway store
+cargo test --workspace -- --test-threads=1   # core, engine, command, ffi — real zsh, bash, fish, pwsh
+cargo run --release -p hyperenv-desktop      # the Windows/Linux app (runs on macOS too)
 apps/macos/Scripts/build-cli.sh              # -> build/hyperenv, universal
 
 apps/macos/Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
@@ -362,16 +359,15 @@ apps/macos/Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
 
 Or open `apps/macos/hyperenv.xcodeproj` in Xcode 26.5+ and press Run.
 
-The shell integration suite is the one that matters: unit tests prove the
-generated strings are correct, but only a real `zsh` proves that sourcing them
-produces the environment the app promised — and that un-applying puts the
-previous values back. It refuses to run anywhere near your real `$HOME`.
+You need Rust (https://rustup.rs) for every target; Xcode builds the Rust core
+as part of the macOS app. `HYPERENV_HOME=/some/dir` points the app and the
+command at another home folder, so you can try them without touching your
+real dotfiles.
 
-The engine suite covers what the shell one has to take on trust: the journal
-is written before the dotfile, a key's baseline is captured once and never
-re-measured, the backup and the hook happen once, a malformed block is refused
-rather than guessed at, and a held lock turns a second writer away. It runs
-against an in-memory filesystem, so it never touches `$HOME` either.
+The end-to-end checks are the ones that matter: unit tests prove the generated
+strings are correct, but only a real shell proves that loading them produces
+the environment the app promised — and that un-applying puts the previous
+values back. They run against a throwaway home, never your real one.
 
 ## Releasing
 

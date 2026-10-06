@@ -11,7 +11,7 @@ git push origin v1.0.1
 
 The [release workflow](../.github/workflows/release.yml) then:
 
-1. runs `apps/macos/Tests/run-core-checks.sh` and `apps/macos/Tests/run-shell-integration.sh` — a
+1. runs the core, engine and command tests (`cargo test`) — a
    broken shell contract cannot ship;
 2. builds a universal (`arm64` + `x86_64`) Release archive with the tag's version
    stamped into `MARKETING_VERSION`;
@@ -142,8 +142,7 @@ same marketing version are still distinguishable.
 
 ## Checklist before tagging
 
-- [ ] `apps/macos/Tests/run-core-checks.sh` passes
-- [ ] `apps/macos/Tests/run-shell-integration.sh` passes
+- [ ] `cargo test --workspace -- --test-threads=1` passes
 - [ ] `CHANGELOG.md` has an entry for the version
 - [ ] The app launches from a clean `~/.config/hyperenv`
 - [ ] Installing the hook, applying, and reverting leave `~/.zprofile` byte-identical
