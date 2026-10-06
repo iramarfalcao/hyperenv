@@ -24,6 +24,8 @@ serde_json = "1"
 # NSIS on Windows (per-user, no administrator), .deb and AppImage on Linux.
 [package.metadata.packager]
 product-name = "HyperEnv"
+# The Linux package name; without it cargo-packager derives "hyper-env".
+name = "hyperenv-desktop"
 identifier = "com.falcaosl.hyperenv"
 publisher = "Falcao SL"
 homepage = "https://hyperenv.falcaosl.com"
