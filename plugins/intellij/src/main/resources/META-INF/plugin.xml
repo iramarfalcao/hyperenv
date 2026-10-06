@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>com.falcaosl.hyperenv</id>
     <name>HyperEnv</name>
-    <vendor url="https://hyperenv.falcaosl.com">Falcao SL</vendor>
+    <vendor url="https://hyperenv.falcaosl.com">Iramar Falcao</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 

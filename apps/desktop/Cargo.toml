@@ -27,7 +27,7 @@ product-name = "HyperEnv"
 # The Linux package name; without it cargo-packager derives "hyper-env".
 name = "hyperenv-desktop"
 identifier = "com.falcaosl.hyperenv"
-publisher = "Falcao SL"
+publisher = "Iramar Falcao"
 homepage = "https://hyperenv.falcaosl.com"
 description = "Apply and undo batches of environment variables. Every new terminal starts with the profile; undo puts each variable back."
 category = "DeveloperTool"
@@ -45,5 +45,6 @@ binaries = [{ path = "hyperenv-desktop", main = true }]
 installer-mode = "currentUser"
 
 [package.metadata.packager.deb]
+maintainer = "Iramar Falcao"
 depends = ["libfontconfig1", "libxkbcommon0", "libxkbcommon-x11-0", "libgl1"]
 section = "devel"

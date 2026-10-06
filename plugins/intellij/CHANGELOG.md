@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [2.1.3]
+
+Published by Iramar Falcao in every store.
+
 ## [2.1.0]
 
 First version on the Visual Studio Marketplace. Plugin versions are now plain X.Y.Z in every store: an odd minor (2.1.x) is a pre-release, an even one (2.2.0) stable. Same content as 2.0.0-alpha.3.

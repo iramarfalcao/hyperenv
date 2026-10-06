@@ -1,6 +1,6 @@
 # Status — HyperEnv
 
-> Atualizado em **2026-09-09**. Este arquivo é a fonte única de "em que pé está".
+> Atualizado em **2026-10-06**. Este arquivo é a fonte única de "em que pé está".
 > Ao mudar o estágio, mude também a linha correspondente no índice do portfólio
 > (`~/Github/CLAUDE.md`) e o selo do site em `site/index.html`.
 
@@ -8,14 +8,20 @@
 |---|---|
 | **Estágio** | **Publicado** — release pública no GitHub, MIT |
 | **Formato** | Monorepo: app macOS, comando `hyperenv` (`cli/`), `plugins/` (IntelliJ e VS Code), `site/` e `docs/` |
-| **Plataformas** | macOS 26.5+ |
-| **Stack** | Swift/SwiftUI, Xcode |
+| **Plataformas** | macOS 26.5+ (app nativo); Windows e Linux (app desktop 2.0.0); comando `hyperenv` nos três |
+| **Stack** | Swift/SwiftUI (macOS); Rust + Slint (desktop e comando); Kotlin e TypeScript (plugins) |
 | **Site** | https://hyperenv.falcaosl.com |
 | **Monetização** | Gratuito e open source (MIT) |
-| **Próximo marco** | Distribuição por Homebrew Cask estável e primeira leva de usuários externos |
+| **Próximo marco** | Plugins estáveis (2.2.0) e primeira leva de usuários externos |
 | **Data-alvo** | Contínuo |
 
 ## O que já está pronto
+
+- **Publicador em todas as lojas: Iramar Falcao** (pessoa física; decidido em
+  2026-10-06). O app macOS é assinado com Developer ID e notarizado nesse nome.
+- **Onde está publicado:** GitHub Releases (macOS 2.0.0, Windows/Linux 2.0.0),
+  Homebrew tap (`Casks/`), Visual Studio Marketplace, Open VSX e JetBrains
+  Marketplace — plugins 2.1.x no canal de pré-lançamento (alpha na JetBrains).
 
 - App funcional: perfis por projeto e por ambiente, classe de risco por perfil, reversão em um clique.
 - **Comando `hyperenv`** dentro do app (`Contents/Helpers`): mesmo Core, Engine e
@@ -36,6 +42,10 @@
   eram provados clicando.
 
 ## O que falta
+
+As pendências de distribuição estão como issues no GitHub (rótulo
+`distribuicao`): assinatura no Windows, Microsoft Store, verificação no Open
+VSX, prints do app desktop, plugins estáveis e lojas Linux.
 
 - Divulgação: o app está pronto e quase ninguém sabe que existe (ver `docs/MARKETING.md`).
 - Ampliar a cobertura de shells além de zsh/bash.

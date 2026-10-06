@@ -2,8 +2,11 @@
   "name": "hyperenv",
   "displayName": "HyperEnv",
   "description": "Apply and undo a profile of environment variables for every new terminal, from inside VS Code. Drives HyperEnv's hyperenv command.",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "publisher": "falcaosl",
+  "author": {
+    "name": "Iramar Falcao"
+  },
   "icon": "media/icon.png",
   "galleryBanner": {
     "color": "#15123A",
