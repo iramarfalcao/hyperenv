@@ -28,7 +28,7 @@
   "publisher": { "@type": "Person", "name": "Iramar Falcao", "url": "https://falcaosl.com/" }
 }
 </script>
-<link rel="stylesheet" href="styles.css?v=20261006">
+<link rel="stylesheet" href="styles.css?v=20261006b">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -36,12 +36,7 @@
 <header class="top">
   <div class="wrap">
     <a class="brand" href="/"><img class="mark" src="assets/icon-256.png" width="28" height="28" alt="">HyperEnv</a>
-    <nav aria-label="Main">
-      <a href="#features">Features</a>
-      <a href="#install">Download</a>
-      <a href="#editors">Editors</a>
-      <a href="https://falcaosl.com/">Falcao SL</a>
-    </nav>
+    <nav aria-label="Main"><a href="https://github.com/iramarfalcao/hyperenv" rel="noopener">GitHub</a></nav>
   </div>
 </header>
 
@@ -50,114 +45,53 @@
   <section class="section">
     <div class="wrap">
       <div class="hero">
-          <img class="hero-icon" src="assets/icon-256.png" width="256" height="256" alt="HyperEnv app icon">
-        <p class="eyebrow">macOS · Windows · Linux · Open source, MIT</p>
+        <img class="hero-icon" src="assets/icon-256.png" width="256" height="256" alt="HyperEnv app icon">
         <h1>HyperEnv</h1>
-        <p class="tagline">Your environment, in the right place.</p>
-        <p class="lead">Profiles of environment variables you apply in one click and undo just as fast. New terminals get the profile; your previous values come back when you undo.</p>
+        <p class="lead">Switch environment variables per project and undo with one click.</p>
         <div class="actions">
-            <a class="btn btn-primary" href="#install">Download <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Repository <span aria-hidden="true">↗</span></a>
-          </div>
-        <p class="badge">2.0 · signed and notarized, MIT</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section shots-section" aria-label="Screens">
-    <div class="wrap">
-      <div class="shots"><figure class="reveal"><picture><source srcset="assets/app-macos-night.webp" media="(prefers-color-scheme: dark)"><img src="assets/app-macos.webp" width="1600" height="1084" alt="HyperEnv on macOS: a list of profiles and the variables of api-production" loading="lazy" decoding="async"></picture><figcaption>macOS — native SwiftUI, light or dark with your system. Secrets stay masked until you reveal them.</figcaption></figure><figure class="reveal"><img src="assets/app-desktop.webp" width="1600" height="1014" alt="HyperEnv on Windows and Linux, dark: api-local applied" loading="lazy" decoding="async"><figcaption>Windows and Linux — the same design, the same Rust core.</figcaption></figure></div>
-    </div>
-  </section>
-
-  <section class="section section--alt" id="features" aria-labelledby="features-title">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">A closer look</p>
-        <h2 id="features-title">One core, every place you work.</h2>
-      </div>
-      <div class="grid">
-        <article class="card reveal"><span class="card-n">01</span><h3>Profiles, applied in one click</h3><p>A flat list of profiles — api-local, api-production, web-staging. Apply one and every new terminal gets it.</p></article>
-        <article class="card reveal"><span class="card-n">02</span><h3>Undo puts it all back</h3><p>Applying records what was there first, once. Undo restores those values exactly, including the ones that did not exist.</p></article>
-        <article class="card reveal"><span class="card-n">03</span><h3>zsh, bash, fish and PowerShell</h3><p>On macOS and Linux a guarded block in your startup file; on Windows your user environment in the registry. Nothing needs sudo.</p></article>
-        <article class="card reveal"><span class="card-n">04</span><h3>The app, the command, two IDEs</h3><p>The hyperenv command and the editor plugins drive the same core, store and journal as the apps — one writer, one state.</p></article>
-      </div>
-    </div>
-  </section>
-
-
-  <section class="section" id="install" aria-labelledby="install-title">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">Download</p>
-        <h2 id="install-title">Pick your platform.</h2>
-        <p class="lead">Every download is checked against its published SHA-256. The scripts never use <code>sudo</code>, and you can read them before you run them.</p>
-      </div>
-      <div class="platforms">
-        <article class="platform reveal" id="macos">
-          <h3>macOS</h3>
-          <p class="platform-meta">Apple silicon and Intel · macOS 26.5 or later · signed and notarized</p>
-          <pre class="command" data-copy><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
-          <div class="actions"><a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg">Download for Mac <span aria-hidden="true">↓</span></a></div>
-          <p class="install-note">Installs the app with the <code>hyperenv</code> command inside it. <a href="install.sh">Read the script</a>.</p>
-        </article>
-        <article class="platform reveal" id="windows">
-          <h3>Windows</h3>
-          <p class="platform-meta">x64 and ARM64 · no administrator rights</p>
-          <pre class="command" data-copy><code>irm https://hyperenv.falcaosl.com/install.ps1 | iex</code></pre>
-          <div class="actions"><a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/HyperEnv-2.0.0-windows-x64-setup.exe">Download for Windows <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/HyperEnv-2.0.0-windows-arm64-setup.exe">ARM64</a></div>
-          <p class="install-note">The command installs <code>hyperenv</code> only; the button gets the app. <a href="install.ps1">Read the script</a>.</p>
-        </article>
-        <article class="platform reveal" id="linux">
-          <h3>Linux</h3>
-          <p class="platform-meta">x64 and ARM64 · .deb or AppImage</p>
-          <pre class="command" data-copy><code>curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh</code></pre>
-          <div class="actions"><a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/hyperenv-desktop_2.0.0_amd64.deb">Download .deb <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/HyperEnv-2.0.0-linux-x64.AppImage">AppImage</a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases/tag/cli-v2.0.0">ARM64</a></div>
-          <p class="install-note">The command installs <code>hyperenv</code> into <code>~/.local/bin</code>. <a href="install-cli.sh">Read the script</a>.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section--alt" id="editors" aria-labelledby="editors-title">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">In your editor</p>
-        <h2 id="editors-title">Apply a profile without leaving the IDE.</h2>
-        <p class="lead">The plugins carry the <code>hyperenv</code> command with them, so they work on their own — and share state with the apps when both are installed.</p>
-      </div>
-      <div class="shots"><figure class="reveal"><img src="assets/plugin-vscode.webp" width="1600" height="1000" alt="HyperEnv in the VS Code activity bar, web-staging just applied" loading="lazy" decoding="async"><figcaption>VS Code, Cursor, VSCodium and Windsurf.</figcaption>
-          <div class="actions"><a class="btn btn-primary" href="vscode:extension/falcaosl.hyperenv">Open in VS Code</a><a class="btn btn-ghost" href="https://marketplace.visualstudio.com/items?itemName=falcaosl.hyperenv" rel="noopener">Marketplace <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="https://open-vsx.org/extension/falcaosl/hyperenv" rel="noopener">Open VSX <span aria-hidden="true">↗</span></a></div></figure>
-        <figure class="reveal"><img src="assets/plugin-intellij.webp" width="1600" height="1114" alt="HyperEnv tool window in IntelliJ IDEA, dark, secrets revealed" loading="lazy" decoding="async"><figcaption>IntelliJ IDEA, PyCharm, WebStorm, GoLand, RustRover and CLion.</figcaption>
-          <div class="actions"><a class="btn btn-primary" href="https://plugins.jetbrains.com/plugin/34830-hyperenv" rel="noopener">Install in JetBrains IDE <span aria-hidden="true">↗</span></a></div></figure></div>
-    </div>
-  </section>
-
-
-  <section class="section cta" id="get" aria-labelledby="get-title">
-    <div class="wrap">
-      <div class="cta-box reveal">
-        <div>
-          <p class="eyebrow">Get HyperEnv</p>
-          <h2 id="get-title">Yours on every platform.</h2>
-          <p class="lead">Free and open source under MIT. The app for your system, the command for your scripts, the plugin for your editor.</p>
+          <a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/latest/download/HyperEnv.dmg">macOS</a><a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/HyperEnv-2.0.0-windows-x64-setup.exe">Windows</a><a class="btn btn-primary" href="https://github.com/iramarfalcao/hyperenv/releases/download/cli-v2.0.0/hyperenv-desktop_2.0.0_amd64.deb">Linux</a>
         </div>
-        <div class="cta-actions"><a class="btn btn-primary" href="#install">Download <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases <span aria-hidden="true">↗</span></a></div>
-        <p class="cta-fine">macOS, Windows and Linux. No account, no licence key, no telemetry.</p>
+        <div class="actions">
+          <a class="btn btn-ghost" href="https://marketplace.visualstudio.com/items?itemName=falcaosl.hyperenv" rel="noopener">VS Code</a><a class="btn btn-ghost" href="https://plugins.jetbrains.com/plugin/34830-hyperenv" rel="noopener">JetBrains</a><a class="btn btn-ghost" href="https://open-vsx.org/extension/falcaosl/hyperenv" rel="noopener">Open VSX</a>
+        </div>
+        <p class="badge">Free and open source, MIT. <a href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">ARM64, AppImage and other downloads</a></p>
       </div>
     </div>
   </section>
 
+  <section class="section section--alt" id="about" aria-labelledby="about-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="about-title">What is HyperEnv?</h2>
+        <p class="lead">You keep profiles such as api-local or api-production. Apply one and every new terminal starts with its variables. Undo restores the values you had before, and removes the ones that did not exist. It works with zsh, bash, fish and PowerShell, and never asks for sudo.</p>
+      </div>
+      <div class="shots">
+        <figure class="reveal"><picture><source srcset="assets/app-macos-night.webp" media="(prefers-color-scheme: dark)"><img src="assets/app-macos.webp" width="1600" height="1084" alt="HyperEnv on macOS: a list of profiles and the variables of api-production" loading="lazy" decoding="async"></picture><figcaption>macOS</figcaption></figure>
+        <figure class="reveal"><img src="assets/app-desktop.webp" width="1600" height="1014" alt="HyperEnv on Windows and Linux, dark: api-local applied" loading="lazy" decoding="async"><figcaption>Windows and Linux</figcaption></figure>
+        <figure class="reveal"><img src="assets/plugin-vscode.webp" width="1600" height="1000" alt="HyperEnv in the VS Code activity bar, web-staging just applied" loading="lazy" decoding="async"><figcaption>VS Code, Cursor and VSCodium</figcaption></figure>
+        <figure class="reveal"><img src="assets/plugin-intellij.webp" width="1600" height="1114" alt="HyperEnv tool window in IntelliJ IDEA, dark, secrets revealed" loading="lazy" decoding="async"><figcaption>IntelliJ, PyCharm and other JetBrains IDEs</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="help-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="help-title">Questions?</h2>
+        <p class="lead">Open an issue on <a href="https://github.com/iramarfalcao/hyperenv/issues" rel="noopener">GitHub</a> or write to <a href="mailto:dev@falcaosl.com">dev@falcaosl.com</a>.</p>
+      </div>
+    </div>
+  </section>
 
 </main>
 
 <footer class="bottom">
   <div class="wrap">
-    <span>© 2026 Iramar Falcao — HyperEnv</span>
-    <span class="spacer"><a href="https://falcaosl.com/">falcaosl.com</a> · <a href="mailto:dev@falcaosl.com">dev@falcaosl.com</a></span>
+    <span>© 2026 Iramar Falcao</span>
+    <span class="spacer"><a href="https://falcaosl.com/">falcaosl.com</a></span>
   </div>
 </footer>
 
 <script src="motion.js?v=20261002" defer></script>
-<script src="copy.js?v=3" defer></script>
 </body>
 </html>
