@@ -53,7 +53,7 @@
         <p class="eyebrow">macOS · Open source, MIT</p>
         <h1>HyperEnv</h1>
         <p class="tagline">Your environment, in the right place.</p>
-        <p class="lead">Environment variables organised per project and per environment. Switch the whole set in one click — and put the previous values back when the switch turns out to have been a bad idea.</p>
+        <p class="lead">Environment variables organised per project and per environment. Switch the whole set in one click, and put the previous values back if you need to.</p>
         <div class="actions">
             <a class="btn btn-primary" href="#install">Install it now <span aria-hidden="true">↓</span></a><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Repository <span aria-hidden="true">↗</span></a>
           </div>
@@ -72,13 +72,13 @@
     <div class="wrap">
       <div class="section-head reveal">
         <p class="eyebrow">A closer look</p>
-        <h2 id="features-title">One engine, four places to reach it.</h2>
+        <h2 id="features-title">The app, the command line and two IDEs.</h2>
       </div>
       <div class="grid">
-        <article class="card reveal"><span class="card-n">01</span><h3>Profiles per project</h3><p>A profile for each project and each environment, so dev, staging and production stop sharing one file and one accident.</p></article>
-        <article class="card reveal"><span class="card-n">02</span><h3>A risk class on each profile</h3><p>Production is marked as production. The app knows which switch deserves a second look before it happens.</p></article>
-        <article class="card reveal"><span class="card-n">03</span><h3>Undo in one click</h3><p>Applying records what was there before. When the switch was wrong, the previous values come back without you reconstructing them from memory.</p></article>
-        <article class="card reveal"><span class="card-n">04</span><h3>The hyperenv command</h3><p>Shipped inside the app, on the same core, store and journal. One engine, one writer in ~/.zprofile — not two tools disagreeing.</p></article>
+        <article class="card reveal"><span class="card-n">01</span><h3>Profiles per project</h3><p>A profile for each project and each environment, so dev, staging and production stop sharing one file.</p></article>
+        <article class="card reveal"><span class="card-n">02</span><h3>A risk class on each profile</h3><p>Production is marked as production. The app asks for a second look before switching to it.</p></article>
+        <article class="card reveal"><span class="card-n">03</span><h3>Undo in one click</h3><p>Applying records what was there before. Undo brings the previous values back.</p></article>
+        <article class="card reveal"><span class="card-n">04</span><h3>The hyperenv command</h3><p>Shipped inside the app, on the same core, store and journal. Only one thing writes to ~/.zprofile.</p></article>
       </div>
     </div>
   </section>
@@ -88,32 +88,12 @@
     <div class="wrap">
       <div class="section-head reveal">
         <p class="eyebrow">Install</p>
-        <h2 id="install-title">One command, and you have it.</h2>
+        <h2 id="install-title">Install with one command.</h2>
         <p class="lead" id="install-command-label">Homebrew if you have it, the disk image if you do not. It verifies the published checksum, never uses <code>sudo</code>, and you can read it before you run it.</p>
       </div>
       <div class="reveal">
         <pre class="command" data-copy aria-labelledby="install-command-label"><code>curl -fsSL https://hyperenv.falcaosl.com/install.sh | bash</code></pre>
-        <p class="install-note"><a href="install.sh">Read the script first</a> — it is forty lines, and running something piped into a shell without looking is a bad habit this project does not want to encourage.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <section class="section section--alt" id="v2" aria-labelledby="v2-title">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">Preview · HyperEnv 2</p>
-        <h2 id="v2-title">Now on Linux and Windows too.</h2>
-        <p class="lead">HyperEnv 2 brings the app to Windows and Linux, and the <code>hyperenv</code> command to all three systems: the same profiles, the same apply and undo. zsh, bash and fish write to your startup file; on Windows it goes to your user environment. It is a pre-release, and it does not replace the macOS app above yet.</p>
-      </div>
-      <div class="reveal">
-        <p class="install-note"><strong>The app</strong> — for Windows, a per-user installer (no administrator); for Linux, a <code>.deb</code> or an AppImage. Get it from the <a href="https://github.com/iramarfalcao/hyperenv/releases?q=cli-v&amp;expanded=true" rel="noopener">latest HyperEnv 2 preview</a>.</p>
-        <p class="install-note"><strong>The command</strong>, for scripts and the editor plugins:</p>
-        <p class="install-note" id="v2-unix-label">macOS and Linux — installs to <code>~/.local/bin</code>, no <code>sudo</code>:</p>
-        <pre class="command" data-copy aria-labelledby="v2-unix-label"><code>curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh</code></pre>
-        <p class="install-note" id="v2-win-label">Windows PowerShell — installs for your user only, no administrator:</p>
-        <pre class="command" data-copy aria-labelledby="v2-win-label"><code>irm https://hyperenv.falcaosl.com/install.ps1 | iex</code></pre>
-        <p class="install-note">Both check the SHA-256 published with the release. Read them first: <a href="install-cli.sh">install-cli.sh</a> · <a href="install.ps1">install.ps1</a>. Or download the binary yourself — Linux x86_64 and ARM64, Windows x64 and ARM64, and one universal macOS build — from the <a href="https://github.com/iramarfalcao/hyperenv/releases?q=cli-v&amp;expanded=true" rel="noopener">GitHub releases</a>.</p>
+        <p class="install-note"><a href="install.sh">Read the script first</a> — it is forty lines.</p>
       </div>
     </div>
   </section>
@@ -138,9 +118,9 @@
       <div class="state reveal">
         <div>
           <p class="eyebrow">Where it stands</p>
-          <h2 id="state-title">Published, and quietly waiting for users.</h2>
-          <p class="lead">The public release is on GitHub under MIT, the CI signs it, and the site installs it with one command. The honest gap is distribution.</p>
-          <p class="lead">What is left is not code: a stable Homebrew Cask distribution and a first batch of external users. The app is finished and almost nobody knows it exists.</p>
+          <h2 id="state-title">Published, with few users so far.</h2>
+          <p class="lead">The public release is on GitHub under MIT, the CI signs it, and the site installs it with one command. What it lacks is distribution.</p>
+          <p class="lead">What is left: a stable Homebrew Cask distribution and a first batch of external users.</p>
           <div class="actions"><a class="btn btn-ghost" href="https://github.com/iramarfalcao/hyperenv/releases" rel="noopener">Releases <span aria-hidden="true">↗</span></a></div>
         </div>
         <dl>
