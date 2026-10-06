@@ -2,7 +2,7 @@
 //  HyperEnvApp.swift
 //  hyperenv
 //
-//  HyperEnv 2 for macOS: the window and the Environment menu, over the same
+//  HyperEnv for macOS: the window and the Environment menu, over the same
 //  Rust core as the Windows and Linux app and the `hyperenv` command.
 //
 

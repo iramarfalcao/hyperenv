@@ -16,7 +16,7 @@ export type IconName =
   | "conceal" | "secret" | "drift" | "confirm" | "close" | "terminal";
 
 /**
- * HyperEnv 2's own icons. Tree icons ignore `currentColor`, so each one ships
+ * HyperEnv's own icons. Tree icons ignore `currentColor`, so each one ships
  * twice with the stroke baked in for light and dark themes.
  */
 export function icon(extension: vscode.Uri, name: IconName): { light: vscode.Uri; dark: vscode.Uri } {

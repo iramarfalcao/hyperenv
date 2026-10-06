@@ -2,7 +2,7 @@
 #
 #   irm https://hyperenv.falcaosl.com/install.ps1 | iex
 #
-# Installs the `hyperenv` command from HyperEnv 2 (pre-release).
+# Installs the `hyperenv` command (pre-release).
 #
 # What it does, in order:
 #   1. picks the build for this processor (x64 or ARM64)

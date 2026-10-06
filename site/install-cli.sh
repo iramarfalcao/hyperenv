@@ -4,7 +4,7 @@
 #
 #   curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh
 #
-# Installs the `hyperenv` command from HyperEnv 2 (pre-release). For the macOS
+# Installs the `hyperenv` command (pre-release). For the macOS
 # app, use install.sh instead.
 #
 # What it does, in order:

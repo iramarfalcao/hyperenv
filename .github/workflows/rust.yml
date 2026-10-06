@@ -1,4 +1,4 @@
-# The Rust workspace (HyperEnv 2: core, engine, command) on all three systems.
+# The Rust workspace (HyperEnv: core, engine, command) on all three systems.
 #
 # Windows is where the registry backend runs against a real HKCU for the first
 # time; macOS and Linux run the end-to-end checks in real zsh, bash and fish.

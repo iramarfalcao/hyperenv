@@ -2,7 +2,7 @@
 //  Core.swift
 //  hyperenv
 //
-//  The bridge to HyperEnv 2's Rust core (crates/ffi). The app sends the
+//  The bridge to HyperEnv's Rust core (crates/ffi). The app sends the
 //  `hyperenv` command's grammar and gets back the command's JSON envelope —
 //  one contract for the window, the terminal and the editor plugins, already
 //  covered by the command's tests. See crates/cli/README.md for the shapes.

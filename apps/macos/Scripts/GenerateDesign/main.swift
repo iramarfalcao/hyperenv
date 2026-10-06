@@ -1,4 +1,4 @@
-// Turns design/ — the one source of HyperEnv 2's visual language — into what
+// Turns design/ — the one source of HyperEnv's visual language — into what
 // the macOS app compiles: hyperenv/Design/Tokens.swift and one template
 // imageset per icon in Assets.xcassets/Icons. Run by generate-design.sh;
 // the outputs are committed, and regenerated whenever design/ changes.
@@ -27,7 +27,7 @@ var out = """
 
 import SwiftUI
 
-/// HyperEnv 2's design tokens — the same values the Windows and Linux app is
+/// HyperEnv's design tokens — the same values the Windows and Linux app is
 /// built from. Colours resolve per appearance (light and dark).
 enum Tokens {
 

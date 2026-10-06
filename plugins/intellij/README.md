@@ -13,7 +13,7 @@ starts with that profile; **Undo** puts each variable back to what it was. For
 a terminal that is already open, the reload command is one click away.
 
 The plugin carries no engine of its own: it drives the `hyperenv` command
-(HyperEnv 2.0 or later), so the desktop app, this plugin and the VS Code
+(version 2.0 or later), so the desktop app, this plugin and the VS Code
 extension share one store and one journal. Works on macOS, Linux and Windows.
 <!-- Plugin description end -->
 
@@ -76,6 +76,6 @@ The tool window itself is exercised with `runIde`.
 
 ## Icons
 
-`src/main/resources/icons` holds HyperEnv 2's own icons from `design/icons`,
+`src/main/resources/icons` holds HyperEnv's own icons from `design/icons`,
 redrawn at 16×16 (same paths, 24-unit viewBox) with IntelliJ's stroke colours:
 `#6C707E` for the light theme and `#CED0D6` in the `_dark` twin.

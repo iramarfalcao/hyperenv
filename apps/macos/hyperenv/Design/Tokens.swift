@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-/// HyperEnv 2's design tokens — the same values the Windows and Linux app is
+/// HyperEnv's design tokens — the same values the Windows and Linux app is
 /// built from. Colours resolve per appearance (light and dark).
 enum Tokens {
     static let accent = Color(light: 0x5C44E6, dark: 0x8B7BFF)

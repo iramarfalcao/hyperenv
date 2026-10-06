@@ -63,10 +63,67 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           case "$version" in *-*) echo "prerelease=true" ;; *) echo "prerelease=false" ;; esac >> "$GITHUB_OUTPUT"
 
-  vscode:
+  # The command, for every platform the plugins ship to. Each plugin carries
+  # it as a last-resort fallback, so it works with nothing else installed;
+  # a command from the app, PATH or the installers still wins.
+  cli:
     needs: check
+    name: command ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-24.04 }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm }
+          - { target: x86_64-pc-windows-msvc, os: windows-2025 }
+          - { target: aarch64-pc-windows-msvc, os: windows-11-arm }
+          - { target: aarch64-apple-darwin, os: macos-26 }
+          - { target: x86_64-apple-darwin, os: macos-26 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal --target ${{ matrix.target }}
+          rustup default stable
+      - name: musl tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build
+        shell: bash
+        run: cargo build --release --locked -p hyperenv-cli --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/hyperenv
+            target/${{ matrix.target }}/release/hyperenv.exe
+          if-no-files-found: error
+
+  # One universal macOS command, made with lipo where it is native.
+  macos-universal:
+    needs: cli
+    name: command universal-apple-darwin
+    runs-on: macos-26
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-*-apple-darwin
+          path: cli
+      - run: |
+          mkdir -p out
+          lipo -create -output out/hyperenv cli/cli-aarch64-apple-darwin/hyperenv cli/cli-x86_64-apple-darwin/hyperenv
+          chmod 755 out/hyperenv && out/hyperenv version && lipo -archs out/hyperenv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-universal-apple-darwin
+          path: out/hyperenv
+
+  vscode:
+    needs: [check, cli, macos-universal]
     name: VS Code extension
-    runs-on: ubuntu-24.04
+    runs-on: macos-26
     defaults:
       run:
         working-directory: plugins/vscode
@@ -79,45 +136,79 @@ jobs:
           cache: npm
           cache-dependency-path: plugins/vscode/package-lock.json
 
-      # The integration test drives the real command against a throwaway home,
-      # in a real zsh — which Ubuntu runners do not ship.
-      - name: Build the hyperenv command
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-*
+          path: ${{ runner.temp }}/cli
+
+      # The universal binary serves both darwin targets; the integration test
+      # drives it against a throwaway home, in zsh.
+      - name: Prepare the commands
         working-directory: .
         run: |
-          sudo apt-get update && sudo apt-get install -y zsh
-          rustup toolchain install stable --profile minimal && rustup default stable
-          cargo build --release --locked -p hyperenv-cli
+          set -euo pipefail
+          c="$RUNNER_TEMP/cli"
+          chmod +x "$c"/cli-*/hyperenv
+          "$c/cli-universal-apple-darwin/hyperenv" version
 
       - name: Install, build and test
         env:
-          HYPERENV_CLI: ${{ github.workspace }}/target/release/hyperenv
+          HYPERENV_CLI: ${{ runner.temp }}/cli/cli-universal-apple-darwin/hyperenv
         run: |
           npm ci
           npm run compile
           npm test
 
-      - name: Package
-        run: npx --yes @vscode/vsce package --no-dependencies ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }} -o hyperenv.vsix
-
-      - name: Publish to the Visual Studio Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        if: env.VSCE_PAT != ''
-        run: npx --yes @vscode/vsce publish --packagePath hyperenv.vsix ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }}
+      # One package per platform, each with only its own command inside.
+      - name: Package per platform
+        run: |
+          set -euo pipefail
+          c="$RUNNER_TEMP/cli"
+          pre="${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }}"
+          mkdir -p dist
+          for pair in \
+              linux-x64:cli-x86_64-unknown-linux-musl/hyperenv \
+              linux-arm64:cli-aarch64-unknown-linux-musl/hyperenv \
+              darwin-x64:cli-universal-apple-darwin/hyperenv \
+              darwin-arm64:cli-universal-apple-darwin/hyperenv \
+              win32-x64:cli-x86_64-pc-windows-msvc/hyperenv.exe \
+              win32-arm64:cli-aarch64-pc-windows-msvc/hyperenv.exe; do
+            t="${pair%%:*}"; src="$c/${pair#*:}"
+            rm -rf bin && mkdir bin
+            case "$t" in win32-*) cp "$src" bin/hyperenv.exe ;; *) cp "$src" bin/hyperenv; chmod 755 bin/hyperenv ;; esac
+            npx --yes @vscode/vsce package --no-dependencies $pre --target "$t" -o "dist/hyperenv-$t.vsix"
+          done
+          rm -rf bin
+          ls -la dist
 
       - name: Publish to Open VSX
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         if: env.OVSX_PAT != ''
-        run: npx --yes ovsx publish hyperenv.vsix ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }} -p "$OVSX_PAT"
+        run: |
+          for v in dist/*.vsix; do
+            npx --yes ovsx publish "$v" ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }} -p "$OVSX_PAT"
+          done
+
+      - name: Publish to the Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        if: env.VSCE_PAT != ''
+        # A token problem here must not hold back Open VSX, JetBrains or the
+        # GitHub release; the step still shows as failed in the run.
+        continue-on-error: true
+        run: |
+          for v in dist/*.vsix; do
+            npx --yes @vscode/vsce publish --packagePath "$v" ${{ needs.check.outputs.prerelease == 'true' && '--pre-release' || '' }}
+          done
 
       - uses: actions/upload-artifact@v4
         with:
           name: vscode
-          path: plugins/vscode/hyperenv.vsix
+          path: plugins/vscode/dist/*.vsix
 
   intellij:
-    needs: check
+    needs: [check, cli, macos-universal]
     name: IntelliJ plugin
     runs-on: ubuntu-24.04
     defaults:
@@ -137,15 +228,29 @@ jobs:
         with:
           build-root-directory: plugins/intellij
 
-      - name: Build the hyperenv command
-        working-directory: .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-*
+          path: ${{ runner.temp }}/cli
+
+      # One zip for every platform: the plugin picks bin/<os>-<arch> at runtime.
+      - name: Bundle the commands
         run: |
-          rustup toolchain install stable --profile minimal && rustup default stable
-          cargo build --release --locked -p hyperenv-cli
+          set -euo pipefail
+          c="$RUNNER_TEMP/cli"
+          sudo apt-get update && sudo apt-get install -y zsh
+          mkdir -p bin/macos bin/linux-x64 bin/linux-arm64 bin/windows-x64 bin/windows-arm64
+          cp "$c/cli-universal-apple-darwin/hyperenv" bin/macos/
+          cp "$c/cli-x86_64-unknown-linux-musl/hyperenv" bin/linux-x64/
+          cp "$c/cli-aarch64-unknown-linux-musl/hyperenv" bin/linux-arm64/
+          cp "$c/cli-x86_64-pc-windows-msvc/hyperenv.exe" bin/windows-x64/
+          cp "$c/cli-aarch64-pc-windows-msvc/hyperenv.exe" bin/windows-arm64/
+          chmod 755 bin/*/hyperenv
+          ls -lR bin
 
       - name: Build, test and verify
         env:
-          HYPERENV_CLI: ${{ github.workspace }}/target/release/hyperenv
+          HYPERENV_CLI: ${{ github.workspace }}/plugins/intellij/bin/linux-x64/hyperenv
         run: ./gradlew build verifyPlugin --console=plain
 
       # Signs and uploads in one step; the channel comes from the version's
@@ -172,6 +277,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: "{vscode,intellij}"
           path: dist
       - name: Attach to the release
         env:
@@ -180,12 +286,11 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ needs.check.outputs.version }}"
-          mv dist/vscode/hyperenv.vsix "dist/hyperenv-vscode-$version.vsix"
+          for v in dist/vscode/*.vsix; do mv "$v" "dist/$(basename "$v" .vsix | sed "s/^hyperenv-/hyperenv-vscode-$version-/").vsix"; done
           for z in dist/intellij/*.zip; do mv "$z" "dist/hyperenv-intellij-$version.zip"; done
-          gh release view "$TAG" >/dev/null 2>&1 || \
-            # Never "latest": the app's installer downloads releases/latest.
-            gh release create "$TAG" --latest=false \
-              ${{ needs.check.outputs.prerelease == 'true' && '--prerelease' || '' }} \
-              --title "HyperEnv plugins $version" \
-              --notes "Editor plugins for HyperEnv 2. Also published to the Visual Studio Marketplace, Open VSX and the JetBrains Marketplace (pre-release channel for pre-release versions)."
+          # Never "latest": the app's installer downloads releases/latest.
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --latest=false \
+            ${{ needs.check.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+            --title "HyperEnv plugins $version" \
+            --notes "Editor plugins for HyperEnv, each with the hyperenv command inside. Also on the Visual Studio Marketplace, Open VSX and the JetBrains Marketplace (pre-release channel for pre-release versions)."
           gh release upload "$TAG" dist/*.vsix dist/*.zip --clobber

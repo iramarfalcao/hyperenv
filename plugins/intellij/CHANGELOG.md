@@ -4,13 +4,20 @@
 
 ## [Unreleased]
 
+## [2.0.0-alpha.3]
+
+- The plugin carries the `hyperenv` command for macOS, Linux and Windows
+  (`bin/`), used as the last resort when none is installed: no install step needed.
+- Plugin icon (the HyperEnv app icon).
+- The product is named HyperEnv throughout.
+
 ## [2.0.0-alpha.2]
 
 First release through the store pipeline (Open VSX and the JetBrains Marketplace). No functional change from 2.0.0-alpha.1.
 
 ## [2.0.0-alpha.1]
 
-Rebuilt for HyperEnv 2's `hyperenv` command. Needs `hyperenv` 2.0 or later.
+Rebuilt for the new `hyperenv` command. Needs `hyperenv` 2.0 or later.
 
 ### Added
 
@@ -24,7 +31,7 @@ Rebuilt for HyperEnv 2's `hyperenv` command. Needs `hyperenv` 2.0 or later.
 - Finds the command on macOS, Linux and Windows: the HyperEnv app, `PATH`,
   then the installers' locations; explains how to install it when missing and
   refuses a 1.x command.
-- HyperEnv 2's own interface icons, in light and dark variants.
+- HyperEnv's own interface icons, in light and dark variants.
 
 ### Changed
 
@@ -34,7 +41,7 @@ Rebuilt for HyperEnv 2's `hyperenv` command. Needs `hyperenv` 2.0 or later.
 ### Removed
 
 - Projects, profile kinds (dev/hml/prd/custom), the Default profile and
-  variable notes — HyperEnv 2 has none of them.
+  variable notes — HyperEnv has none of them.
 - *Install Hook*: `hyperenv apply` installs it when needed.
 
 ## [0.1.0]

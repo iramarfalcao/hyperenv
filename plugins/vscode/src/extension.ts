@@ -10,6 +10,8 @@ import {
   Variable,
   isSupportedVersion,
   isValidKey,
+  bundledCandidates,
+  ensureExecutable,
   locate,
   parseAssignment,
 } from "./cli";
@@ -49,12 +51,15 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   async function resolve(setting: string): Promise<HyperEnvCli> {
-    const found = locate(setting, {
+    const env = {
       platform: process.platform,
       home: homedir(),
       path: process.env.PATH ?? process.env.Path,
       localAppData: process.env.LOCALAPPDATA,
-    });
+      extensionPath: context.extensionPath,
+    };
+    for (const bundled of bundledCandidates(env)) ensureExecutable(bundled);
+    const found = locate(setting, env);
     if (!found) {
       setContext("hyperenv.missing", true);
       if (!warnedMissing) {

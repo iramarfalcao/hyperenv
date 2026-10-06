@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds the `hyperenv` command (crates/cli, HyperEnv 2's Rust core) as one
+# Builds the `hyperenv` command (crates/cli, HyperEnv's Rust core) as one
 # universal binary. It ships inside the app at Contents/Helpers/hyperenv —
 # the editor plugins' door — and runs the same core as the window.
 #

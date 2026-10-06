@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Builds HyperEnv 2's Rust core (crates/ffi) as one universal static library
+# Builds HyperEnv's Rust core (crates/ffi) as one universal static library
 # for the macOS app, and puts it with its header and module map in
 # build/core/, where the Xcode project looks for them.
 #

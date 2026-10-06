@@ -1,4 +1,4 @@
-// The C interface to HyperEnv 2 (crates/ffi). See crates/ffi/src/lib.rs.
+// The C interface to HyperEnv (crates/ffi). See crates/ffi/src/lib.rs.
 #pragma once
 
 #ifdef __cplusplus

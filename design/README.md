@@ -1,4 +1,4 @@
-# Design — HyperEnv 2
+# Design — HyperEnv
 
 Fonte única do visual, igual no macOS (SwiftUI), no Windows e no Linux (Slint).
 As cores vêm do ícone do app: índigo-violeta para agir; verde, laranja e vermelho

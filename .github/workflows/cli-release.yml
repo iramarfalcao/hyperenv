@@ -1,4 +1,4 @@
-# Builds HyperEnv 2 — the desktop app's installers for Windows and Linux and
+# Builds HyperEnv — the desktop app's installers for Windows and Linux and
 # the `hyperenv` command for macOS, Linux and Windows — and publishes them on
 # a GitHub Release.
 #
@@ -178,8 +178,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --prerelease --title "HyperEnv 2 preview ${TAG#cli-v}" \
-              --notes "HyperEnv 2 preview: the desktop app for Windows (installer) and Linux (.deb, AppImage), and the \`hyperenv\` command for macOS, Linux and Windows.
+            gh release create "$TAG" --prerelease --title "HyperEnv preview ${TAG#cli-v}" \
+              --notes "HyperEnv preview: the desktop app for Windows (installer) and Linux (.deb, AppImage), and the \`hyperenv\` command for macOS, Linux and Windows.
 
           Install: \`curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh\` (macOS, Linux) or \`irm https://hyperenv.falcaosl.com/install.ps1 | iex\` (Windows PowerShell)."
           gh release upload "$TAG" dist/* --clobber

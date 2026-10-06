@@ -22,7 +22,7 @@ applying it, the tree marks it **changed since applied**: apply it again to
 update new terminals. The view refreshes when the window regains focus, so
 changes made in the desktop app or a terminal show up.
 
-The extension carries no engine of its own. It drives HyperEnv 2's `hyperenv`
+The extension carries no engine of its own. It drives HyperEnv's `hyperenv`
 command, which uses the same store, journal and startup file as the desktop
 apps — whichever one you click, it is the same state. Works on macOS, Linux and
 Windows.
@@ -47,7 +47,10 @@ In order:
    under `~/Applications`;
 3. `hyperenv` on your `PATH`;
 4. where the install scripts put it: `~/.local/bin/hyperenv` (macOS/Linux),
-   `%LOCALAPPDATA%\Programs\hyperenv\hyperenv.exe` (Windows).
+   `%LOCALAPPDATA%\Programs\hyperenv\hyperenv.exe` (Windows);
+5. the copy bundled with the extension (`bin/hyperenv`, `bin\hyperenv.exe` on
+   Windows) in the platform-specific packages. With it, nothing needs
+   installing; anything you install yourself takes precedence.
 
 The command's grammar and JSON shapes are in `crates/cli/README.md` at the
 repository root.
@@ -75,5 +78,5 @@ HYPERENV_CLI=../../target/release/hyperenv npm test
 Without it, that test is skipped. The view itself is exercised by pressing F5
 in VS Code (Run Extension).
 
-The icons in `media/` are HyperEnv 2's own (`design/icons`), in a light and a
+The icons in `media/` are HyperEnv's own (`design/icons`), in a light and a
 dark copy because VS Code tree icons do not follow `currentColor`.

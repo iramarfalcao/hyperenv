@@ -317,7 +317,7 @@ apps/                one folder per platform
   macos/             the macOS app — SwiftUI over the Rust core (crates/ffi);
                      Xcode project, Scripts/ and the app icon (assets/)
   desktop/           the Windows and Linux app — Slint over the same core
-crates/              HyperEnv 2's shared Rust, the same on every platform
+crates/              HyperEnv's shared Rust, the same on every platform
   core/              pure logic: profiles, .env, apply/undo plans, generated scripts
   engine/            what touches the machine: startup files, journal, Windows registry
   cli/               the `hyperenv` command for macOS, Linux and Windows
@@ -327,7 +327,7 @@ plugins/             editor and IDE integrations — see plugins/README.md
   intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
   vscode/            VS Code — TypeScript
 site/                hyperenv.falcaosl.com — pages, installers, and deploy/ (Dockerfile, nginx)
-design/              HyperEnv 2's design tokens and interface icons, shared by every app
+design/              HyperEnv's design tokens and interface icons, shared by every app
 docs/                architecture, releasing, product docs
 Casks/               the Homebrew cask, updated on release (must stay at the root)
 ```

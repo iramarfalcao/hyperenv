@@ -4,7 +4,7 @@ import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
 /**
- * HyperEnv 2's own interface icons (design/icons), at 16×16. Each has a
+ * HyperEnv's own interface icons (design/icons), at 16×16. Each has a
  * `_dark` twin with a light stroke; IconLoader picks it under a dark theme,
  * the IDE's usual convention.
  */

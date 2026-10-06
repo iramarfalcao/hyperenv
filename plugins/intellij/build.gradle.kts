@@ -142,6 +142,15 @@ tasks {
     publishPlugin {
         dependsOn(patchChangelog)
     }
+
+    // Prebuilt `hyperenv` binaries placed in bin/ by the release workflow ship
+    // inside the plugin at <plugin dir>/bin/<platform>/, the locator's last fallback.
+    prepareSandbox {
+        val pluginName = intellijPlatform.projectName
+        from(layout.projectDirectory.dir("bin")) {
+            into(pluginName.map { "$it/bin" })
+        }
+    }
 }
 
 intellijPlatformTesting {

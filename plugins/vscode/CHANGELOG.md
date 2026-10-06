@@ -1,24 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+## [2.0.0-alpha.3]
+
+- Platform-specific packages bundle the `hyperenv` command (`bin/`), used as
+  the last resort when none is installed: no install step needed.
+- Marketplace icon and banner.
+- The product is named HyperEnv throughout.
+
 ## [2.0.0-alpha.2]
 
 First release through the store pipeline (Open VSX and the JetBrains Marketplace). No functional change from 2.0.0-alpha.1.
 
 ## [2.0.0-alpha.1]
 
-Rebuilt for HyperEnv 2's `hyperenv` command. Requires `hyperenv` 2.0 or later;
+Rebuilt for HyperEnv's `hyperenv` command. Requires `hyperenv` 2.0 or later;
 the 1.x command is no longer supported.
 
 ### Changed
 
 - A flat list of profiles replaces projects → profiles; risk kinds
-  (dev/hml/prd) and the Default profile are gone, as in HyperEnv 2.
+  (dev/hml/prd) and the Default profile are gone, as in the 2.0 command.
 - Revert is now **Undo**: each variable goes back to its previous value.
 - The command is looked for in the setting, the macOS app, `PATH`, then the
   installers' places (`~/.local/bin`, `%LOCALAPPDATA%\Programs\hyperenv`);
   when it is missing the extension shows the install commands. Works on macOS,
   Linux and Windows.
-- HyperEnv 2's own icons throughout, including the activity bar.
+- HyperEnv's own icons throughout, including the activity bar.
 
 ### Added
 

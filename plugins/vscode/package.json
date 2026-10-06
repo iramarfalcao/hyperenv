@@ -1,9 +1,14 @@
 {
   "name": "hyperenv",
   "displayName": "HyperEnv",
-  "description": "Apply and undo a profile of environment variables for every new terminal, from inside VS Code. Drives HyperEnv 2's hyperenv command.",
-  "version": "2.0.0-alpha.2",
+  "description": "Apply and undo a profile of environment variables for every new terminal, from inside VS Code. Drives HyperEnv's hyperenv command.",
+  "version": "2.0.0-alpha.3",
   "publisher": "falcaosl",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#15123A",
+    "theme": "dark"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -446,7 +451,7 @@
           "type": "string",
           "default": "",
           "scope": "machine",
-          "markdownDescription": "Path to HyperEnv 2's `hyperenv` command. Leave empty to search: inside `HyperEnv.app` (macOS), then `PATH`, then `~/.local/bin` (macOS/Linux) or `%LOCALAPPDATA%\\Programs\\hyperenv` (Windows)."
+          "markdownDescription": "Path to HyperEnv's `hyperenv` command. Leave empty to search: inside `HyperEnv.app` (macOS), then `PATH`, then `~/.local/bin` (macOS/Linux) or `%LOCALAPPDATA%\\Programs\\hyperenv` (Windows), then the copy bundled with the extension."
         }
       }
     }

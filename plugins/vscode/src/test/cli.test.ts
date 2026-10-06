@@ -1,11 +1,12 @@
 // Plain Node tests: no VS Code needed. `cli.ts` never imports `vscode`.
 //
-// The fixtures in src/test/fixtures are real output of HyperEnv 2.0.0-alpha.3,
+// The fixtures in src/test/fixtures are real output of `hyperenv` 2.0.0-alpha.3,
 // captured with `hyperenv --home <temp> --json …` (see the README). Parsing
 // them proves the extension reads what the command really prints.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   CliError,
@@ -13,8 +14,11 @@ import {
   INSTALL_UNIX,
   Runner,
   changedSinceApplied,
+  isExecutable,
   isSupportedVersion,
   isValidKey,
+  bundledCandidates,
+  ensureExecutable,
   locate,
   majorVersion,
   parseApply,
@@ -167,6 +171,36 @@ test("locate (Windows): hyperenv.exe on PATH, then %LOCALAPPDATA%\\Programs\\hyp
   const seen: string[] = [];
   locate(undefined, win, (f) => (seen.push(f), false));
   assert.deepEqual(seen, ["C:\\Tools\\hyperenv.exe", "C:\\Bin\\hyperenv.exe", "C:\\Users\\me\\AppData\\Local\\Programs\\hyperenv\\hyperenv.exe"]);
+});
+
+test("locate: the bundled copy is the very last resort, after the installers' places", () => {
+  const ext = { ...mac, extensionPath: "/ext" };
+  const bundled = "/ext/bin/hyperenv";
+  const seen: string[] = [];
+  locate(undefined, ext, (f) => (seen.push(f), false));
+  assert.equal(seen[seen.length - 1], bundled);
+  assert.equal(seen.indexOf("/Users/me/.local/bin/hyperenv"), seen.length - 2);
+  assert.equal(locate(undefined, ext, only(bundled)), bundled);
+  assert.equal(locate(undefined, ext, only(bundled, "/usr/bin/hyperenv")), "/usr/bin/hyperenv");
+  assert.equal(locate("/tmp/mine", ext, only(bundled, "/tmp/mine")), "/tmp/mine");
+  assert.equal(locate(undefined, mac, only(bundled)), undefined);
+});
+
+test("bundled candidate: bin/hyperenv, or bin\\hyperenv.exe on Windows", () => {
+  assert.deepEqual(bundledCandidates({ platform: "linux", home: "/h", extensionPath: "/ext" }), ["/ext/bin/hyperenv"]);
+  assert.deepEqual(bundledCandidates({ platform: "win32", home: "C:\\h", extensionPath: "C:\\ext" }), ["C:\\ext\\bin\\hyperenv.exe"]);
+  assert.deepEqual(bundledCandidates({ platform: "linux", home: "/h" }), []);
+});
+
+test("ensureExecutable restores a dropped execute bit", { skip: process.platform === "win32" }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "hv-bin-"));
+  const file = join(dir, "hyperenv");
+  writeFileSync(file, "#!/bin/sh\n", { mode: 0o644 });
+  assert.equal(isExecutable(file), false);
+  ensureExecutable(file);
+  assert.equal(isExecutable(file), true);
+  ensureExecutable(join(dir, "missing"));
+  rmSync(dir, { recursive: true, force: true });
 });
 
 test("install command is the documented one", () => {

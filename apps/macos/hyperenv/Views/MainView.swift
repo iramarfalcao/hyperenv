@@ -2,7 +2,7 @@
 //  MainView.swift
 //  hyperenv
 //
-//  The window, as in the approved HyperEnv 2 mockup: a flat profile list on
+//  The window, as in the approved HyperEnv mockup: a flat profile list on
 //  the left, the selected profile's variables on the right, one main action
 //  that is Apply or Undo, and a status bar that says what new terminals get.
 //

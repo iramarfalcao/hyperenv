@@ -32,7 +32,7 @@ jobs:
           xcodebuild -version
           swift --version
 
-      # The app's logic is HyperEnv 2's Rust core: the same suites the Rust
+      # The app's logic is HyperEnv's Rust core: the same suites the Rust
       # workflow runs on three systems, here on the macOS the app ships for —
       # including the end-to-end checks in a real zsh and bash.
       - name: Core, engine and command checks

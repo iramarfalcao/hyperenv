@@ -1,4 +1,4 @@
-# Architecture — HyperEnv 2
+# Architecture — HyperEnv
 
 One Rust core, three windows, one command. Everything that decides what
 happens to the user's environment lives in `crates/`, once; every surface on

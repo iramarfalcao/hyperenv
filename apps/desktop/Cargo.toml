@@ -1,6 +1,6 @@
 [package]
 name = "hyperenv-desktop"
-description = "HyperEnv 2 for Windows and Linux (and macOS, for development): the window over the same engine as the command."
+description = "HyperEnv for Windows and Linux (and macOS, for development): the window over the same engine as the command."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,4 +1,4 @@
-// The client for HyperEnv 2's `hyperenv` command. No `vscode` import on
+// The client for HyperEnv's `hyperenv` command. No `vscode` import on
 // purpose: this file is unit-tested with plain Node, and the extension wires it
 // up.
 //
@@ -7,7 +7,7 @@
 // crates/cli/README.md in the repository.
 
 import { execFile } from "node:child_process";
-import { accessSync, constants } from "node:fs";
+import { accessSync, chmodSync, constants, statSync } from "node:fs";
 import { posix, win32 } from "node:path";
 
 // ------------------------------------------------------------------- model
@@ -257,6 +257,8 @@ export interface LocateEnv {
   home: string;
   path?: string;
   localAppData?: string;
+  /** The extension's own folder; platform-specific packages carry `bin/hyperenv[.exe]` there. */
+  extensionPath?: string;
 }
 
 /** The copy inside the macOS app, looked at before PATH: it is the one the app itself uses. */
@@ -274,6 +276,28 @@ export function installerCandidates(env: LocateEnv): string[] {
     return env.localAppData ? [win32.join(env.localAppData, "Programs", "hyperenv", "hyperenv.exe")] : [];
   }
   return [posix.join(env.home, ".local", "bin", "hyperenv")];
+}
+
+/** The copy bundled in a platform-specific package: the last resort, after anything the user installed. */
+export function bundledCandidates(env: LocateEnv): string[] {
+  if (!env.extensionPath) return [];
+  return env.platform === "win32"
+    ? [win32.join(env.extensionPath, "bin", "hyperenv.exe")]
+    : [posix.join(env.extensionPath, "bin", "hyperenv")];
+}
+
+/**
+ * VSIX extraction can drop the execute bit; put it back on the bundled copy so
+ * `isExecutable` accepts it. Harmless when the file is absent or on Windows.
+ */
+export function ensureExecutable(file: string, platform: NodeJS.Platform = process.platform): void {
+  if (platform === "win32") return;
+  try {
+    const mode = statSync(file).mode;
+    if ((mode & 0o111) !== 0o111) chmodSync(file, 0o755);
+  } catch {
+    // Missing or read-only install: the lookup simply skips it.
+  }
 }
 
 export function pathCandidates(env: LocateEnv): string[] {
@@ -296,7 +320,7 @@ export function isExecutable(file: string): boolean {
   }
 }
 
-/** Setting, then the macOS app, then PATH, then the installers' places. Pure, for the tests. */
+/** Setting, then the macOS app, then PATH, then the installers' places, then the bundled copy. Pure, for the tests. */
 export function locate(
   override: string | undefined,
   env: LocateEnv,
@@ -304,7 +328,9 @@ export function locate(
 ): string | undefined {
   const explicit = override?.trim();
   if (explicit && exists(explicit)) return explicit;
-  return [...appCandidates(env), ...pathCandidates(env), ...installerCandidates(env)].find(exists);
+  return [...appCandidates(env), ...pathCandidates(env), ...installerCandidates(env), ...bundledCandidates(env)].find(
+    exists,
+  );
 }
 
 // ------------------------------------------------------------------- client

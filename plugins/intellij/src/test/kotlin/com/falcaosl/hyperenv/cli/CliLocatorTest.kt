@@ -16,6 +16,8 @@ class CliLocatorTest {
     private val userApp = File("/Users/me/Applications/HyperEnv.app/Contents/Helpers/hyperenv")
     private val onPath = File("/opt/homebrew/bin/hyperenv")
     private val local = File("/Users/me/.local/bin/hyperenv")
+    private val pluginDir = File("/Users/me/Library/plugins/hyperenv-intellij")
+    private val bundled = File("/Users/me/Library/plugins/hyperenv-intellij/bin/macos/hyperenv")
 
     private fun existing(vararg files: File): (File) -> Boolean = { it in files }
 
@@ -24,6 +26,7 @@ class CliLocatorTest {
         CliLocator.appCandidates(Os.MAC, home),
         CliLocator.pathCandidates("/usr/bin:/opt/homebrew/bin", Os.MAC, ":"),
         CliLocator.installerCandidates(Os.MAC, home, null),
+        CliLocator.bundledCandidate(pluginDir, Os.MAC),
         existing(*present),
     )
 
@@ -34,6 +37,28 @@ class CliLocatorTest {
     @Test fun `then the user's Applications folder`() = assertEquals(userApp, mac(null, userApp, onPath))
     @Test fun `then PATH, in PATH order`() = assertEquals(onPath, mac(null, onPath, local))
     @Test fun `then the installer's location`() = assertEquals(local, mac(null, local))
+    @Test fun `the bundled copy is the last resort`() = assertEquals(bundled, mac(null, bundled))
+    @Test fun `the installer's location beats the bundled copy`() = assertEquals(local, mac(null, local, bundled))
+    @Test fun `PATH beats the bundled copy`() = assertEquals(onPath, mac(null, onPath, bundled))
+    @Test fun `a setting beats the bundled copy`() = assertEquals(custom, mac(custom.path, custom, bundled))
+
+    @Test
+    fun `bundled folder per os and arch`() {
+        assertEquals("macos", CliLocator.bundledFolder(Os.MAC, "aarch64"))
+        assertEquals("macos", CliLocator.bundledFolder(Os.MAC, "x86_64"))
+        assertEquals("linux-x64", CliLocator.bundledFolder(Os.LINUX, "amd64"))
+        assertEquals("linux-x64", CliLocator.bundledFolder(Os.LINUX, "x86_64"))
+        assertEquals("linux-arm64", CliLocator.bundledFolder(Os.LINUX, "aarch64"))
+        assertEquals("windows-x64", CliLocator.bundledFolder(Os.WINDOWS, "amd64"))
+        assertEquals("windows-arm64", CliLocator.bundledFolder(Os.WINDOWS, "arm64"))
+        assertNull(CliLocator.bundledFolder(Os.LINUX, "riscv64"))
+        assertEquals(
+            File(File(File(File("C:\\p"), "bin"), "windows-x64"), "hyperenv.exe"),
+            CliLocator.bundledCandidate(File("C:\\p"), Os.WINDOWS, "amd64"),
+        )
+        assertNull(CliLocator.bundledCandidate(null, Os.MAC))
+    }
+
     @Test fun `nothing found is null so the caller can explain`() = assertNull(mac(null))
 
     @Test

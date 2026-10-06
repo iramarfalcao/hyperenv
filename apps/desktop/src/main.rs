@@ -1,4 +1,4 @@
-//! HyperEnv 2 for Windows and Linux — the window over the same engine as the
+//! HyperEnv for Windows and Linux — the window over the same engine as the
 //! `hyperenv` command. Builds and runs on macOS too, for development.
 //!
 //! The UI thread only reads and writes the profiles file, which is fast.
