@@ -187,6 +187,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyperenv-cli"
+version = "2.0.0-dev"
+dependencies = [
+ "hyperenv-core",
+ "hyperenv-engine",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "hyperenv-core"
 version = "2.0.0-dev"
 dependencies = [

@@ -200,6 +200,9 @@ fn bash_and_fish_targets() {
             .unwrap()
             .contains("session.bash")
     );
+    let mut zdot = layout(home.path(), Shell::Zsh);
+    zdot.zdotdir = Some(home.path().join("zsh"));
+    assert_eq!(zdot.startup_file().unwrap(), home.path().join("zsh/.zprofile"));
     let linux = Layout::in_home(home.path(), Platform::Linux, Shell::Bash, "/bin/bash");
     assert_eq!(linux.startup_file().unwrap(), home.path().join(".bashrc"));
     bash.unapply().unwrap();

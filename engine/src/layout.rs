@@ -35,6 +35,9 @@ pub struct Layout {
     pub shell: Shell,
     /// O executável desse shell, para a sondagem.
     pub shell_path: PathBuf,
+    /// zsh com `ZDOTDIR` apontando para outra pasta lê o `.zprofile` de lá,
+    /// não o da home.
+    pub zdotdir: Option<PathBuf>,
 }
 
 impl Layout {
@@ -50,12 +53,16 @@ impl Layout {
                 .join("hyperenv"),
             _ => home.join(".config").join("hyperenv"),
         };
+        let zdotdir = std::env::var_os("ZDOTDIR")
+            .map(PathBuf::from)
+            .filter(|d| d.is_dir() && *d != home);
         Some(Self {
             platform,
             home,
             config_dir,
             shell,
             shell_path,
+            zdotdir,
         })
     }
 
@@ -67,6 +74,7 @@ impl Layout {
             config_dir: home.join(".config").join("hyperenv"),
             shell,
             shell_path: shell_path.into(),
+            zdotdir: None,
         }
     }
 
@@ -111,7 +119,7 @@ impl Layout {
     /// - PowerShell (Windows): não há arquivo; o ambiente vai pelo registro.
     pub fn startup_file(&self) -> Option<PathBuf> {
         match (self.shell, self.platform) {
-            (Shell::Zsh, _) => Some(self.home.join(".zprofile")),
+            (Shell::Zsh, _) => Some(self.zdotdir.as_ref().unwrap_or(&self.home).join(".zprofile")),
             (Shell::Bash, Platform::MacOs) => Some(self.home.join(".bash_profile")),
             (Shell::Bash, _) => Some(self.home.join(".bashrc")),
             (Shell::Fish, _) => Some(self.fish_config_dir().join("config.fish")),
