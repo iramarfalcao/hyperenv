@@ -6,7 +6,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estágio** | **Publicado** — release pública no GitHub, MIT |
+| **Estágio** | **Em desenvolvimento** — versões de teste no GitHub e nas lojas de plugins (pré-lançamento); distribuição em andamento |
 | **Formato** | Monorepo: app macOS, comando `hyperenv` (`cli/`), `plugins/` (IntelliJ e VS Code), `site/` e `docs/` |
 | **Plataformas** | macOS 26.5+ (app nativo); Windows e Linux (app desktop 2.0.0); comando `hyperenv` nos três |
 | **Stack** | Swift/SwiftUI (macOS); Rust + Slint (desktop e comando); Kotlin e TypeScript (plugins) |
@@ -64,4 +64,4 @@ VSX, prints do app desktop, plugins estáveis e lojas Linux.
 
 ## Definição de "pronto para publicar"
 
-Já publicado. O gate de release é o `docs/RELEASING.md`.
+Há versões públicas de teste; o lançamento estável depende das issues de distribuição (#16 a #23). O gate de release é o `docs/RELEASING.md`.
