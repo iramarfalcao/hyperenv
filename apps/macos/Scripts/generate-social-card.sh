@@ -9,4 +9,4 @@ OUT="$(mktemp -d)"; trap 'rm -rf "$OUT"' EXIT
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 
 xcrun swiftc -swift-version 6 -O -o "$OUT/card" "$REPO/Scripts/GenerateSocialCard/main.swift"
-"$OUT/card" "$REPO/assets/icon-1024.png" "$REPO/site/assets/og-image.jpg"
+"$OUT/card" "$REPO/assets/icon-1024.png" "$REPO/../../site/assets/og-image.jpg"

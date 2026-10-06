@@ -15,7 +15,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="$REPO/site/assets"
+OUT="$REPO/../../site/assets"
 APP="${1:-/Applications/HyperEnv.app}"
 
 [ -d "$APP" ] || { echo "No app at $APP"; exit 1; }

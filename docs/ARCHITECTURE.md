@@ -31,7 +31,7 @@ with no filesystem, no app bundle and no test host.
 | `Reconciler.swift` | Diffs desired state against observed state to produce a plan. |
 | `EnvOutputParser.swift` | Parses the probe's null-delimited output. |
 
-`Tests/CoreChecks/` compiles this directory with `swiftc` and runs 121 assertions
+`apps/macos/Tests/CoreChecks/` compiles this directory with `swiftc` and runs 121 assertions
 against it. It needs nothing but a Swift toolchain.
 
 ## Engine — the part that touches the machine
@@ -103,7 +103,7 @@ Two layout rules follow from bugs that were expensive to find:
   profile holds a 400-character `PATH`. One such row asked for 3417pt inside a
   ~550pt column, and the split view answered by pushing every column's content
   off screen — which reads as the data failing to load. Text fields therefore cap
-  their `idealWidth`, and `Tests/run-layout-checks.sh` enforces it.
+  their `idealWidth`, and `apps/macos/Tests/run-layout-checks.sh` enforces it.
 - **No view may report an ideal height larger than the window either.**
   `.fixedSize(horizontal: false, vertical: true)` on a long `Text` asks for its
   ideal height, and during the split view's measuring pass the proposed width is
@@ -116,7 +116,7 @@ guard against AppKit restoring stale split-view geometry, but measuring showed i
 changed nothing about how the columns are built — and the geometry corruption it
 was meant to solve turned out to be a symptom of the width bug above.
 
-`Scripts/capture-window.sh` is how any claim in this section gets checked: it
+`apps/macos/Scripts/capture-window.sh` is how any claim in this section gets checked: it
 hosts the real view in an offscreen window, reports how many columns AppKit built,
 dumps the view tree and writes a PNG. Its limits are worth knowing —
 `cacheDisplay` does not draw vibrancy or Liquid Glass, so a blank sidebar in the
@@ -146,7 +146,7 @@ dilute the only signal that matters. The setup notice used to be orange, which
 both read as a warning and collided with the tint homologation uses.
 
 `Brand.swift` and `AccentColor.colorset` are both written by
-`Scripts/generate-app-icon.swift` from the same constants the icon is drawn
+`apps/macos/Scripts/generate-app-icon.swift` from the same constants the icon is drawn
 from, so the interface cannot drift away from the icon.
 
 **Sound** (`Feedback.swift`) is limited to four events: applied, reverted,
@@ -162,9 +162,9 @@ dot arrives with it, and the status dot breathes while work is in flight.
 
 ## The icon
 
-`Scripts/generate-app-icon.swift` renders the mark once and writes it to all
-three places it is needed — the asset catalog, `assets/HyperEnv.icns` for the
-disk image's volume icon, and `assets/icon-1024.png` for the documentation. The
+`apps/macos/Scripts/generate-app-icon.swift` renders the mark once and writes it to all
+three places it is needed — the asset catalog, `apps/macos/assets/HyperEnv.icns` for the
+disk image's volume icon, and `apps/macos/assets/icon-1024.png` for the documentation. The
 three dots in it are the literal `dev` / `hml` / `prd` tints, so the icon cannot
 drift away from the palette the app actually uses.
 
@@ -172,10 +172,10 @@ drift away from the palette the app actually uses.
 
 | Suite | What it proves |
 |---|---|
-| `Tests/run-core-checks.sh` | The generated strings, parsing and quoting are correct. Pure, fast, no I/O. |
-| `Tests/run-shell-integration.sh` | A real `zsh`, in an isolated `ZDOTDIR`, produces the promised environment — and un-applying restores the previous values. Refuses to run anywhere near the real `$HOME`. |
-| `Tests/run-layout-checks.sh` | No row demands more width than the window can give it. Measures `VariableRow` directly, because measuring it inside the editor's `List` reports a clamped width and would pass with the bug present. |
-| `Tests/run-export-checks.sh` | An export carries the variables it says it does. Reads the generated file rather than trusting the code path, because the failure it guards — a file holding a comment header and nothing else — looks like success until the file is opened. |
+| `apps/macos/Tests/run-core-checks.sh` | The generated strings, parsing and quoting are correct. Pure, fast, no I/O. |
+| `apps/macos/Tests/run-shell-integration.sh` | A real `zsh`, in an isolated `ZDOTDIR`, produces the promised environment — and un-applying restores the previous values. Refuses to run anywhere near the real `$HOME`. |
+| `apps/macos/Tests/run-layout-checks.sh` | No row demands more width than the window can give it. Measures `VariableRow` directly, because measuring it inside the editor's `List` reports a clamped width and would pass with the bug present. |
+| `apps/macos/Tests/run-export-checks.sh` | An export carries the variables it says it does. Reads the generated file rather than trusting the code path, because the failure it guards — a file holding a comment header and nothing else — looks like success until the file is opened. |
 
 The shell suite is the one that matters most. Unit tests prove the strings are
 built correctly; only a real shell proves the contract. The other three exist

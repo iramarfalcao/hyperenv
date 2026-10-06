@@ -96,9 +96,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Infrastructure
 
-- `Tests/run-layout-checks.sh` and `Tests/run-export-checks.sh`, both verified by
+- `apps/macos/Tests/run-layout-checks.sh` and `apps/macos/Tests/run-export-checks.sh`, both verified by
   reintroducing the bug they guard and watching them fail.
-- `Scripts/capture-window.sh` renders the real window offscreen and reports what
+- `apps/macos/Scripts/capture-window.sh` renders the real window offscreen and reports what
   AppKit actually built.
 - The release workflow signs with a secure timestamp, notarizes and staples the
   app *before* building the disk image, then notarizes and staples the image and

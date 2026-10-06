@@ -53,18 +53,18 @@ jobs:
       # A release nobody can trust is not a release: the same two suites CI runs
       # gate the tag as well, so a broken shell contract cannot ship.
       - name: Core checks
-        run: Tests/run-core-checks.sh
+        run: apps/macos/Tests/run-core-checks.sh
 
       - name: Shell integration
-        run: Tests/run-shell-integration.sh
+        run: apps/macos/Tests/run-shell-integration.sh
 
       - name: Layout checks
-        run: Tests/run-layout-checks.sh
+        run: apps/macos/Tests/run-layout-checks.sh
 
       # An export that writes a header and no variables looks like success until
       # the file is opened.
       - name: Export checks
-        run: Tests/run-export-checks.sh
+        run: apps/macos/Tests/run-export-checks.sh
 
       # Signing is optional and entirely secret-driven. With no secrets set the
       # build is ad-hoc signed, which is what a public repository can honestly
@@ -95,7 +95,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY || '-' }}
           DEVELOPMENT_TEAM: ${{ secrets.MACOS_TEAM_ID }}
-        run: Scripts/build-release.sh "$VERSION"
+        run: apps/macos/Scripts/build-release.sh "$VERSION"
 
       # The app is notarized and stapled *before* the disk image is built, so the
       # ticket travels inside it. A ticket cannot be attached to the app once it
@@ -107,17 +107,17 @@ jobs:
           TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
           NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
         run: |
-          ditto -c -k --keepParent build/export/HyperEnv.app "$RUNNER_TEMP/HyperEnv.zip"
+          ditto -c -k --keepParent apps/macos/build/export/HyperEnv.app "$RUNNER_TEMP/HyperEnv.zip"
           xcrun notarytool submit "$RUNNER_TEMP/HyperEnv.zip" \
             --apple-id "$APPLE_ID" --team-id "$TEAM_ID" \
             --password "$NOTARY_PASSWORD" --wait
-          xcrun stapler staple build/export/HyperEnv.app
-          xcrun stapler validate build/export/HyperEnv.app
+          xcrun stapler staple apps/macos/build/export/HyperEnv.app
+          xcrun stapler validate apps/macos/build/export/HyperEnv.app
 
       - name: Package the disk image
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: Scripts/make-dmg.sh build/export/HyperEnv.app "$VERSION"
+        run: apps/macos/Scripts/make-dmg.sh apps/macos/build/export/HyperEnv.app "$VERSION"
 
       # And the image itself, so the download is trusted before it is even
       # opened. Without this the app inside is fine but the disk image is not.
@@ -129,7 +129,7 @@ jobs:
           TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
           NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
         run: |
-          dmg="build/HyperEnv-$VERSION.dmg"
+          dmg="apps/macos/build/HyperEnv-$VERSION.dmg"
           xcrun notarytool submit "$dmg" \
             --apple-id "$APPLE_ID" --team-id "$TEAM_ID" \
             --password "$NOTARY_PASSWORD" --wait
@@ -137,7 +137,7 @@ jobs:
           xcrun stapler validate "$dmg"
           # The checksum was taken before stapling, which changes the file.
           name="$(basename "$dmg")"
-          (cd build && shasum -a 256 "$name" > "$name.sha256")
+          (cd apps/macos/build && shasum -a 256 "$name" > "$name.sha256")
           echo "re-checksummed after stapling:"
           cat "$dmg.sha256"
 
@@ -147,11 +147,11 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          signature="$(codesign -dv --verbose=2 build/export/HyperEnv.app 2>&1 \
+          signature="$(codesign -dv --verbose=2 apps/macos/build/export/HyperEnv.app 2>&1 \
             | sed -n 's/^Signature=//p' | head -1)"
           [ -n "$signature" ] || signature="unknown"
-          arches="$(lipo -archs build/export/HyperEnv.app/Contents/MacOS/HyperEnv)"
-          checksum="$(cut -d' ' -f1 < "build/HyperEnv-$VERSION.dmg.sha256")"
+          arches="$(lipo -archs apps/macos/build/export/HyperEnv.app/Contents/MacOS/HyperEnv)"
+          checksum="$(cut -d' ' -f1 < "apps/macos/build/HyperEnv-$VERSION.dmg.sha256")"
 
           if [ "$signature" = "adhoc" ]; then
             gatekeeper="This build is signed ad-hoc, not with a paid Apple Developer ID, so macOS blocks the first launch. Right-click HyperEnv in Applications and choose Open, or run the command below once."
@@ -223,7 +223,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          checksum="$(cut -d' ' -f1 < "build/HyperEnv-$VERSION.dmg.sha256")"
+          checksum="$(cut -d' ' -f1 < "apps/macos/build/HyperEnv-$VERSION.dmg.sha256")"
           python3 - "$VERSION" "$checksum" <<'PY'
           import pathlib, re, sys
           version, checksum = sys.argv[1], sys.argv[2]
@@ -259,9 +259,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          cp "build/HyperEnv-$VERSION.dmg" build/HyperEnv.dmg
-          (cd build && shasum -a 256 HyperEnv.dmg > HyperEnv.dmg.sha256)
-          ls -la build/
+          cp "apps/macos/build/HyperEnv-$VERSION.dmg" apps/macos/build/HyperEnv.dmg
+          (cd apps/macos/build && shasum -a 256 HyperEnv.dmg > HyperEnv.dmg.sha256)
+          ls -la apps/macos/build/
 
       - name: Publish the release
         env:
@@ -278,18 +278,18 @@ jobs:
               --title "HyperEnv $VERSION" \
               --notes-file "$RUNNER_TEMP/notes.md"
             gh release upload "$tag" \
-              "build/HyperEnv-$VERSION.dmg" \
-              "build/HyperEnv-$VERSION.dmg.sha256" \
-              "build/HyperEnv.dmg" \
-              "build/HyperEnv.dmg.sha256" --clobber
+              "apps/macos/build/HyperEnv-$VERSION.dmg" \
+              "apps/macos/build/HyperEnv-$VERSION.dmg.sha256" \
+              "apps/macos/build/HyperEnv.dmg" \
+              "apps/macos/build/HyperEnv.dmg.sha256" --clobber
           else
             gh release create "$tag" \
               --title "HyperEnv $VERSION" \
               --notes-file "$RUNNER_TEMP/notes.md" \
-              "build/HyperEnv-$VERSION.dmg" \
-              "build/HyperEnv-$VERSION.dmg.sha256" \
-              "build/HyperEnv.dmg" \
-              "build/HyperEnv.dmg.sha256"
+              "apps/macos/build/HyperEnv-$VERSION.dmg" \
+              "apps/macos/build/HyperEnv-$VERSION.dmg.sha256" \
+              "apps/macos/build/HyperEnv.dmg" \
+              "apps/macos/build/HyperEnv.dmg.sha256"
           fi
 
       # Kept even on failure, so a run that dies after packaging still leaves the
@@ -301,5 +301,5 @@ jobs:
           name: HyperEnv-${{ steps.version.outputs.version }}
           if-no-files-found: ignore
           path: |
-            build/*.dmg
-            build/*.sha256
+            apps/macos/build/*.dmg
+            apps/macos/build/*.sha256

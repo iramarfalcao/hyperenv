@@ -35,32 +35,32 @@ jobs:
       # The Core layer does no I/O, so it compiles and runs straight from
       # swiftc — no app bundle, no test host, no simulator.
       - name: Core checks
-        run: Tests/run-core-checks.sh
+        run: apps/macos/Tests/run-core-checks.sh
 
       # The check that actually matters: a real zsh in an isolated ZDOTDIR,
       # proving that sourcing the generated scripts produces the environment the
       # app promised, and that un-applying puts the old values back.
       - name: Shell integration
-        run: Tests/run-shell-integration.sh
+        run: apps/macos/Tests/run-shell-integration.sh
 
       # A view that demands more width than the window has does not fail loudly.
       # It renders with content pushed off screen, which reads as missing data.
       - name: Layout checks
-        run: Tests/run-layout-checks.sh
+        run: apps/macos/Tests/run-layout-checks.sh
 
       # An export that writes a header and no variables looks like success until
       # the file is opened.
       - name: Export checks
-        run: Tests/run-export-checks.sh
+        run: apps/macos/Tests/run-export-checks.sh
 
       - name: Model checks
-        run: Tests/run-model-checks.sh
+        run: apps/macos/Tests/run-model-checks.sh
 
       - name: Engine checks
-        run: Tests/run-engine-checks.sh
+        run: apps/macos/Tests/run-engine-checks.sh
 
       - name: CLI checks
-        run: Tests/run-cli-checks.sh
+        run: apps/macos/Tests/run-cli-checks.sh
 
   cask:
     name: Homebrew cask
@@ -106,15 +106,15 @@ jobs:
       # Exactly the script the release workflow runs, so a packaging break shows
       # up on a pull request instead of on a tag.
       - name: Build (universal, ad-hoc signed)
-        run: Scripts/build-release.sh
+        run: apps/macos/Scripts/build-release.sh
 
       - name: Package a disk image
-        run: Scripts/make-dmg.sh build/export/HyperEnv.app "ci-${GITHUB_SHA:0:7}"
+        run: apps/macos/Scripts/make-dmg.sh apps/macos/build/export/HyperEnv.app "ci-${GITHUB_SHA:0:7}"
 
       - uses: actions/upload-artifact@v7
         with:
           name: HyperEnv-dmg
           path: |
-            build/*.dmg
-            build/*.sha256
+            apps/macos/build/*.dmg
+            apps/macos/build/*.sha256
           retention-days: 14

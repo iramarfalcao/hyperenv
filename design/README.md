@@ -5,8 +5,8 @@ As cores vêm do ícone do app: índigo-violeta para agir; verde, laranja e verm
 dos três pontos para ativo, pendente e erro.
 
 - `tokens.json` — cores (claro/escuro), tipografia, escala, espaço, raios, layout e movimento.
-- Ícone do app: o já existente (`hyperenv/Assets.xcassets/AppIcon.appiconset`,
-  `assets/HyperEnv.icns`, `assets/icon-1024.png`), igual nas três plataformas.
+- Ícone do app: o já existente (`apps/macos/hyperenv/Assets.xcassets/AppIcon.appiconset`,
+  `apps/macos/assets/HyperEnv.icns`, `apps/macos/assets/icon-1024.png`), igual nas três plataformas.
 - `icons/` — 16 ícones de interface próprios: grade 24, traço 1,75, pontas retas, cantos vivos.
   Nada de SF Symbols nem ícones do sistema.
 

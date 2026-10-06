@@ -54,8 +54,8 @@ from a demo window holding invented data — no real environment variables, keys
 hostnames appear in any of them. Regenerate them at any time:
 
 ```sh
-Scripts/capture-screenshots.sh          # light and dark, needs Screen Recording
-Scripts/generate-social-card.sh         # the 1200×630 card
+apps/macos/Scripts/capture-screenshots.sh          # light and dark, needs Screen Recording
+apps/macos/Scripts/generate-social-card.sh         # the 1200×630 card
 ```
 
 The hero uses `<picture>` to pick the light or dark capture by

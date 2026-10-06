@@ -11,7 +11,7 @@ git push origin v1.0.1
 
 The [release workflow](../.github/workflows/release.yml) then:
 
-1. runs `Tests/run-core-checks.sh` and `Tests/run-shell-integration.sh` — a
+1. runs `apps/macos/Tests/run-core-checks.sh` and `apps/macos/Tests/run-shell-integration.sh` — a
    broken shell contract cannot ship;
 2. builds a universal (`arm64` + `x86_64`) Release archive with the tag's version
    stamped into `MARKETING_VERSION`;
@@ -28,8 +28,8 @@ the tag if it does not exist yet.
 ## Building locally
 
 ```sh
-Scripts/build-release.sh 1.0.1                       # -> build/export/HyperEnv.app
-Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.1  # -> build/HyperEnv-1.0.1.dmg
+apps/macos/Scripts/build-release.sh 1.0.1                       # -> build/export/HyperEnv.app
+apps/macos/Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.1  # -> build/HyperEnv-1.0.1.dmg
 ```
 
 `SIGN_IDENTITY` selects the codesigning identity and defaults to `-` (ad-hoc).
@@ -55,13 +55,13 @@ step turns itself on when its secret is present, and nothing else changes.
 | `MACOS_NOTARY_APPLE_ID` | The Apple ID used for notarization |
 | `MACOS_NOTARY_PASSWORD` | An app-specific password for that Apple ID |
 
-`Scripts/setup-notarization.sh` sets all six. Run it yourself rather than
+`apps/macos/Scripts/setup-notarization.sh` sets all six. Run it yourself rather than
 handing the values to anyone — the certificate and both passwords never leave
 your machine except as GitHub secrets, and nothing sensitive is echoed or left in
 your shell history:
 
 ```sh
-Scripts/setup-notarization.sh
+apps/macos/Scripts/setup-notarization.sh
 ```
 
 It reads the identity and team ID straight out of your keychain, invents the
@@ -142,8 +142,8 @@ same marketing version are still distinguishable.
 
 ## Checklist before tagging
 
-- [ ] `Tests/run-core-checks.sh` passes
-- [ ] `Tests/run-shell-integration.sh` passes
+- [ ] `apps/macos/Tests/run-core-checks.sh` passes
+- [ ] `apps/macos/Tests/run-shell-integration.sh` passes
 - [ ] `CHANGELOG.md` has an entry for the version
 - [ ] The app launches from a clean `~/.config/hyperenv`
 - [ ] Installing the hook, applying, and reverting leave `~/.zprofile` byte-identical

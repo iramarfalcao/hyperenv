@@ -11,7 +11,7 @@ It ships inside the app at `HyperEnv.app/Contents/Helpers/hyperenv`. To build
 it on its own:
 
 ```sh
-Scripts/build-cli.sh            # -> build/hyperenv, universal
+apps/macos/Scripts/build-cli.sh            # -> build/hyperenv, universal
 ```
 
 ## Grammar
@@ -76,7 +76,7 @@ reopening the window. Making the app watch the store is on the list.
 
 ## Checks
 
-`Tests/run-cli-checks.sh` runs the whole grammar against a throwaway store
+`apps/macos/Tests/run-cli-checks.sh` runs the whole grammar against a throwaway store
 (`--store`), so the real one is never touched. Apply, un-apply and the hook are
 not exercised there — they would write the real `~/.zprofile` — and are proven
-by `Tests/run-engine-checks.sh` against an in-memory filesystem instead.
+by `apps/macos/Tests/run-engine-checks.sh` against an in-memory filesystem instead.

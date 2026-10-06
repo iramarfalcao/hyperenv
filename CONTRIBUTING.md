@@ -7,7 +7,7 @@ Thanks for taking a look. Issues and pull requests are welcome.
 ```sh
 git clone https://github.com/iramarfalcao/hyperenv.git
 cd hyperenv
-open hyperenv.xcodeproj
+open apps/macos/hyperenv.xcodeproj
 ```
 
 You need Xcode 26.5 or later. There are no package dependencies.
@@ -15,8 +15,8 @@ You need Xcode 26.5 or later. There are no package dependencies.
 ## Before you open a pull request
 
 ```sh
-Tests/run-core-checks.sh
-Tests/run-shell-integration.sh
+apps/macos/Tests/run-core-checks.sh
+apps/macos/Tests/run-shell-integration.sh
 ```
 
 Both must pass. CI runs exactly these two scripts, plus a full universal build
@@ -27,14 +27,14 @@ request rather than at tag time.
 
 The layer boundary is the important convention in this codebase:
 
-- **`hyperenv/Core/`** performs **no I/O**. If your change can be expressed as a
+- **`apps/macos/hyperenv/Core/`** performs **no I/O**. If your change can be expressed as a
   transform over values, it belongs here, and it needs an assertion in
-  `Tests/CoreChecks/main.swift`. This is what keeps the code that rewrites
+  `apps/macos/Tests/CoreChecks/main.swift`. This is what keeps the code that rewrites
   `~/.zprofile` fully testable.
-- **`hyperenv/Engine/`** is where the filesystem and subprocesses are touched, and
+- **`apps/macos/hyperenv/Engine/`** is where the filesystem and subprocesses are touched, and
   it is actor-isolated. `@Model` types must never cross into it — copy what you
   need into a plain `Sendable` value first.
-- **`hyperenv/Views/`** is SwiftUI. Liquid Glass belongs to the navigation layer;
+- **`apps/macos/hyperenv/Views/`** is SwiftUI. Liquid Glass belongs to the navigation layer;
   do not stack it on itself, and do not use it for the variables table, which is
   content.
 

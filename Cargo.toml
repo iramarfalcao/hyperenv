@@ -2,7 +2,7 @@
 # o CLI e o app Windows/Linux (Slint) entram aqui como membros.
 [workspace]
 resolver = "3"
-members = ["core", "engine", "cli-rs"]
+members = ["crates/core", "crates/engine", "crates/cli"]
 
 [workspace.package]
 version = "2.0.0-dev"

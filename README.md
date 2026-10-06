@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/icon-1024.png" width="132" alt="HyperEnv">
+<img src="apps/macos/assets/icon-1024.png" width="132" alt="HyperEnv">
 
 # HyperEnv
 
@@ -313,16 +313,21 @@ profile format has to be able to touch the app and the plugin in a single
 commit.
 
 ```
-hyperenv/            the macOS app — SwiftUI, Xcode project at the root
-cli/                 the `hyperenv` command — same Core, Engine and Models, same store
-Tests/               seven suites, run from Scripts or CI
-Scripts/             build, sign, package
+apps/                one folder per platform
+  macos/             the macOS app (1.x) — SwiftUI; Xcode project, Tests/, Scripts/,
+                     the Swift `hyperenv` command (cli/) and the app icon (assets/)
+  desktop/           HyperEnv 2 for Windows and Linux — Slint (coming)
+crates/              HyperEnv 2's shared Rust, the same on every platform
+  core/              pure logic: profiles, .env, apply/undo plans, generated scripts
+  engine/            what touches the machine: startup files, journal, Windows registry
+  cli/               the `hyperenv` command for macOS, Linux and Windows
 plugins/             editor and IDE integrations — see plugins/README.md
   intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
   vscode/            VS Code — TypeScript
-site/                hyperenv.falcaosl.com, served from deploy/site/
+site/                hyperenv.falcaosl.com — pages, installers, and deploy/ (Dockerfile, nginx)
+design/              HyperEnv 2's design tokens and interface icons, shared by every app
 docs/                architecture, releasing, product docs
-Casks/               the Homebrew cask, updated on release
+Casks/               the Homebrew cask, updated on release (must stay at the root)
 ```
 
 The plugins do not carry an engine of their own. They call the `hyperenv`
@@ -330,8 +335,8 @@ command, which ships inside the app bundle and opens the same store and the
 same journal the window does — so whichever surface pressed Apply, there is one
 engine and one writer to `~/.zprofile`. See [docs/CLI.md](docs/CLI.md).
 
-Each part builds on its own: the app from Xcode or `Scripts/`, the command from
-`Scripts/build-cli.sh`, the plugins from their own directories. CI keeps them
+Each part builds on its own: the app from Xcode or `apps/macos/Scripts/`, the command from
+`apps/macos/Scripts/build-cli.sh`, the plugins from their own directories. CI keeps them
 apart too — the macOS workflow ignores `plugins/**`, and the plugin workflow
 only runs when `plugins/**` changes. Nothing in a plugin can break an app
 release, and the reverse holds.
@@ -342,20 +347,20 @@ release, and the reverse holds.
 git clone https://github.com/iramarfalcao/hyperenv.git
 cd hyperenv
 
-Tests/run-core-checks.sh          # pure-logic checks, no app bundle needed
-Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
-Tests/run-layout-checks.sh        # no view may outgrow the window
-Tests/run-export-checks.sh        # an export carries the variables it claims to
-Tests/run-model-checks.sh         # create / duplicate / import rules, and what a profile turns into
-Tests/run-engine-checks.sh        # the engine's whole life against an in-memory filesystem
-Tests/run-cli-checks.sh           # the hyperenv command, against a throwaway store
-Scripts/build-cli.sh              # -> build/hyperenv, universal
+apps/macos/Tests/run-core-checks.sh          # pure-logic checks, no app bundle needed
+apps/macos/Tests/run-shell-integration.sh    # drives a real zsh in an isolated ZDOTDIR
+apps/macos/Tests/run-layout-checks.sh        # no view may outgrow the window
+apps/macos/Tests/run-export-checks.sh        # an export carries the variables it claims to
+apps/macos/Tests/run-model-checks.sh         # create / duplicate / import rules, and what a profile turns into
+apps/macos/Tests/run-engine-checks.sh        # the engine's whole life against an in-memory filesystem
+apps/macos/Tests/run-cli-checks.sh           # the hyperenv command, against a throwaway store
+apps/macos/Scripts/build-cli.sh              # -> build/hyperenv, universal
 
-Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
-Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
+apps/macos/Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
+apps/macos/Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
 ```
 
-Or open `hyperenv.xcodeproj` in Xcode 26.5+ and press Run.
+Or open `apps/macos/hyperenv.xcodeproj` in Xcode 26.5+ and press Run.
 
 The shell integration suite is the one that matters: unit tests prove the
 generated strings are correct, but only a real `zsh` proves that sourcing them
@@ -408,7 +413,7 @@ Signing and notarization are optional and entirely secret-driven — see
 | [`docs/MARKETING.md`](docs/MARKETING.md) | Posicionamento, mensagens e ativos de campanha |
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Processo de release |
 
-Site: [hyperenv.falcaosl.com](https://hyperenv.falcaosl.com) — fonte em [`site/`](site), imagem de deploy em [`deploy/site/`](deploy/site).
+Site: [hyperenv.falcaosl.com](https://hyperenv.falcaosl.com) — fonte em [`site/`](site), imagem de deploy em [`site/deploy/`](site/deploy).
 
 ---
 
