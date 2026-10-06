@@ -1749,7 +1749,7 @@ checksum = "48ce8546b993eaf241d69ded33b1be6d205dd9857ec879d9d18bd05d3676e144"
 
 [[package]]
 name = "hyperenv-cli"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 dependencies = [
  "hyperenv-core",
  "hyperenv-engine",
@@ -1759,7 +1759,7 @@ dependencies = [
 
 [[package]]
 name = "hyperenv-core"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1767,7 +1767,7 @@ dependencies = [
 
 [[package]]
 name = "hyperenv-desktop"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 dependencies = [
  "arboard",
  "hyperenv-core",
@@ -1779,7 +1779,7 @@ dependencies = [
 
 [[package]]
 name = "hyperenv-engine"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 dependencies = [
  "hyperenv-core",
  "libc",
@@ -1796,7 +1796,7 @@ dependencies = [
 
 [[package]]
 name = "hyperenv-ffi"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 dependencies = [
  "hyperenv-cli",
  "serde_json",

@@ -173,13 +173,20 @@ jobs:
           (cd dist && shasum -a 256 -- * > SHA256SUMS)
           cat dist/SHA256SUMS
 
-      - name: Publish pre-release
+      # A version with a hyphen (2.1.0-beta.1) is a pre-release; a plain one is
+      # stable. Neither becomes "latest": that slot belongs to the macOS app,
+      # whose /releases/latest/download/HyperEnv.dmg the site and Homebrew use.
+      - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          case "${TAG#cli-v}" in
+            *-*) kind=(--prerelease); title="HyperEnv preview ${TAG#cli-v}" ;;
+            *)   kind=(); title="HyperEnv ${TAG#cli-v} for Windows and Linux" ;;
+          esac
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --prerelease --title "HyperEnv preview ${TAG#cli-v}" \
-              --notes "HyperEnv preview: the desktop app for Windows (installer) and Linux (.deb, AppImage), and the \`hyperenv\` command for macOS, Linux and Windows.
+            gh release create "$TAG" "${kind[@]}" --latest=false --title "$title" \
+              --notes "HyperEnv: the desktop app for Windows (installer) and Linux (.deb, AppImage), and the \`hyperenv\` command for macOS, Linux and Windows.
 
           Install: \`curl -fsSL https://hyperenv.falcaosl.com/install-cli.sh | sh\` (macOS, Linux) or \`irm https://hyperenv.falcaosl.com/install.ps1 | iex\` (Windows PowerShell)."
           gh release upload "$TAG" dist/* --clobber
