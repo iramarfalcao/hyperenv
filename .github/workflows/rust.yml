@@ -1,0 +1,65 @@
+# The Rust workspace (HyperEnv 2: core, engine, command) on all three systems.
+#
+# Windows is where the registry backend runs against a real HKCU for the first
+# time; macOS and Linux run the end-to-end checks in real zsh, bash and fish.
+
+name: Rust
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "core/**"
+      - "engine/**"
+      - "cli-rs/**"
+      - "Cargo.*"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - "engine/**"
+      - "cli-rs/**"
+      - "Cargo.*"
+      - ".github/workflows/rust.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup default stable
+
+      - name: Shells for the end-to-end checks
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh fish
+
+      - name: Shells for the end-to-end checks
+        if: runner.os == 'macOS'
+        run: brew install fish
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace --locked -- --test-threads=1
