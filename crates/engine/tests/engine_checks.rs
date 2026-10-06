@@ -33,6 +33,51 @@ fn profile(store: &mut Store, name: &str, vars: &[(&str, &str)]) -> hyperenv_eng
     store.get(name).unwrap().clone()
 }
 
+#[test]
+fn credentials_in_a_url_are_secret() {
+    use hyperenv_engine::store::has_credentials;
+    assert!(has_credentials("postgres://api:s3nh4@10.0.4.12:5432/api"));
+    assert!(has_credentials("redis://:token@10.0.4.20:6379/0"));
+    assert!(!has_credentials("https://errors.example.com/5"));
+    assert!(
+        !has_credentials("https://user@host/x"),
+        "a user name alone is not a secret"
+    );
+    assert!(
+        !has_credentials("https://host/path?q=a:b@c"),
+        "only the authority counts"
+    );
+    let mut s = Store::default();
+    s.create("p").unwrap();
+    s.set_var("p", "REDIS_URL", "redis://:token@h:6379/0", None)
+        .unwrap();
+    assert!(s.get("p").unwrap().variables[0].secret);
+}
+
+/// HYPERENV_HOME must not follow the caller's ZDOTDIR into the real home.
+#[cfg(unix)]
+#[test]
+fn hyperenv_home_ignores_the_callers_zdotdir() {
+    let fake = tempfile::tempdir().unwrap();
+    let real_zdotdir = tempfile::tempdir().unwrap();
+    // SAFETY: only this test reads these variables, and the suite runs
+    // single-threaded in CI.
+    unsafe {
+        std::env::set_var("HYPERENV_HOME", fake.path());
+        std::env::set_var("ZDOTDIR", real_zdotdir.path());
+    }
+    let layout = Layout::detect().unwrap();
+    unsafe {
+        std::env::remove_var("HYPERENV_HOME");
+        std::env::remove_var("ZDOTDIR");
+    }
+    assert_eq!(layout.home, fake.path());
+    assert!(layout.config_dir.starts_with(fake.path()));
+    if layout.shell == Shell::Zsh {
+        assert_eq!(layout.startup_file().unwrap(), fake.path().join(".zprofile"));
+    }
+}
+
 // ── Profiles ─────────────────────────────────────────────────────────────────
 
 #[test]

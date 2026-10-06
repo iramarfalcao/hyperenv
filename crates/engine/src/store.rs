@@ -191,7 +191,7 @@ impl Store {
                 }
             }
             None => {
-                let secret = secret.unwrap_or_else(|| looks_secret(key.as_str()));
+                let secret = secret.unwrap_or_else(|| looks_secret(key.as_str()) || has_credentials(value));
                 p.variables.push(Variable {
                     key,
                     value: EnvValue::new(value),
@@ -237,7 +237,7 @@ impl Store {
                 None => p.variables.push(Variable {
                     key: key.clone(),
                     value: value.clone(),
-                    secret: looks_secret(key.as_str()),
+                    secret: looks_secret(key.as_str()) || has_credentials(value.as_str()),
                     enabled: true,
                 }),
             }
@@ -264,4 +264,16 @@ pub fn looks_secret(key: &str) -> bool {
     ]
     .iter()
     .any(|w| k.contains(w))
+}
+
+/// A URL with a password in it (`postgres://user:pass@host`,
+/// `redis://:token@host`) is a secret whatever the variable is called.
+pub fn has_credentials(value: &str) -> bool {
+    let Some((_, rest)) = value.split_once("://") else {
+        return false;
+    };
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    authority
+        .rsplit_once('@')
+        .is_some_and(|(userinfo, _)| userinfo.contains(':'))
 }

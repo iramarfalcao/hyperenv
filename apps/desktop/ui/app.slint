@@ -1,0 +1,714 @@
+// HyperEnv 2 — the window. Layout and states follow the approved mockup;
+// every colour and size comes from Tokens (generated from design/tokens.json)
+// and every icon from design/icons/.
+
+import { Tokens } from "tokens.slint";
+import { ScrollView } from "std-widgets.slint";
+import "fonts/SchibstedGrotesk.ttf";
+import "fonts/JetBrainsMono.ttf";
+
+export struct ProfileRow {
+    name: string,
+    meta: string,
+    applied: bool,
+}
+
+export struct VarRow {
+    key: string,
+    value: string,
+    secret: bool,
+    enabled: bool,
+    revealed: bool,
+}
+
+component Icon inherits Image {
+    in property <color> tint: Tokens.ink;
+    width: 16px;
+    height: 16px;
+    colorize: tint;
+}
+
+component IconButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <color> tint: Tokens.muted;
+    in property <length> size: 32px;
+    in property <bool> enabled: true;
+    callback clicked;
+    width: size;
+    opacity: enabled ? 1 : 0.4;
+    height: size;
+    border-radius: Tokens.radius-sm;
+    background: touch.has-hover ? Tokens.line-soft : transparent;
+    accessible-role: button;
+    accessible-label: label;
+    accessible-action-default => { clicked(); }
+    Icon {
+        source: icon;
+        tint: tint;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+component Button inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> primary;
+    in property <bool> enabled: true;
+    callback clicked;
+    height: 40px;
+    border-radius: Tokens.radius-md;
+    background: primary ? (touch.has-hover && enabled ? Tokens.accent.darker(10%) : Tokens.accent) : Tokens.surface;
+    border-width: primary ? 0 : 1px;
+    border-color: Tokens.ink;
+    opacity: enabled ? 1 : 0.5;
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { if enabled { clicked(); } }
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 18px;
+        spacing: 8px;
+        alignment: center;
+        Icon {
+            y: (parent.height - self.height) / 2;
+            width: 18px;
+            height: 18px;
+            source: icon;
+            tint: primary ? Tokens.on-accent : Tokens.ink;
+        }
+
+        Text {
+            text: text;
+            vertical-alignment: center;
+            font-size: Tokens.size-ui;
+            font-weight: 600;
+            color: primary ? Tokens.on-accent : Tokens.ink;
+        }
+    }
+
+    touch := TouchArea {
+        enabled: enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+component ProfileItem inherits Rectangle {
+    in property <ProfileRow> item;
+    in property <bool> current;
+    callback picked;
+    height: 52px;
+    border-radius: Tokens.radius-md;
+    background: current ? Tokens.surface : (touch.has-hover ? Tokens.line-soft : transparent);
+    border-width: current ? 1px : 0;
+    border-color: Tokens.line;
+    accessible-role: list-item;
+    accessible-label: item.name;
+    accessible-item-selected: current;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+        Rectangle {
+            width: 8px;
+            height: 8px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 4px;
+            background: item.applied ? Tokens.live : transparent;
+            border-width: item.applied ? 0 : 1.5px;
+            border-color: Tokens.masked;
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: item.name;
+                font-family: Tokens.font-mono;
+                font-size: Tokens.size-body;
+                font-weight: 500;
+                color: Tokens.ink;
+                overflow: elide;
+            }
+
+            Text {
+                text: item.meta;
+                font-size: Tokens.size-small;
+                color: Tokens.muted;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.picked(); }
+    }
+}
+
+component VarItem inherits Rectangle {
+    in property <VarRow> item;
+    in property <bool> editing;
+    callback reveal;
+    callback copy;
+    callback remove;
+    callback edit;
+    callback save(string);
+    callback cancel;
+    height: editing ? 56px : Tokens.row-height;
+    border-radius: editing ? Tokens.radius-md : 0;
+    background: editing ? Tokens.raised : transparent;
+    border-width: editing ? 1px : 0;
+    border-color: Tokens.accent;
+    Rectangle {
+        visible: !editing;
+        y: parent.height - 1px;
+        height: 1px;
+        background: Tokens.line-soft;
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 8px;
+        spacing: 12px;
+        Text {
+            width: Tokens.key-column - 16px;
+            text: item.key;
+            vertical-alignment: center;
+            font-family: Tokens.font-mono;
+            font-size: Tokens.size-body;
+            font-weight: 600;
+            color: item.enabled ? Tokens.ink : Tokens.masked;
+            overflow: elide;
+        }
+
+        if !editing: Rectangle {
+            horizontal-stretch: 1;
+            Text {
+                width: 100%;
+                text: item.secret && !item.revealed ? "••••••••••••••••" : item.value;
+                vertical-alignment: center;
+                font-family: Tokens.font-mono;
+                font-size: Tokens.size-body;
+                letter-spacing: item.secret && !item.revealed ? 1.5px : 0;
+                color: item.secret && !item.revealed ? Tokens.masked : Tokens.ink;
+                overflow: elide;
+            }
+
+            TouchArea {
+                double-clicked => { root.edit(); }
+            }
+        }
+        if editing: Rectangle {
+            horizontal-stretch: 1;
+            height: 36px;
+            y: (parent.height - self.height) / 2;
+            border-radius: Tokens.radius-sm;
+            border-width: 1px;
+            border-color: Tokens.line;
+            background: Tokens.surface;
+            input := TextInput {
+                x: 10px;
+                width: parent.width - 20px;
+                text: item.value;
+                vertical-alignment: center;
+                font-family: Tokens.font-mono;
+                font-size: Tokens.size-body;
+                color: Tokens.ink;
+                single-line: true;
+                accessible-label: "Value of " + item.key;
+                init => { self.focus(); self.select-all(); }
+                accepted => { root.save(self.text); }
+                key-pressed(e) => {
+                    if e.text == Key.Escape { root.cancel(); return accept; }
+                    reject
+                }
+            }
+        }
+        HorizontalLayout {
+            width: 104px;
+            alignment: end;
+            spacing: 4px;
+            if item.secret && !editing: IconButton {
+                y: (parent.height - self.height) / 2;
+                label: item.revealed ? "Hide value" : "Show value";
+                icon: item.revealed ? @image-url("../../../design/icons/conceal.svg") : @image-url("../../../design/icons/reveal.svg");
+                clicked => { root.reveal(); }
+            }
+            if !editing: IconButton {
+                y: (parent.height - self.height) / 2;
+                label: "Copy value";
+                icon: @image-url("../../../design/icons/copy.svg");
+                clicked => { root.copy(); }
+            }
+            if !editing: IconButton {
+                y: (parent.height - self.height) / 2;
+                label: "Delete " + item.key;
+                icon: @image-url("../../../design/icons/delete.svg");
+                clicked => { root.remove(); }
+            }
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "HyperEnv";
+    icon: @image-url("../../macos/assets/icon-1024.png");
+    preferred-width: 1200px;
+    preferred-height: 760px;
+    min-width: 900px;
+    min-height: 560px;
+    background: Tokens.surface;
+    default-font-family: Tokens.font-ui;
+
+    in property <[ProfileRow]> profiles;
+    in-out property <int> selected: -1;
+    in property <string> profile-name;
+    in property <string> profile-meta;
+    in property <[VarRow]> vars;
+    in property <bool> is-applied;
+    in property <bool> busy;
+    // 0 nothing, 1 live (green), 2 pending (orange), 3 error (red)
+    in property <int> banner-kind;
+    in property <string> banner-text;
+    in property <string> banner-detail;
+    in property <string> status-left;
+    in property <string> status-right;
+    in-out property <string> search;
+    in-out property <string> editing-key;
+    in-out property <bool> naming-profile;
+
+    callback select(int);
+    callback apply();
+    callback undo();
+    callback create-profile(string);
+    callback delete-profile();
+    callback set-var(string, string) -> string;
+    callback delete-var(string);
+    callback toggle-reveal(string);
+    callback copy-value(string);
+    callback search-edited(string);
+
+    HorizontalLayout {
+        // ── Sidebar ──────────────────────────────────────────────────────────
+        Rectangle {
+            width: Tokens.sidebar-width;
+            background: Tokens.sidebar;
+            Rectangle {
+                x: parent.width - 1px;
+                width: 1px;
+                background: Tokens.line;
+            }
+
+            VerticalLayout {
+                HorizontalLayout {
+                    padding: 20px;
+                    padding-bottom: 8px;
+                    height: 56px;
+                    spacing: 8px;
+                    alignment: start;
+                    Text {
+                        text: ">_";
+                        font-family: Tokens.font-mono;
+                        font-weight: 600;
+                        color: Tokens.accent;
+                        vertical-alignment: center;
+                    }
+
+                    Text {
+                        text: "hyperenv";
+                        font-family: Tokens.font-mono;
+                        font-weight: 600;
+                        color: Tokens.ink;
+                        vertical-alignment: center;
+                    }
+                }
+
+                Rectangle {
+                    height: 52px;
+                    Rectangle {
+                        x: 16px;
+                        width: parent.width - 32px;
+                        height: 36px;
+                        border-radius: Tokens.radius-md;
+                        border-width: 1px;
+                        border-color: search-input.has-focus ? Tokens.accent : Tokens.line;
+                        background: Tokens.surface;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 8px;
+                            Icon {
+                                y: (parent.height - self.height) / 2;
+                                source: @image-url("../../../design/icons/search.svg");
+                                tint: Tokens.muted;
+                            }
+
+                            Rectangle {
+                                search-input := TextInput {
+                                    width: 100%;
+                                    text <=> root.search;
+                                    vertical-alignment: center;
+                                    font-size: Tokens.size-ui;
+                                    color: Tokens.ink;
+                                    single-line: true;
+                                    accessible-label: "Search profiles";
+                                    edited => { root.search-edited(self.text); }
+                                }
+
+                                Text {
+                                    visible: root.search == "";
+                                    width: 100%;
+                                    text: "Search profiles";
+                                    vertical-alignment: center;
+                                    font-size: Tokens.size-ui;
+                                    color: Tokens.masked;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    text: "PROFILES";
+                    height: 28px;
+                    x: 20px;
+                    vertical-alignment: center;
+                    font-size: Tokens.size-caption;
+                    font-weight: 600;
+                    letter-spacing: 1px;
+                    color: Tokens.muted;
+                }
+
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        spacing: 2px;
+                        alignment: start;
+                        for p[i] in root.profiles: ProfileItem {
+                            item: p;
+                            current: i == root.selected;
+                            picked => {
+                                root.editing-key = "";
+                                root.select(i);
+                            }
+                        }
+                        if root.profiles.length == 0: Text {
+                            text: root.search == "" ? "No profiles yet." : "No match.";
+                            height: 40px;
+                            x: 12px;
+                            vertical-alignment: center;
+                            font-size: Tokens.size-ui;
+                            color: Tokens.muted;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: Tokens.line;
+                }
+
+                Rectangle {
+                    height: 64px;
+                    if !root.naming-profile: Rectangle {
+                        x: 12px;
+                        width: parent.width - 24px;
+                        height: 40px;
+                        border-radius: Tokens.radius-md;
+                        border-width: 1px;
+                        border-color: new-touch.has-hover ? Tokens.accent : Tokens.masked;
+                        accessible-role: button;
+                        accessible-label: "New profile";
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 8px;
+                            Icon {
+                                y: (parent.height - self.height) / 2;
+                                source: @image-url("../../../design/icons/add.svg");
+                            }
+
+                            Text {
+                                text: "New profile";
+                                vertical-alignment: center;
+                                font-size: Tokens.size-ui;
+                                font-weight: 500;
+                                color: Tokens.ink;
+                            }
+                        }
+
+                        new-touch := TouchArea {
+                            clicked => { root.naming-profile = true; }
+                        }
+                    }
+                    if root.naming-profile: Rectangle {
+                        x: 12px;
+                        width: parent.width - 24px;
+                        height: 40px;
+                        border-radius: Tokens.radius-md;
+                        border-width: 1px;
+                        border-color: Tokens.accent;
+                        background: Tokens.surface;
+                        name-input := TextInput {
+                            x: 12px;
+                            width: parent.width - 24px;
+                            vertical-alignment: center;
+                            font-family: Tokens.font-mono;
+                            font-size: Tokens.size-body;
+                            color: Tokens.ink;
+                            single-line: true;
+                            accessible-label: "New profile name";
+                            init => { self.focus(); }
+                            accepted => {
+                                if self.text != "" { root.create-profile(self.text); }
+                                root.naming-profile = false;
+                            }
+                            key-pressed(e) => {
+                                if e.text == Key.Escape { root.naming-profile = false; return accept; }
+                                reject
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Profile ──────────────────────────────────────────────────────────
+        VerticalLayout {
+            horizontal-stretch: 1;
+            if root.selected < 0: Rectangle {
+                vertical-stretch: 1;
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 8px;
+                    Text {
+                        text: "No profile selected";
+                        horizontal-alignment: center;
+                        font-family: Tokens.font-mono;
+                        font-size: Tokens.size-heading;
+                        font-weight: 600;
+                        color: Tokens.ink;
+                    }
+
+                    Text {
+                        text: "A profile is a batch of variables. Apply it, and every new terminal starts with them; undo, and each one goes back to what it was.";
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                        font-size: Tokens.size-ui;
+                        color: Tokens.muted;
+                    }
+                }
+            }
+            if root.selected >= 0: VerticalLayout {
+                vertical-stretch: 1;
+                padding-left: 32px;
+                padding-right: 32px;
+                HorizontalLayout {
+                    padding-top: 28px;
+                    padding-bottom: 20px;
+                    spacing: 8px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 8px;
+                        Text {
+                            text: root.profile-name;
+                            font-family: Tokens.font-mono;
+                            font-size: Tokens.size-title;
+                            font-weight: 600;
+                            color: Tokens.ink;
+                            overflow: elide;
+                        }
+
+                        Text {
+                            text: root.profile-meta;
+                            font-size: Tokens.size-ui;
+                            color: Tokens.muted;
+                        }
+                    }
+
+                    IconButton {
+                        y: 0;
+                        size: 40px;
+                        label: "Delete profile";
+                        icon: @image-url("../../../design/icons/delete.svg");
+                        enabled: !root.is-applied;
+                        clicked => { root.delete-profile(); }
+                    }
+
+                    if root.is-applied: Button {
+                        text: root.busy ? "Working…" : "Undo";
+                        icon: @image-url("../../../design/icons/undo.svg");
+                        enabled: !root.busy;
+                        clicked => { root.undo(); }
+                    }
+                    if !root.is-applied: Button {
+                        primary: true;
+                        text: root.busy ? "Applying…" : "Apply";
+                        icon: @image-url("../../../design/icons/apply.svg");
+                        enabled: !root.busy;
+                        clicked => { root.apply(); }
+                    }
+                }
+
+                if root.banner-kind > 0: Rectangle {
+                    height: 48px;
+                    border-radius: Tokens.radius-md;
+                    background: root.banner-kind == 1 ? Tokens.live-bg : Tokens.pending-bg;
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        spacing: 12px;
+                        Rectangle {
+                            width: 8px;
+                            height: 8px;
+                            y: (parent.height - self.height) / 2;
+                            border-radius: 4px;
+                            background: root.banner-kind == 1 ? Tokens.live : (root.banner-kind == 2 ? Tokens.pending : Tokens.error);
+                        }
+
+                        Text {
+                            horizontal-stretch: 1;
+                            text: root.banner-text;
+                            vertical-alignment: center;
+                            font-size: Tokens.size-ui;
+                            color: root.banner-kind == 1 ? Tokens.live-text : Tokens.pending-text;
+                            overflow: elide;
+                        }
+
+                        Text {
+                            text: root.banner-detail;
+                            vertical-alignment: center;
+                            font-family: Tokens.font-mono;
+                            font-size: Tokens.size-small;
+                            color: root.banner-kind == 1 ? Tokens.live-text : Tokens.pending-text;
+                        }
+                    }
+                }
+                if root.banner-kind > 0: Rectangle { height: 16px; }
+
+                HorizontalLayout {
+                    height: 32px;
+                    padding-left: 16px;
+                    Text {
+                        width: Tokens.key-column - 4px;
+                        text: "NAME";
+                        vertical-alignment: center;
+                        font-size: Tokens.size-caption;
+                        font-weight: 600;
+                        letter-spacing: 1px;
+                        color: Tokens.muted;
+                    }
+
+                    Text {
+                        text: "VALUE";
+                        vertical-alignment: center;
+                        font-size: Tokens.size-caption;
+                        font-weight: 600;
+                        letter-spacing: 1px;
+                        color: Tokens.muted;
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: Tokens.line;
+                }
+
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        alignment: start;
+                        for v in root.vars: VarItem {
+                            item: v;
+                            editing: root.editing-key == v.key;
+                            reveal => { root.toggle-reveal(v.key); }
+                            copy => { root.copy-value(v.key); }
+                            remove => { root.delete-var(v.key); }
+                            edit => { root.editing-key = v.key; }
+                            cancel => { root.editing-key = ""; }
+                            save(value) => {
+                                if root.set-var(v.key, value) == "" { root.editing-key = ""; }
+                            }
+                        }
+
+                        // New variable: KEY=VALUE, Enter to add.
+                        Rectangle {
+                            height: Tokens.row-height;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                spacing: 10px;
+                                Icon {
+                                    y: (parent.height - self.height) / 2;
+                                    source: @image-url("../../../design/icons/add.svg");
+                                    tint: Tokens.muted;
+                                }
+
+                                Rectangle {
+                                    horizontal-stretch: 1;
+                                    new-var := TextInput {
+                                        width: 100%;
+                                        vertical-alignment: center;
+                                        font-family: Tokens.font-mono;
+                                        font-size: Tokens.size-body;
+                                        color: Tokens.ink;
+                                        single-line: true;
+                                        accessible-label: "New variable, as NAME=value";
+                                        accepted => {
+                                            if root.set-var("", self.text) == "" { self.text = ""; }
+                                        }
+                                    }
+
+                                    Text {
+                                        visible: new-var.text == "" && !new-var.has-focus;
+                                        width: 100%;
+                                        text: "NEW_VARIABLE=value";
+                                        vertical-alignment: center;
+                                        font-family: Tokens.font-mono;
+                                        font-size: Tokens.size-body;
+                                        color: Tokens.muted;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Status bar ───────────────────────────────────────────────────
+            Rectangle {
+                height: 1px;
+                background: Tokens.line;
+            }
+
+            Rectangle {
+                height: Tokens.statusbar-height;
+                background: Tokens.sidebar;
+                HorizontalLayout {
+                    padding-left: 32px;
+                    padding-right: 32px;
+                    Text {
+                        horizontal-stretch: 1;
+                        text: root.status-left;
+                        vertical-alignment: center;
+                        font-family: Tokens.font-mono;
+                        font-size: Tokens.size-caption;
+                        color: Tokens.muted;
+                        overflow: elide;
+                    }
+
+                    Text {
+                        text: root.status-right;
+                        vertical-alignment: center;
+                        font-family: Tokens.font-mono;
+                        font-size: Tokens.size-caption;
+                        color: Tokens.muted;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -44,16 +44,26 @@ impl Layout {
     /// The real layout for this account.
     pub fn detect() -> Option<Self> {
         let platform = Platform::current();
-        let home = home_dir()?;
+        // HYPERENV_HOME points everything at another folder — for development,
+        // demos and screenshots, so the real dotfiles are never touched.
+        // Anything else read from the environment must then be ignored too:
+        // the caller's ZDOTDIR and APPDATA belong to the real home, and
+        // following them would write the real ~/.zprofile or %APPDATA%.
+        let override_home = std::env::var_os("HYPERENV_HOME").map(PathBuf::from);
+        let real = |name: &str| std::env::var_os(name).filter(|_| override_home.is_none());
+        let home = match &override_home {
+            Some(dir) => dir.clone(),
+            None => home_dir()?,
+        };
         let (shell, shell_path) = login_shell(platform);
         let config_dir = match platform {
-            Platform::Windows => std::env::var_os("APPDATA")
+            Platform::Windows => real("APPDATA")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| home.join("AppData").join("Roaming"))
                 .join("hyperenv"),
             _ => home.join(".config").join("hyperenv"),
         };
-        let zdotdir = std::env::var_os("ZDOTDIR")
+        let zdotdir = real("ZDOTDIR")
             .map(PathBuf::from)
             .filter(|d| d.is_dir() && *d != home);
         Some(Self {
