@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [2.0.0-alpha.2]
+
+First release through the store pipeline (Open VSX and the JetBrains Marketplace). No functional change from 2.0.0-alpha.1.
+
 ## [2.0.0-alpha.1]
 
 Rebuilt for HyperEnv 2's `hyperenv` command. Needs `hyperenv` 2.0 or later.
