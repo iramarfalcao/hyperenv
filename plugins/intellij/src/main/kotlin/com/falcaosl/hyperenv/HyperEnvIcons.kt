@@ -11,7 +11,7 @@ import javax.swing.Icon
 object HyperEnvIcons {
     private fun load(name: String): Icon = IconLoader.getIcon("/icons/$name.svg", HyperEnvIcons::class.java)
 
-    @JvmField val ToolWindow = load("profile")
+    @JvmField val ToolWindow = load("toolWindow")
     @JvmField val Profile = load("profile")
     @JvmField val Add = load("add")
     @JvmField val Apply = load("apply")

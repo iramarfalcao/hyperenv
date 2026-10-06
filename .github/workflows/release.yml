@@ -25,7 +25,7 @@ jobs:
       # The `secrets` context is not available in a step-level `if`, so the two
       # optional paths are resolved to plain strings once, here.
       HAS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE != '' && 'yes' || 'no' }}
-      HAS_NOTARY: ${{ secrets.MACOS_NOTARY_PASSWORD != '' && 'yes' || 'no' }}
+      HAS_NOTARY: ${{ secrets.MACOS_NOTARY_KEY != '' && 'yes' || 'no' }}
 
     steps:
       - uses: actions/checkout@v7
@@ -92,14 +92,17 @@ jobs:
       - name: Notarize the app
         if: env.HAS_NOTARY == 'yes'
         env:
-          APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
-          TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
-          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+          NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.MACOS_NOTARY_ISSUER }}
         run: |
+          # An App Store Connect API key (Developer access), not an Apple ID
+          # password: it needs no two-factor session and can be revoked alone.
+          printf '%s' "$NOTARY_KEY" > "$RUNNER_TEMP/notary.p8"
           ditto -c -k --keepParent apps/macos/build/export/HyperEnv.app "$RUNNER_TEMP/HyperEnv.zip"
           xcrun notarytool submit "$RUNNER_TEMP/HyperEnv.zip" \
-            --apple-id "$APPLE_ID" --team-id "$TEAM_ID" \
-            --password "$NOTARY_PASSWORD" --wait
+            --key "$RUNNER_TEMP/notary.p8" --key-id "$NOTARY_KEY_ID" \
+            --issuer "$NOTARY_ISSUER" --wait
           xcrun stapler staple apps/macos/build/export/HyperEnv.app
           xcrun stapler validate apps/macos/build/export/HyperEnv.app
 
@@ -114,14 +117,15 @@ jobs:
         if: env.HAS_NOTARY == 'yes'
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
-          TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
-          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+          NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.MACOS_NOTARY_ISSUER }}
         run: |
           dmg="apps/macos/build/HyperEnv-$VERSION.dmg"
+          printf '%s' "$NOTARY_KEY" > "$RUNNER_TEMP/notary.p8"
           xcrun notarytool submit "$dmg" \
-            --apple-id "$APPLE_ID" --team-id "$TEAM_ID" \
-            --password "$NOTARY_PASSWORD" --wait
+            --key "$RUNNER_TEMP/notary.p8" --key-id "$NOTARY_KEY_ID" \
+            --issuer "$NOTARY_ISSUER" --wait
           xcrun stapler staple "$dmg"
           xcrun stapler validate "$dmg"
           # The checksum was taken before stapling, which changes the file.

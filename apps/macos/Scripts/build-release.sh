@@ -95,7 +95,10 @@ codesign --verify --strict --verbose=2 "$EXPORT/HyperEnv.app"
 # Catches the failure that otherwise only surfaces at the notary service.
 if [ "$SIGN_IDENTITY" != "-" ]; then
   echo "==> checking the signature is distributable"
-  codesign --display --verbose=4 "$EXPORT/HyperEnv.app" 2>&1 | grep -q "^Timestamp=" || {
+  # Captured first: `grep -q` stops reading early, which under pipefail
+  # turns codesign's SIGPIPE into a false failure.
+  signature="$(codesign --display --verbose=4 "$EXPORT/HyperEnv.app" 2>&1)"
+  grep -q "^Timestamp=" <<<"$signature" || {
     echo "signature carries no secure timestamp; notarization would reject it"
     exit 1
   }
