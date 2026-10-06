@@ -142,19 +142,7 @@ impl Layout {
     pub fn shell_relative(&self, path: &Path) -> String {
         match path.strip_prefix(&self.home) {
             Ok(rest) => {
-                // Joined by hand rather than with to_string_lossy(): on Windows
-                // that yields backslashes, which zsh, bash and fish (Git Bash,
-                // MSYS) read as escapes, not separators.
-                let sep = if self.shell == Shell::PowerShell {
-                    "\\"
-                } else {
-                    "/"
-                };
-                let rest = rest
-                    .components()
-                    .map(|c| c.as_os_str().to_string_lossy())
-                    .collect::<Vec<_>>()
-                    .join(sep);
+                let rest = self.join_for_shell(rest);
                 match self.shell {
                     Shell::Fish => format!("$HOME/{rest}"),
                     Shell::PowerShell => format!("$HOME\\{rest}"),
@@ -168,9 +156,25 @@ impl Layout {
     /// `~` form for the interface.
     pub fn display(&self, path: &Path) -> String {
         match path.strip_prefix(&self.home) {
-            Ok(rest) => format!("~/{}", rest.to_string_lossy()),
+            Ok(rest) if self.shell == Shell::PowerShell => format!("~\\{}", self.join_for_shell(rest)),
+            Ok(rest) => format!("~/{}", self.join_for_shell(rest)),
             Err(_) => path.to_string_lossy().into_owned(),
         }
+    }
+
+    /// Joined by hand rather than with to_string_lossy(): on Windows that
+    /// yields backslashes, which zsh, bash and fish (Git Bash, MSYS) read as
+    /// escapes, not separators. `\` only for PowerShell.
+    fn join_for_shell(&self, rest: &Path) -> String {
+        let sep = if self.shell == Shell::PowerShell {
+            "\\"
+        } else {
+            "/"
+        };
+        rest.components()
+            .map(|c| c.as_os_str().to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(sep)
     }
 }
 
