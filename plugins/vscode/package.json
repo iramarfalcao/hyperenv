@@ -456,7 +456,8 @@
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node --test out/test/",
     "package": "vsce package --no-dependencies",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run compile",
+    "pretest": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
