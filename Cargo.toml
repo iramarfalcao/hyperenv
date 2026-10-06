@@ -1,0 +1,17 @@
+# Workspace do HyperEnv 2. O app macOS (Swift) consome o núcleo pela FFI;
+# o CLI e o app Windows/Linux (Slint) entram aqui como membros.
+[workspace]
+resolver = "3"
+members = ["core"]
+
+[workspace.package]
+version = "2.0.0-dev"
+edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
