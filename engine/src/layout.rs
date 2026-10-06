@@ -142,7 +142,19 @@ impl Layout {
     pub fn shell_relative(&self, path: &Path) -> String {
         match path.strip_prefix(&self.home) {
             Ok(rest) => {
-                let rest = rest.to_string_lossy();
+                // Joined by hand rather than with to_string_lossy(): on Windows
+                // that yields backslashes, which zsh, bash and fish (Git Bash,
+                // MSYS) read as escapes, not separators.
+                let sep = if self.shell == Shell::PowerShell {
+                    "\\"
+                } else {
+                    "/"
+                };
+                let rest = rest
+                    .components()
+                    .map(|c| c.as_os_str().to_string_lossy())
+                    .collect::<Vec<_>>()
+                    .join(sep);
                 match self.shell {
                     Shell::Fish => format!("$HOME/{rest}"),
                     Shell::PowerShell => format!("$HOME\\{rest}"),
