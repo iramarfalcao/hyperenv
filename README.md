@@ -9,7 +9,7 @@
 [![CI](https://github.com/iramarfalcao/hyperenv/actions/workflows/ci.yml/badge.svg)](https://github.com/iramarfalcao/hyperenv/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/iramarfalcao/hyperenv?label=download)](https://github.com/iramarfalcao/hyperenv/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/macOS-26.5%2B-lightgrey.svg)](#requirements)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#requirements)
 
 [**hyperenv.falcaosl.com**](https://hyperenv.falcaosl.com) · [Download](#install) · [How it works](#how-it-works) · [Safety](#safety-model) · [Architecture](docs/ARCHITECTURE.md)
 
@@ -17,12 +17,9 @@
 
 ---
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-dark.png">
-  <img src="docs/images/window-light.png" alt="The HyperEnv window: a sidebar of projects, a column of colour-coded profiles for development, homologation and production, and a table of environment variables. The bar along the bottom reads payments/dev, 7 variables in new terminals.">
-</picture>
+<img src="site/assets/v20261007/app-macos-light.webp" alt="The HyperEnv window on macOS. The sidebar lists four profiles; api-staging is applied, and the table shows its seven variables, with DATABASE_URL and SENTRY_DSN masked as secrets. A green banner reads: active in new terminals since 18:46, open ones keep what they had.">
 
-<div align="center"><sub>Projects, profiles and their variables. The bar along the bottom always names what is live.</sub></div>
+<div align="center"><sub>Profiles and their variables. The banner and the bar along the bottom always name what is live.</sub></div>
 
 ---
 
@@ -38,13 +35,15 @@
 
 ## What it is
 
-HyperEnv is a native macOS app — a window plus a menu bar item — that manages the
-environment variables new terminal sessions start with.
+HyperEnv manages the environment variables new terminal sessions start with. It
+is a native SwiftUI app on macOS, a desktop app for Windows and Linux, and the
+`hyperenv` command on all three — every one of them over the same Rust core.
 
-You keep **projects**, each holding **profiles** (`dev`, `hml`, `prd`, or your own).
-A profile is a list of `KEY=value` pairs. Applying one writes a single generated
-file that your shell sources at login, so every terminal you open from that
-moment on sees that environment. One click puts it back.
+You keep a list of **profiles** (`api-local`, `api-staging`, `api-production`, or
+whatever you name them). A profile is a list of `KEY=value` pairs. Applying one
+writes a single generated file that your shell sources at login — on Windows, the
+user environment in the registry — so every terminal you open from that moment
+on sees that environment. One click puts it back.
 
 ## The problem it solves
 
@@ -58,68 +57,65 @@ options:
 | Separate terminal profiles per environment | Every new tool — an editor terminal, a task runner, a CI shim — starts outside the setup. |
 
 HyperEnv fixes the part that actually causes incidents: **you can always see
-which environment is live**, in the window and in the menu bar, and reverting is
-one click rather than an act of memory.
+which environment is live**, in the window's banner and status bar, and reverting
+is one click rather than an act of memory.
 
 ## Where it is useful
 
 - **Multi-environment backend work** — pointing the same repo at dev, staging and
   production databases, queues and API gateways.
-- **Multi-client / multi-tenant consulting** — a project per client, each with its
+- **Multi-client / multi-tenant consulting** — profiles per client, each with its
   own credentials and endpoints, none of them leaking into the next.
 - **Cloud CLIs** — swapping `AWS_PROFILE`, `AWS_REGION`, `KUBECONFIG`,
   `GOOGLE_APPLICATION_CREDENTIALS` as a set instead of one at a time.
-- **Onboarding** — export a project's `dev` profile as a `.env` and hand it over;
-  the new hire imports it and is configured.
-- **Anywhere a wrong `DATABASE_URL` is expensive** — production profiles are red,
-  ask for confirmation before applying, and are called out in the menu bar with a
-  shape no other state uses.
+- **Onboarding** — export a `dev` profile as a `.env` and hand it over; the new
+  hire imports it and is configured.
+- **Anywhere a wrong `DATABASE_URL` is expensive** — the applied profile is named
+  in the window at all times, and `hyperenv plan <profile>` shows what applying
+  would change before anything is written.
 
 ## Features
 
-- **Projects and profiles** — a hierarchy that matches how the work is actually
-  organised. A new project is named by you and starts empty; profiles are added
-  one at a time, each with a name and a badge.
-- **Colour-coded risk** — every profile carries an environment class. Production
-  is red everywhere it appears and is the only action that asks first.
-- **Always-visible active state** — a status bar naming the live profile and its
-  variable count, plus a menu bar item you can read without switching apps.
+- **Profiles** — a flat, searchable list. Create, rename, duplicate and delete
+  (delete asks twice); variables can be switched off without being removed.
+- **Always-visible active state** — a banner and a status bar naming the live
+  profile, the shell and the startup file it went into. A profile edited after
+  it was applied says so, until you apply it again.
 - **One-click revert** — restores the *previous value* of every variable it
   changed, not merely unsetting them, and unsets the ones that did not exist.
 - **Open terminals are handled too** — applying cannot reach shells that are
-  already running, so the command that can is one click from the status bar.
+  already running, so the command that can is one shortcut away (**Copy Reload
+  Command**, ⇧⌘C, in the Environment menu).
 - **Drift detection** — tells you when your shell no longer matches what HyperEnv
   applied, including the case a checksum cannot see: something assigned the same
   variable *after* our block and quietly won.
-- **First-launch snapshot** — reads your existing shell environment into a
-  read-only `Default` profile, bucketed by why each variable was or was not
-  considered safe to reuse.
-- **`.env` import and export** — three dialects (POSIX shell, quoted dotenv,
-  `docker --env-file`), with a preview before anything is written.
+- **`.env` import and export** — import merges a file into a profile; export
+  writes quoted dotenv from the app, and POSIX shell or `docker --env-file` too
+  from the command (`hyperenv export --dialect`).
 - **Secret masking** — values can be hidden in the interface.
-- **Sound and motion for the moments that matter** — a cue when a profile is
-  applied, reverted or copied, and when something fails; the card that just went
-  live animates in. Sound is limited to those four events, respects macOS's own
-  interface-sound setting, and can be switched off in the Environment menu.
-- **Menu bar switching** — change profile without bringing the window forward.
+- **zsh, bash, fish and PowerShell** — the login shell decides the dialect and
+  the startup file; on Windows the variables go to `HKCU\Environment`.
+- **The `hyperenv` command and editor plugins** — the same engine from the
+  terminal, VS Code and the IntelliJ family. See [docs/CLI.md](docs/CLI.md) and
+  [plugins/README.md](plugins/README.md).
+- **Coming from 1.x** — on macOS, the first launch of 2.0 with no profiles
+  brings the 1.x profiles over (the old store is only read).
 
 ## Getting started
 
-<img src="docs/images/new-profile.png" width="380" align="right" alt="The New Profile sheet, showing a name field and four colour swatches for development, homologation, production and custom">
-
-1. **Install the hook.** The app asks once, and explains exactly what it will add
-   to `~/.zprofile`. Nothing is written before you press the button.
-2. **Create a project**, named after the codebase or client it belongs to.
-3. **Add a profile** and pick its badge. The badge is the environment class, so
-   choosing red is also choosing to be asked for confirmation before that
-   profile is ever applied.
-4. **Enter the variables**, or import an existing `.env`.
-5. **Apply.** Every terminal you open from then on inherits that profile, and the
-   bar along the bottom names it until you revert.
-
-<br clear="right">
+1. **Create a profile**, named after the codebase and environment it belongs
+   to (`api-staging`).
+2. **Enter the variables** as `NAME=value`, or import an existing `.env`.
+3. **Apply.** The first apply adds the guarded hook to your startup file
+   (after backing it up). Every terminal you open from then on inherits that
+   profile, and the window names it until you undo.
 
 ## Install
+
+> **HyperEnv is in development.** There is no published release on GitHub right
+> now, and the download buttons on the site are switched off. The commands below
+> are how installing works once a release is out; until then,
+> [build it from source](#building-from-source).
 
 ### One command
 
@@ -147,16 +143,13 @@ The `brew trust` step is not optional. Homebrew refuses to load a cask from a
 third-party tap until you say you trust it — a tap can run code with your user's
 privileges, so it wants that stated once, explicitly.
 
-The download also carries macOS's quarantine attribute, and Homebrew does not
-strip it, so the first launch still needs one command — `brew` prints it, and it
-is the same one in [First launch](#first-launch) below.
-
 Upgrades are `brew upgrade --cask hyperenv`; `brew uninstall --cask hyperenv`
 removes the app, and `--zap` also removes `~/.config/hyperenv`.
 
-Uninstalling does not touch the block in `~/.zprofile`. Remove the hook from
-inside the app first if you want it gone — a leftover block is harmless either
-way, since it is guarded and does nothing once the files are missing.
+Uninstalling does not touch the block in `~/.zprofile`. Remove the hook first
+if you want it gone (`/Applications/HyperEnv.app/Contents/Helpers/hyperenv hook
+remove`) — a leftover block is harmless either way, since it is guarded and does
+nothing once the files are missing.
 
 ### Download
 
@@ -174,9 +167,10 @@ shasum -a 256 -c HyperEnv.dmg.sha256
 
 ### First launch
 
-Public builds are **ad-hoc signed**, not signed with a paid Apple Developer ID,
-so Gatekeeper blocks the first launch. Either right-click **HyperEnv** in
-Applications and choose **Open**, or run once:
+Release builds are **signed with a Developer ID and notarized**, so the disk
+image opens normally — no right-click → Open, no quarantine attribute to strip.
+A build made without the signing secrets is signed ad-hoc instead; for one of
+those, run once:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/HyperEnv.app
@@ -185,13 +179,22 @@ xattr -dr com.apple.quarantine /Applications/HyperEnv.app
 If you would rather not trust a binary you did not build,
 [build it yourself](#building-from-source) — it takes one command.
 
+### Windows and Linux
+
+The desktop app ships as a per-user installer (`.exe`) for Windows and as
+`.deb` and AppImage for Linux, x64 and ARM64, in the `cli-v*` releases. The
+`hyperenv` command alone installs with
+[`site/install-cli.sh`](site/install-cli.sh) (macOS, Linux) or
+[`site/install.ps1`](site/install.ps1) (Windows), both checked against the
+published `SHA256SUMS`.
+
 ### Requirements
 
 | | |
 |---|---|
-| macOS | 26.5 or later |
-| Architecture | Apple silicon and Intel (universal binary) |
-| Login shell | `zsh` (the macOS default) |
+| macOS | 26.5 or later — Apple silicon and Intel (universal binary) |
+| Windows, Linux | x64 or ARM64 (desktop app and command) |
+| Login shell | `zsh` (the macOS default), `bash` or `fish`; PowerShell on Windows |
 
 ## How it works
 
@@ -208,8 +211,7 @@ Applying a profile rewrites `~/.config/hyperenv/session.zsh`:
 
 ```sh
 # Generated by HyperEnv. Do not edit — changes are overwritten on apply.
-# Project: payments
-# Profile: prd
+# Profile: payments-prd
 # Applied: 2026-08-12T09:14:02Z
 
 [[ -n "$HYPERENV_DISABLE" ]] && return
@@ -254,22 +256,13 @@ existing shell up to date.
 </details>
 
 <details>
-<summary><strong>What the first launch reads</strong></summary>
+<summary><strong>What applying reads first</strong></summary>
 
-HyperEnv probes your login shell *as if it were not installed*
-(`HYPERENV_DISABLE=1`) and sorts what it finds into buckets:
-
-| Bucket | Example | Kept? |
-|---|---|---|
-| `user` | `EDITOR`, `AWS_PROFILE` | Yes — your configuration |
-| `derived` | `HOMEBREW_PREFIX` | Shown, switched off — a tool generated it |
-| `session` | `TMPDIR`, `SSH_AUTH_SOCK` | Shown, switched off — different next login |
-| `pathLike` | `PATH`, `MANPATH` | Shown, switched off — never frozen wholesale |
-| `cosmetic` | `TERM`, prompt state | Shown, switched off |
-| `rejected` | `SHELL`, `HOME` | Shown, switched off — cannot be set safely |
-
-Nothing is discarded, because drift comparison later needs to know a variable was
-*seen and deliberately excluded*, not merely absent.
+Before writing anything, HyperEnv starts your login shell the way a terminal
+opens it, with `HYPERENV_DISABLE=1`, to read the environment *as if it were not
+installed*. A key's original value is captured once — the first time HyperEnv
+takes that key over — and only released on undo. Measuring again later would
+record HyperEnv's own value as yours.
 
 </details>
 
@@ -279,15 +272,15 @@ This app writes to the file that starts your login shell. It is built on the
 assumption that it will eventually be wrong about something, so every dangerous
 step is reversible.
 
-- **Backed up before the first edit.** `~/.zprofile` is copied to
-  `~/.config/hyperenv/backups/` before a single byte changes.
+- **Backed up before the first edit.** The startup file (`~/.zprofile` for zsh)
+  is copied to `~/.config/hyperenv/backups/` before a single byte changes.
 - **Only inside the markers.** Insertion and removal are a pure `String → String`
   transform with no I/O, so every edge case is covered by a unit test. Removing
   the block restores the file **byte for byte** — including CRLF line endings and
   a missing trailing newline, both of which would otherwise show up as spurious
   diffs in a dotfiles repo.
-- **Nothing happens unasked.** The hook is installed by a button, and applying a
-  production profile asks for confirmation.
+- **Nothing happens unasked.** The startup file is only touched when you apply
+  (or run `hyperenv hook install`), and deleting a profile asks twice.
 - **A kill switch that does not need the app.** Setting `HYPERENV_DISABLE=1`
   makes the generated script return immediately:
 
@@ -298,8 +291,8 @@ step is reversible.
 - **Truthful undo.** Reverting restores prior values rather than blanking them,
   and a variable that was empty comes back empty rather than unset.
 - **The filesystem is the source of truth.** What is applied lives in a JSON
-  journal on disk, not in the app's database — a corrupted or migrated store can
-  never leave you with mutated dotfiles and no way back.
+  journal on disk, apart from the profiles (`profiles.json`) — a corrupted or
+  lost profiles file can never leave you with mutated dotfiles and no way back.
 - **Values are plaintext by design.** `session.zsh` has to be sourceable by
   `zsh`, so masking in the interface is presentation only. Treat the file as you
   would any `.env`: it is `0600` in your home directory, and secrets in it are
@@ -321,7 +314,6 @@ crates/              HyperEnv's shared Rust, the same on every platform
   core/              pure logic: profiles, .env, apply/undo plans, generated scripts
   engine/            what touches the machine: startup files, journal, Windows registry
   cli/               the `hyperenv` command for macOS, Linux and Windows
-  ffi/               the C interface the macOS app links
   ffi/               the C interface the macOS app links
 plugins/             editor and IDE integrations — see plugins/README.md
   intellij/          IntelliJ family (IDEA, PyCharm, WebStorm, …) — Kotlin, Gradle
@@ -351,10 +343,10 @@ cd hyperenv
 
 cargo test --workspace -- --test-threads=1   # core, engine, command, ffi — real zsh, bash, fish, pwsh
 cargo run --release -p hyperenv-desktop      # the Windows/Linux app (runs on macOS too)
-apps/macos/Scripts/build-cli.sh              # -> build/hyperenv, universal
+apps/macos/Scripts/build-cli.sh              # -> apps/macos/build/hyperenv, universal
 
-apps/macos/Scripts/build-release.sh          # universal, ad-hoc signed -> build/export/HyperEnv.app
-apps/macos/Scripts/make-dmg.sh build/export/HyperEnv.app 1.0.0
+apps/macos/Scripts/build-release.sh          # universal, ad-hoc signed -> apps/macos/build/export/HyperEnv.app
+apps/macos/Scripts/make-dmg.sh apps/macos/build/export/HyperEnv.app 2.0.0
 ```
 
 Or open `apps/macos/hyperenv.xcodeproj` in Xcode 26.5+ and press Run.
@@ -373,12 +365,18 @@ values back. They run against a throwaway home, never your real one.
 
 Tagging is the whole process. Push a `v*` tag and the
 [release workflow](.github/workflows/release.yml) runs all four suites, builds a
-universal binary, packages the disk image, and publishes it with a checksum:
+universal binary, notarizes the app and the disk image when the signing secrets
+are set, publishes it with a checksum and points the Homebrew cask at it:
 
 ```sh
-git tag v1.0.1
-git push origin v1.0.1
+git tag v2.0.1
+git push origin v2.0.1
 ```
+
+The other surfaces have their own tags: `cli-v*` publishes the `hyperenv`
+command and the Windows and Linux app
+([cli-release.yml](.github/workflows/cli-release.yml)), and `plugins-v*` the
+editor plugins ([plugins-release.yml](.github/workflows/plugins-release.yml)).
 
 Signing and notarization are optional and entirely secret-driven — see
 [docs/RELEASING.md](docs/RELEASING.md).
