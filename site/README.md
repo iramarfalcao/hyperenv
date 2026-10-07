@@ -31,6 +31,13 @@ site/
     └── og-image.jpg            1200×630 social card
 ```
 
+Since 2026-10-07 the page is written by hand (it no longer comes from the
+Falcao-SL generator). Fonts and screenshots live in a dated folder,
+`assets/v20261007/`, because `assets/` is served as immutable: a new name is
+the only way a visitor gets a new file. `tools/make_assets.py` builds that
+folder from the app's fonts, the window capture (taken with `HYPERENV_HOME`
+pointing at a throwaway folder, so no real profile shows) and `docs/store/`.
+
 ## Before publishing
 
 **The domain is set to `https://hyperenv.falcaosl.com/`.** It appears in the

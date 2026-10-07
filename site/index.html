@@ -3,18 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HyperEnv | Environment variable manager</title>
-<meta name="description" content="Apply and undo environment variables in batches. Native apps for macOS, Windows and Linux, a command line, and plugins for VS Code and JetBrains IDEs. Free and open source, MIT.">
-<meta name="theme-color" content="#f5f4fd">
+<title>HyperEnv | Environment variable profiles for your terminal</title>
+<meta name="description" content="Keep profiles of environment variables, apply one and every new terminal starts with it, undo to get your old values back. Apps for macOS, Windows and Linux, a command line, and plugins for VS Code and JetBrains. Free and open source, MIT.">
+<meta name="theme-color" content="#f5f4fd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0a1a" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://hyperenv.falcaosl.com/">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="HyperEnv | Environment variable manager">
-<meta property="og:description" content="Apply and undo environment variables in batches. Native apps for macOS, Windows and Linux, a command line, and plugins for VS Code and JetBrains IDEs. Free and open source, MIT.">
+<meta property="og:title" content="HyperEnv | Environment variable profiles for your terminal">
+<meta property="og:description" content="Apply a profile and every new terminal starts with its variables. Undo puts back what you had. Free and open source.">
 <meta property="og:url" content="https://hyperenv.falcaosl.com/">
 <meta property="og:site_name" content="HyperEnv">
+<meta property="og:image" content="https://hyperenv.falcaosl.com/assets/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="author" content="Francisco Iramar Falcão Junior">
 <meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="preload" href="assets/v20261007/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -23,63 +30,155 @@
   "url": "https://hyperenv.falcaosl.com/",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "macOS, Windows, Linux",
-  "description": "Apply and undo environment variables in batches. Native apps for macOS, Windows and Linux, a command line, and plugins for VS Code and JetBrains IDEs. Free and open source, MIT.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "license": "https://opensource.org/licenses/MIT",
+  "description": "Keep profiles of environment variables, apply one and every new terminal starts with it, undo to get your old values back. Apps for macOS, Windows and Linux, a command line, and plugins for VS Code and JetBrains.",
   "author": { "@type": "Person", "name": "Francisco Iramar Falcão Junior" },
   "publisher": { "@type": "Person", "name": "Iramar Falcao", "url": "https://falcaosl.com/" }
 }
 </script>
-<link rel="stylesheet" href="styles.css?v=20261006c">
+<link rel="stylesheet" href="styles.css?v=20261007">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="top">
-  <div class="wrap">
-    <a class="brand" href="/"><img class="mark" src="assets/icon-256.png" width="28" height="28" alt="">HyperEnv</a>
-    <nav aria-label="Main"><a href="https://github.com/iramarfalcao/hyperenv" rel="noopener">GitHub</a></nav>
+  <div class="wrap top-row">
+    <a class="brand" href="/"><img src="assets/icon-256.png" width="28" height="28" alt="">HyperEnv</a>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#cli">Command line</a>
+      <a href="#editors">Editors</a>
+      <a class="nav-gh" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">GitHub</a>
+    </nav>
   </div>
 </header>
 
 <main id="main">
 
-  <section class="section">
+  <section class="hero">
     <div class="wrap">
-      <div class="hero">
-        <img class="hero-icon" src="assets/icon-256.png" width="256" height="256" alt="HyperEnv app icon">
-        <p class="status-pill">In progress</p>
-        <h1>HyperEnv</h1>
-        <p class="lead">Switch environment variables per project and undo with one click.</p>
-        <div class="actions">
-          <span class="btn btn-primary btn--disabled" aria-disabled="true">macOS</span><span class="btn btn-primary btn--disabled" aria-disabled="true">Windows</span><span class="btn btn-primary btn--disabled" aria-disabled="true">Linux</span>
-        </div>
-        <div class="actions">
-          <span class="btn btn-ghost btn--disabled" aria-disabled="true">VS Code</span><span class="btn btn-ghost btn--disabled" aria-disabled="true">JetBrains</span><span class="btn btn-ghost btn--disabled" aria-disabled="true">Open VSX</span>
-        </div>
-        <p class="badge">In progress. Downloads open when the first stable version is out. Free and open source, MIT.</p>
+      <p class="eyebrow"><span class="dot dot--pending" aria-hidden="true"></span>Pre-release · free and open source</p>
+      <h1>One profile per environment.<br>Undo in one click.</h1>
+      <p class="lead">Keep your variables in profiles like <code>api-local</code> and <code>api-production</code>. Apply one and every new terminal starts with it. Undo puts back the values you had before.</p>
+      <div class="actions">
+        <span class="btn btn--primary" aria-disabled="true">Download for macOS</span>
+        <span class="btn" aria-disabled="true">Windows</span>
+        <span class="btn" aria-disabled="true">Linux</span>
+        <a class="btn btn--ghost" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Source on GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+      <p class="note">Downloads open with the first stable release. MIT license.</p>
+    </div>
+    <div class="wrap wrap--wide">
+      <figure class="window">
+        <img src="assets/v20261007/app-macos-light.webp" width="2000" height="1355" alt="The HyperEnv window on macOS. The sidebar lists four profiles; api-staging is applied, and the table shows its seven variables, with DATABASE_URL and SENTRY_DSN masked as secrets. A green banner reads: active in new terminals since 18:46, open ones keep what they had." fetchpriority="high">
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="kicker">How it works</p>
+        <h2 id="how-title">Three steps, and the last one is optional.</h2>
+      </header>
+      <ol class="steps">
+        <li>
+          <span class="step-n">1</span>
+          <h3>Keep profiles</h3>
+          <p>A profile is a list of <code>KEY=value</code> pairs. Mark a value as secret and it stays masked until you ask to see it. Bring in an existing <code>.env</code> file or start empty.</p>
+        </li>
+        <li>
+          <span class="step-n">2</span>
+          <h3>Apply one</h3>
+          <p>HyperEnv writes one generated file that your shell reads at login, so every terminal you open from then on has those variables. Terminals already open keep theirs; one <code>source</code> line updates them.</p>
+        </li>
+        <li>
+          <span class="step-n">3</span>
+          <h3>Undo</h3>
+          <p>Every variable goes back to the value it had before, and the ones that did not exist are removed.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section--tint" id="cli" aria-labelledby="cli-title">
+    <div class="wrap split">
+      <div class="split-text">
+        <p class="kicker">Command line</p>
+        <h2 id="cli-title">The same engine, from the terminal.</h2>
+        <p>The <code>hyperenv</code> command ships inside the app and also runs on its own. Check what a profile would change before applying it, apply it, and take it back.</p>
+        <ul class="ticks">
+          <li><code>plan</code> shows the change without making it</li>
+          <li><code>drift</code> checks that a new terminal matches what is applied</li>
+          <li><code>export</code> writes POSIX, <code>.env</code> or Docker format</li>
+          <li><code>--json</code> on every command, for scripts</li>
+        </ul>
+      </div>
+      <figure class="terminal" aria-label="A terminal session using the hyperenv command">
+        <div class="terminal-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+<pre><code><span class="p">$</span> hyperenv plan api-production
+Applying "api-production" would export 7 variables.
+  <span class="add">+</span> API_BASE_URL
+  <span class="add">+</span> DATABASE_URL
+  <span class="add">+</span> STRIPE_SECRET_KEY
+  <span class="dim">…</span>
+
+<span class="p">$</span> hyperenv apply api-production
+"api-production" applied: 7 variables. Every new
+terminal starts with them.
+
+<span class="p">$</span> hyperenv unapply
+"api-production" undone: 7 variables back to
+what they were.</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="editors" aria-labelledby="editors-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="kicker">Editors</p>
+        <h2 id="editors-title">Switch without leaving the editor.</h2>
+        <p class="lead">The plugins call the same command, so the editor, the app and the terminal always agree on what is applied.</p>
+      </header>
+      <div class="editors">
+        <figure class="panel">
+          <img src="assets/v20261007/plugin-vscode.webp" width="992" height="660" alt="The HyperEnv view in the VS Code sidebar: profiles api-local, api-production, web-staging and rust-nightly, with api-production expanded and secrets masked." loading="lazy" decoding="async">
+          <figcaption><strong>VS Code</strong> and editors built on it, such as Cursor and VSCodium. Coming to the Visual Studio Marketplace and Open VSX.</figcaption>
+        </figure>
+        <figure class="panel">
+          <img src="assets/v20261007/plugin-intellij.webp" width="1056" height="735" alt="The HyperEnv tool window in IntelliJ IDEA with api-local applied and a notification confirming four variables." loading="lazy" decoding="async">
+          <figcaption><strong>IntelliJ IDEA</strong>, PyCharm and the other JetBrains IDEs. Coming to the JetBrains Marketplace.</figcaption>
+        </figure>
       </div>
     </div>
   </section>
 
-  <section class="section section--alt" id="about" aria-labelledby="about-title">
+  <section class="section section--tint" aria-labelledby="details-title">
     <div class="wrap">
-      <div class="section-head reveal">
-        <h2 id="about-title">What is HyperEnv?</h2>
-        <p class="lead">You keep profiles such as api-local or api-production. Apply one and every new terminal starts with its variables. Undo restores the values you had before, and removes the ones that did not exist. It works with zsh, bash, fish and PowerShell, and never asks for sudo.</p>
-      </div>
-      <div class="shots">
-        <figure class="reveal"><picture><source srcset="assets/app-macos-night.webp" media="(prefers-color-scheme: dark)"><img src="assets/app-macos.webp" width="1600" height="1084" alt="HyperEnv on macOS: a list of profiles and the variables of api-production" loading="lazy" decoding="async"></picture><figcaption>macOS</figcaption></figure>
-        <figure class="reveal"><img src="assets/app-desktop.webp" width="1600" height="1014" alt="HyperEnv on Windows and Linux, dark: api-local applied" loading="lazy" decoding="async"><figcaption>Windows and Linux</figcaption></figure>
-        <figure class="reveal"><img src="assets/plugin-vscode.webp" width="1600" height="1000" alt="HyperEnv in the VS Code activity bar, web-staging just applied" loading="lazy" decoding="async"><figcaption>VS Code, Cursor and VSCodium</figcaption></figure>
-        <figure class="reveal"><img src="assets/plugin-intellij.webp" width="1600" height="1114" alt="HyperEnv tool window in IntelliJ IDEA, dark, secrets revealed" loading="lazy" decoding="async"><figcaption>IntelliJ, PyCharm and other JetBrains IDEs</figcaption></figure>
-      </div>
+      <header class="section-head">
+        <p class="kicker">Details</p>
+        <h2 id="details-title">What it does to your machine.</h2>
+      </header>
+      <dl class="details">
+        <div><dt>No sudo</dt><dd>Everything lives in your home folder. Your shell's startup file gets one small marked block, added once and removed on request.</dd></div>
+        <div><dt>Your shell</dt><dd>zsh, bash, fish and PowerShell.</dd></div>
+        <div><dt>Secrets stay masked</dt><dd>Shown as dots in the app, the plugins and the terminal, unless you ask to reveal them.</dd></div>
+        <div><dt>Nothing leaves the computer</dt><dd>No account, no sync, no telemetry. Profiles stay in a local file.</dd></div>
+        <div><dt>Three platforms</dt><dd>A native app on macOS. A desktop app for Windows and Linux. The command on all three.</dd></div>
+        <div><dt>Open source</dt><dd>MIT license. Read the code, file an issue or send a pull request on GitHub.</dd></div>
+      </dl>
     </div>
   </section>
 
-  <section class="section" aria-labelledby="help-title">
+  <section class="section cta" aria-labelledby="cta-title">
     <div class="wrap">
-      <div class="section-head reveal">
-        <h2 id="help-title">Questions?</h2>
-        <p class="lead">Open an issue on <a href="https://github.com/iramarfalcao/hyperenv/issues" rel="noopener">GitHub</a> or write to <a href="mailto:dev@falcaosl.com">dev@falcaosl.com</a>.</p>
+      <h2 id="cta-title">The first stable version is close.</h2>
+      <p class="lead">Pre-release builds are being tested now. Follow the repository to hear when the first stable version is out, or write with questions.</p>
+      <div class="actions actions--center">
+        <a class="btn btn--primary" href="https://github.com/iramarfalcao/hyperenv" rel="noopener">Follow on GitHub <span aria-hidden="true">↗</span></a>
+        <a class="btn btn--ghost" href="mailto:dev@falcaosl.com">dev@falcaosl.com</a>
       </div>
     </div>
   </section>
@@ -87,12 +186,10 @@
 </main>
 
 <footer class="bottom">
-  <div class="wrap">
+  <div class="wrap bottom-row">
     <span>© 2026 Iramar Falcao</span>
-    <span class="spacer"><a href="https://falcaosl.com/">falcaosl.com</a></span>
+    <span><a href="https://github.com/iramarfalcao/hyperenv/issues" rel="noopener">Issues</a> · <a href="https://falcaosl.com/">falcaosl.com</a></span>
   </div>
 </footer>
-
-<script src="motion.js?v=20261002" defer></script>
 </body>
 </html>
