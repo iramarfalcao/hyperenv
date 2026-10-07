@@ -1,13 +1,11 @@
 package com.falcaosl.hyperenv.settings
 
 import com.falcaosl.hyperenv.cli.CliLocator
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.util.EnvironmentUtil
 import java.io.File
 
@@ -49,7 +47,11 @@ class HyperEnvSettings : PersistentStateComponent<HyperEnvSettings.State> {
      * executable bit, so it is restored here on macOS and Linux.
      */
     private fun bundledCli(os: CliLocator.Os): File? {
-        val dir = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.pluginPath?.toFile() ?: return null
+        // The plugin's jar sits in <plugin>/lib/, so its grandparent is the plugin
+        // folder. Read from the class's own location: the IDE's lookup by plugin
+        // id is internal API and fails verifyPlugin.
+        val jar = runCatching { File(HyperEnvSettings::class.java.protectionDomain.codeSource.location.toURI()) }.getOrNull() ?: return null
+        val dir = jar.parentFile?.parentFile ?: return null
         val file = CliLocator.bundledCandidate(dir, os) ?: return null
         if (os != CliLocator.Os.WINDOWS && file.isFile && !file.canExecute()) {
             runCatching { file.setExecutable(true) }
