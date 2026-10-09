@@ -6,18 +6,17 @@ Nada aqui promete o que o app não faz — a lista do que ele faz está em
 
 ## Posicionamento em uma frase
 
-> O gerenciador de variáveis de ambiente do macOS em que produção é vermelha e o desfazer funciona.
+> O gerenciador de variáveis de ambiente em que o perfil ativo está sempre à vista e o desfazer funciona.
 
 ## Público e o gancho de cada um
 
 - **Dev que alterna projetos**: acabou o `~/.zshrc` cheio de export comentado.
-- **Quem já rodou comando no ambiente errado**: produção pede confirmação, e dá para voltar atrás.
+- **Quem já rodou comando no ambiente errado**: a janela sempre diz qual perfil está aplicado, e dá para voltar atrás.
 - **Time pequeno**: um perfil por ambiente, igual para todo mundo.
 
 ## Mensagens prontas
 
 - "Todo terminal novo já nasce com as variáveis do projeto certo."
-- "Produção é vermelha em todo lugar — e é a única que pergunta antes."
 - "Reverter restaura o valor anterior de cada variável. Não é só apagar."
 - "Grátis, MIT, e o código está lá para você ler antes de rodar."
 

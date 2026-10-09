@@ -20,7 +20,8 @@
 - **Publicador em todas as lojas: Iramar Falcao** (pessoa física; decidido em
   2026-10-06). O app macOS é assinado com Developer ID e notarizado nesse nome.
 - **Onde está publicado:** Visual Studio Marketplace, Open VSX e JetBrains
-  Marketplace — plugins 2.1.x no canal de pré-lançamento (alpha na JetBrains).
+  Marketplace — plugins 2.1.x no canal de pré-lançamento (alpha na JetBrains);
+  no Visual Studio Marketplace a página ainda dava 404 em 2026-10-06 (issue #20).
   **GitHub Releases: nenhuma publicada** (0 releases em 2026-10-07; as tags
   `v2.0.0` e `cli-v*` existem). Por isso o cask em `Casks/` (aponta para a
   2.0.0), o `install.sh` do site e o link do DMG dão 404.

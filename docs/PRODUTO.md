@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Plataformas** | macOS 26.5+ |
+| **Plataformas** | macOS 26.5+ (app nativo); Windows e Linux (app desktop); comando `hyperenv` nos três; plugins para VS Code e IntelliJ |
 | **Idioma da interface** | Inglês |
 | **Site** | https://hyperenv.falcaosl.com |
 | **Estado** | ver [`STATUS.md`](STATUS.md) |
@@ -17,14 +17,14 @@ voltar atrás depende de lembrar o que havia antes.
 
 ## Para quem é
 
-- **Desenvolvedores em macOS** que alternam entre projetos e ambientes no mesmo dia.
+- **Desenvolvedores** (macOS, Windows ou Linux) que alternam entre projetos e ambientes no mesmo dia.
 - **Times pequenos** que compartilham a configuração de um projeto sem um cofre corporativo.
 
 ## O que ele faz
 
-- Um perfil por ambiente (dev, homologação, produção) dentro de cada projeto.
+- Uma lista plana de perfis, um por ambiente (`api-local`, `api-staging`, `api-production`).
 - Aplicar um perfil escreve um único arquivo gerado, lido no login do shell: todo terminal novo nasce configurado.
-- Cada perfil carrega uma classe de risco; produção é vermelha em toda a interface e é a única que pede confirmação.
+- O perfil aplicado fica sempre à vista (faixa e barra de status), e `hyperenv plan` mostra o que mudaria antes de aplicar.
 - Reverter restaura o valor anterior de cada variável — não apenas apaga — e avisa quando o shell sai de sincronia.
 
 ## Por que este e não outro
@@ -41,6 +41,6 @@ undo real e sem servidor no meio.
 
 ## Princípios de produto
 
-1. **Produção pergunta antes.** Sempre.
+1. **O ambiente ativo está sempre à vista.** Sempre.
 2. **Desfazer é recurso de primeira classe**, não um botão escondido.
 3. **Gratuito e auditável.** Software que mexe no ambiente do shell precisa ser lido — por isso MIT.
